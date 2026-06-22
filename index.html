@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -41,7 +41,7 @@
 <body>
 <header>
   <h1>GAA Fixtures Dashboard</h1>
-  <p>Cork &amp; Waterford championship fixtures &middot; Laois pending (fixtures not yet published by Laois GAA)</p>
+  <p>Live fixtures from Cork, Waterford &amp; Laois GAA &middot; fetched fresh on page load via a server-side proxy</p>
 </header>
 
 <div class="toolbar">
@@ -74,10 +74,12 @@
     <button class="btn-approve" id="approveBtn" disabled>Approve</button>
     <button class="btn-reject" id="rejectBtn" disabled>Reject</button>
     <button class="btn-remove" id="removeBtn" disabled>Remove</button>
+    <button class="btn-remove" id="refreshBtn" style="background:#2d6cdf;">Refresh</button>
   </div>
 </div>
 
 <div class="count" id="rowCount"></div>
+<div class="count" id="loadStatus"></div>
 
 <div class="container">
 <table>
@@ -102,7 +104,7 @@
 </div>
 
 <script>
-// ---- Source data (verified against official county GAA league pages) ----
+// ---- Date/time helpers shared with the Worker's output format ----
 function iso(d){ // d = 'D Month YYYY'
   const months={January:'01',February:'02',March:'03',April:'04',May:'05',June:'06',July:'07',August:'08',September:'09',October:'10',November:'11',December:'12'};
   const [day,month,year]=d.split(' ');
@@ -124,289 +126,15 @@ function mk(county,teamA,teamB,date,time,venue,competition,round){
   return {county,teamA,teamB,date:d,day:dayName(d),time:to12h(time),venue,competition,round:round||'',status:'Proposed'};
 }
 
-const raw = [];
-
-// Cork - Premier Senior HC
-[
- ['Douglas','Newtownshandrum','31 July 2026','19:15','Ballyhooly','Group 2'],
- ['Midleton','St Finbarrs','31 July 2026','19:15','Pairc Ui Rinn','Group 3'],
- ['Bride Rovers','Newcestown','1 August 2026','19:00','Ballincollig','Group 3'],
- ['Kanturk','Fr O Neills','1 August 2026','19:00','Kilworth','Group 1'],
- ['Sarsfields','Charleville','1 August 2026','19:00','Castletownroche','Group 2'],
- ['Blackrock','Glen Rovers','1 August 2026','19:30','Pairc Ui Rinn','Group 1'],
- ['Newcestown','Midleton','22 August 2026','15:00','Pairc Ui Rinn','Group 3'],
- ['Newtownshandrum','Sarsfields','22 August 2026','15:00','Mallow','Group 2'],
- ['Charleville','Douglas','22 August 2026','17:00','Mallow','Group 2'],
- ['St Finbarrs','Bride Rovers','22 August 2026','17:00','Pairc Ui Rinn','Group 3'],
- ['Fr O Neills','Blackrock','23 August 2026','16:00','Midleton','Group 1'],
- ['Glen Rovers','Kanturk','23 August 2026','16:00','Castletownroche','Group 1'],
- ['Blackrock','Kanturk','6 September 2026','16:00','Mourneabbey','Group 1'],
- ['Douglas','Sarsfields','6 September 2026','16:00','Pairc Ui Rinn','Group 2'],
- ['Glen Rovers','Fr O Neills','6 September 2026','16:00','Carrigtwohill','Group 1'],
- ['Midleton','Bride Rovers','6 September 2026','16:00','Caherlag','Group 3'],
- ['Newtownshandrum','Charleville','6 September 2026','16:00','Milford','Group 2'],
- ['St Finbarrs','Newcestown','6 September 2026','16:00','TBC','Group 3'],
-].forEach(r=>raw.push(mk('Cork',r[0],r[1],r[2],r[3],r[4],'Premier Senior HC',r[5])));
-
-// Cork - Senior A HC
-[
- ['Blarney','Castlelyons','1 August 2026','14:00','Riverstown','Group 1'],
- ['Na Piarsaigh','Erins Own','1 August 2026','17:45','Pairc Ui Rinn','Group 2'],
- ['Ballinhassig','Courcey Rovers','1 August 2026','19:00','Kilbrittain','Group 3'],
- ['Carrigtwohill','Inniscarra','1 August 2026','19:00','Blarney','Group 3'],
- ['Killeagh','Fermoy','1 August 2026','19:00','Lisgoold','Group 2'],
- ['Watergrasshill','Ballyhea','1 August 2026','19:00','Kildorrery','Group 1'],
- ['Courcey Rovers','Carrigtwohill','21 August 2026','19:30','Pairc Ui Rinn','Group 3'],
- ['Fermoy','Na Piarsaigh','22 August 2026','15:00','Castlelyons','Group 2'],
- ['Castlelyons','Watergrasshill','23 August 2026','14:00','Rathcormac','Group 1'],
- ['Erins Own','Killeagh','23 August 2026','14:00','Castlemartyr','Group 2'],
- ['Ballyhea','Blarney','23 August 2026','15:30','Glantane','Group 1'],
- ['Inniscarra','Ballinhassig','23 August 2026','17:00','Ovens','Group 3'],
- ['Blarney','Watergrasshill','5 September 2026','17:30','Grenagh','Group 1'],
- ['Carrigtwohill','Ballinhassig','5 September 2026','17:30','Pairc Ui Rinn','Group 3'],
- ['Castlelyons','Ballyhea','5 September 2026','17:30','Mallow','Group 1'],
- ['Fermoy','Erins Own','5 September 2026','17:30','Rathcormac','Group 2'],
- ['Inniscarra','Courcey Rovers','5 September 2026','17:30','Carrigaline','Group 3'],
- ['Killeagh','Na Piarsaigh','5 September 2026','17:30','Midleton','Group 2'],
-].forEach(r=>raw.push(mk('Cork',r[0],r[1],r[2],r[3],r[4],'Senior A HC',r[5])));
-
-// Cork - Premier Intermediate HC
-[
- ['Carrigaline','Valley Rovers','1 August 2026','16:30','Riverstick','Group 3'],
- ['Kilworth','Ballymartle','2 August 2026','14:00','Rathcormac','Group 3'],
- ['Bishopstown','Ballincollig','2 August 2026','17:15','Ballyanley','Group 1'],
- ['Castlemartyr','Lisgoold','2 August 2026','17:15','Midleton','Group 2'],
- ['Dungourney','Cloyne','2 August 2026','19:00','Midleton','Group 2'],
- ['Eire Og','Aghabullogue','2 August 2026','19:00','Cloughduv','Group 1'],
- ['Valley Rovers','Kilworth','20 August 2026','19:30','Pairc Ui Rinn','Group 3'],
- ['Ballymartle','Carrigaline','22 August 2026','15:00','Killibrittian','Group 3'],
- ['Ballincollig','Eire Og','23 August 2026','14:30','Riverstick','Group 1'],
- ['Aghabullogue','Bishopstown','23 August 2026','15:30','Cloughduv','Group 1'],
- ['Lisgoold','Dungourney','23 August 2026','17:30','Carrigtwohill','Group 2'],
- ['Cloyne','Castlemartyr','23 August 2026','19:30','Carrigtwohill','Group 2'],
- ['Ballincollig','Aghabullogue','6 September 2026','14:00','Ballyanley','Group 1'],
- ['Bishopstown','Eire Og','6 September 2026','14:00','Blarney','Group 1'],
- ['Carrigaline','Kilworth','6 September 2026','14:00','Pairc Ui Rinn','Group 3'],
- ['Cloyne','Lisgoold','6 September 2026','14:00','Shanagarry','Group 2'],
- ['Dungourney','Castlemartyr','6 September 2026','14:00','Killeagh','Group 2'],
- ['Valley Rovers','Ballymartle','6 September 2026','14:00','Ballinspittle','Group 3'],
-].forEach(r=>raw.push(mk('Cork',r[0],r[1],r[2],r[3],r[4],'Premier Intermediate HC',r[5])));
-
-// Cork - Intermediate A HC
-[
- ['Aghada','Bandon','31 July 2026','19:15','Church Road','Group 1'],
- ['Midleton','Mallow','1 August 2026','16:30','Castlelyons','Group 2'],
- ['Kildorrery','Blackrock','2 August 2026','14:00','Watergrasshill','Group 2'],
- ['Youghal','Ballygiblin','2 August 2026','14:00','Ballynoe','Group 3'],
- ['Erins Own','Sarsfields','2 August 2026','16:30','Cobh','Group 3'],
- ['Kilbrittain','Russell Rovers','2 August 2026','16:30','Ballinhassig','Group 1'],
- ['Blackrock','Midleton','21 August 2026','19:30','Riverstown','Group 2'],
- ['Ballygiblin','Erins Own','22 August 2026','14:00','Ballyhooley','Group 3'],
- ['Russell Rovers','Aghada','22 August 2026','16:00','Aghavine','Group 1'],
- ['Sarsfields','Youghal','23 August 2026','14:00','Shanagarry','Group 3'],
- ['Bandon','Kilbrittain','23 August 2026','15:30','Ballinspittle','Group 1'],
- ['Mallow','Kildorrery','23 August 2026','15:30','Glanworth','Group 2'],
- ['Aghada','Kilbrittain','4 September 2026','19:30','Cloughduv','Group 1'],
- ['Bandon','Russell Rovers','4 September 2026','19:30','Páirc Uí Rinn','Group 1'],
- ['Erins Own','Youghal','4 September 2026','19:30','Carrigtwohill','Group 3'],
- ['Mallow','Blackrock','4 September 2026','19:30','Glantane','Group 2'],
- ['Midleton','Kildorrery','4 September 2026','19:30','Mourneabbey','Group 2'],
- ['Sarsfields','Ballygiblin','4 September 2026','19:30','Ballyhooley','Group 3'],
-].forEach(r=>raw.push(mk('Cork',r[0],r[1],r[2],r[3],r[4],'Intermediate A HC',r[5])));
-
-// Cork - Premier Senior FC
-[
- ['St Finbarrs','Carrigaline','24 July 2026','19:15','Pairc Ui Rinn',''],
- ['Mallow','Douglas','25 July 2026','16:00','Grenagh',''],
- ['Newcestown','Nemo Rangers','25 July 2026','16:00','Cloughduv',''],
- ['Knocknagree','Clonakilty','26 July 2026','19:00','Carrigadrohid',''],
- ['Castlehaven','Ballincollig','26 July 2026','19:15','Clonakilty',''],
- ['St Michaels','Valley Rovers','26 July 2026','19:15','Ballygarvan',''],
- ['Douglas','St Finbarrs','14 August 2026','19:15','Pairc Ui Rinn',''],
- ['Valley Rovers','Newcestown','15 August 2026','16:00','Coachford',''],
- ['Carrigaline','Mallow','16 August 2026','14:00','Pairc Ui Rinn',''],
- ['Clonakilty','Castlehaven','16 August 2026','15:30','Rosscarbery',''],
- ['Ballincollig','Knocknagree','16 August 2026','16:00','Macroom',''],
- ['Nemo Rangers','St Michaels','16 August 2026','16:00','Pairc Ui Rinn',''],
- ['Ballincollig','Clonakilty','13 September 2026','16:00','Bandon',''],
- ['Carrigaline','Douglas','13 September 2026','16:00','Ballygarvan',''],
- ['Castlehaven','Knocknagree','13 September 2026','16:00','Pairc Ui Rinn',''],
- ['Nemo Rangers','Valley Rovers','13 September 2026','16:00','Ballyanley',''],
- ['Newcestown','St Michaels','13 September 2026','16:00','Riverstick',''],
- ['St Finbarrs','Mallow','13 September 2026','16:00','Kilworth',''],
-].forEach(r=>raw.push(mk('Cork',r[0],r[1],r[2],r[3],r[4],'Premier Senior FC',r[5])));
-
-// Cork - Senior A FC
-[
- ["Clyda Rovers","Kilshannig",'22 July 2026','19:30','Charleville','Group 3'],
- ["Bishopstown","Eire Og",'24 July 2026','19:15','Ballincollig','Group 3'],
- ["Béal Átha'n Ghaorthaidh","Kanturk",'25 July 2026','19:00','Ballyanley','Group 1'],
- ["Dohenys","Aghabullogue",'25 July 2026','19:00','Kilmichael','Group 1'],
- ["Cill na Martra","Carbery Rangers",'26 July 2026','19:15','Dunmanway','Group 2'],
- ["O Donovan Rossa","Newmarket",'26 July 2026','19:15','Macroom','Group 2'],
- ["Eire Og","Clyda Rovers",'15 August 2026','15:00','Grenagh','Group 3'],
- ["Carbery Rangers","O Donovan Rossa",'15 August 2026','18:30','Moneyvollahane','Group 2'],
- ["Kilshannig","Bishopstown",'15 August 2026','18:30','Mallow','Group 3'],
- ["Aghabullogue","Béal Átha'n Ghaorthaidh",'16 August 2026','14:00','Macroom','Group 1'],
- ["Kanturk","Dohenys",'16 August 2026','15:30','Kilmurry','Group 1'],
- ["Newmarket","Cill na Martra",'16 August 2026','15:30','Clondrohid','Group 2'],
- ["Bishopstown","Clyda Rovers",'13 September 2026','14:00','Páirc Uí Rinn','Group 3'],
- ["Béal Átha'n Ghaorthaidh","Dohenys",'13 September 2026','14:00','Kilmichael','Group 1'],
- ["Carbery Rangers","Newmarket",'13 September 2026','14:00','Carrigadrohid','Group 2'],
- ["Cill na Martra","O Donovan Rossa",'13 September 2026','14:00','Enniskeane','Group 2'],
- ["Eire Og","Kilshannig",'13 September 2026','14:00','Grenagh','Group 3'],
- ["Kanturk","Aghabullogue",'13 September 2026','14:00','Macroom','Group 1'],
-].forEach(r=>raw.push(mk('Cork',r[0],r[1],r[2],r[3],r[4],'Senior A FC',r[5])));
-
-// Waterford - Senior Hurling Championship Group A
-[
- ['Clonea','Abbeyside-Ballinacourty','3 July 2026','19:30','Cappoquin Logistics Fraher Field, Dungarvan','Round 1'],
- ['Passage','Ballygunner A','3 July 2026','19:30','Azzurri Walsh Park, Waterford','Round 1'],
- ['De La Salle','Ferrybank','5 July 2026','13:00','Azzurri Walsh Park, Waterford','Round 1'],
- ['Passage','Clonea','10 July 2026','19:30','Azzurri Walsh Park, Waterford','Round 2'],
- ['Ferrybank','Abbeyside-Ballinacourty','11 July 2026','14:30','Cappoquin Logistics Fraher Field, Dungarvan','Round 2'],
- ['De La Salle','Ballygunner A','12 July 2026','15:30','Azzurri Walsh Park, Waterford','Round 2'],
- ['Ferrybank','Clonea','18 July 2026','14:00','Portlaw','Round 3'],
- ['De La Salle','Passage','18 July 2026','17:00','Azzurri Walsh Park, Waterford','Round 3'],
- ['Abbeyside-Ballinacourty','Ballygunner A','19 July 2026','13:00','Cappoquin Logistics Fraher Field, Dungarvan','Round 3'],
- ['Ballygunner A','Ferrybank','31 July 2026','19:30','Azzurri Walsh Park, Waterford','Round 4'],
- ['Abbeyside-Ballinacourty','Passage','1 August 2026','17:00','Azzurri Walsh Park, Waterford','Round 4'],
- ['Clonea','De La Salle','1 August 2026','18:45','Azzurri Walsh Park, Waterford','Round 4'],
- ['Ferrybank','Passage','7 August 2026','19:30','Azzurri Walsh Park, Waterford','Round 5'],
- ['Abbeyside-Ballinacourty','De La Salle','8 August 2026','17:00','Azzurri Walsh Park, Waterford','Round 5'],
- ['Ballygunner A','Clonea','8 August 2026','18:45','Azzurri Walsh Park, Waterford','Round 5'],
-].forEach(r=>raw.push(mk('Waterford',r[0],r[1],r[2],r[3],r[4],'Senior HC Group A',r[5])));
-
-// Waterford - Senior Hurling Championship Group B
-[
- ['Roanmore','Ballygunner B','4 July 2026','14:30','Azzurri Walsh Park, Waterford','Round 1'],
- ['Fourmilewater','Dún Garbhan','5 July 2026','13:00','Cappoquin Logistics Fraher Field, Dungarvan','Round 1'],
- ['Lismore','Mount Sion','5 July 2026','18:30','Cappoquin Logistics Fraher Field, Dungarvan','Round 1'],
- ['Ballygunner B','Dún Garbhan','11 July 2026','19:00','St Mollerans','Round 2'],
- ['Roanmore','Mount Sion','12 July 2026','14:00','Azzurri Walsh Park, Waterford','Round 2'],
- ['Lismore','Fourmilewater','12 July 2026','18:30','Cappoquin','Round 2'],
- ['Ballygunner B','Fourmilewater','18 July 2026','14:30','St Mollerans','Round 3'],
- ['Dún Garbhan','Mount Sion','18 July 2026','18:45','Azzurri Walsh Park, Waterford','Round 3'],
- ['Roanmore','Lismore','19 July 2026','18:30','Cappoquin Logistics Fraher Field, Dungarvan','Round 3'],
- ['Mount Sion','Ballygunner B','1 August 2026','13:30','Azzurri Walsh Park, Waterford','Round 4'],
- ['Dún Garbhan','Lismore','2 August 2026','14:00','Cappoquin Logistics Fraher Field, Dungarvan','Round 4'],
- ['Fourmilewater','Roanmore','2 August 2026','15:30','Cappoquin Logistics Fraher Field, Dungarvan','Round 4'],
- ['Ballygunner B','Lismore','9 August 2026','13:00','Lemybrien','Round 5'],
- ['Dún Garbhan','Roanmore','9 August 2026','14:30','Cappoquin Logistics Fraher Field, Dungarvan','Round 5'],
- ['Mount Sion','Fourmilewater','9 August 2026','16:00','Cappoquin Logistics Fraher Field, Dungarvan','Round 5'],
-].forEach(r=>raw.push(mk('Waterford',r[0],r[1],r[2],r[3],r[4],'Senior HC Group B',r[5])));
-
-// Waterford - Premier Intermediate Hurling Group A
-[
- ['Clashmore Kinsalebeg','Affane/Cappoquin/Tourin','5 July 2026','13:00','Bushy Park','Round 1'],
- ['Shamrocks','Brickey Rangers','5 July 2026','13:00','Lismore','Round 1'],
- ['Brickey Rangers','Clashmore Kinsalebeg','11 July 2026','16:00','Cappoquin Logistics Fraher Field, Dungarvan','Round 2'],
- ['Shamrocks','Affane/Cappoquin/Tourin','12 July 2026','13:00','Lismore','Round 2'],
- ['Clashmore Kinsalebeg','Shamrocks','24 July 2026','14:30','Cappoquin','Round 3'],
- ['Brickey Rangers','Affane/Cappoquin/Tourin','24 July 2026','19:30','Cappoquin Logistics Fraher Field, Dungarvan','Round 3'],
-].forEach(r=>raw.push(mk('Waterford',r[0],r[1],r[2],r[3],r[4],'Premier Intermediate HC Group A',r[5])));
-
-// Waterford - Premier Intermediate Hurling Group B
-[
- ['An Rinn','Portlaw','3 July 2026','19:30','Lemybrien','Round 1'],
- ['Ballysaggart','Tulach An Iarainn','3 July 2026','19:30','Cappoquin','Round 1'],
- ['Ballysaggart','Portlaw','10 July 2026','19:30','Dungarvan','Round 2'],
- ['Tulach An Iarainn','An Rinn','12 July 2026','17:00','Cappoquin','Round 2'],
- ['Tulach An Iarainn','Portlaw','25 July 2026','17:00','Cappoquin Logistics Fraher Field, Dungarvan','Round 3'],
- ['An Rinn','Ballysaggart','25 July 2026','18:30','Cappoquin Logistics Fraher Field, Dungarvan','Round 3'],
-].forEach(r=>raw.push(mk('Waterford',r[0],r[1],r[2],r[3],r[4],'Premier Intermediate HC Group B',r[5])));
-
-// Laois - Senior Football Championship
-[
- ['Gleann Uiseann','Stradbally','22 July 2026','19:30','TBC','Round 1'],
- ['Graiguecullen GAA','Emo','22 July 2026','19:30','TBC','Round 1'],
- ["St Joseph's",'Crettyard','23 July 2026','19:30','TBC','Round 1'],
- ['Courtwood',"O'Dempseys",'23 July 2026','19:30','TBC','Round 1'],
- ['Mainistir Béal Atha an Róine/Ballyroan Abbey','Rosenallis','24 July 2026','19:30','Ballyroan','Round 1'],
- ['Portlaoise','Clonaslee St Manmans/Cluain na Slí Naomh Meanmain','24 July 2026','19:30','TBC','Round 1'],
- ['Arles/Killeen','Park Ratheniska','25 July 2026','16:00','TBC','Round 1'],
- ['Portarlington','An Fraoch','25 July 2026','19:00','TBC','Round 1'],
-].forEach(r=>raw.push(mk('Laois',r[0],r[1],r[2],r[3],r[4],'Senior Football Championship',r[5])));
-
-// Laois - Intermediate Football Championship
-[
- ['Ard Lios Cill Chruis','Ballylinan','23 July 2026','19:30','TBC','Round 1'],
- ['Ballyfin CLG','Portlaoise','25 July 2026','19:00','TBC','Round 1'],
- ['Kilcavan','Mainistir Béal Atha an Róine/Ballyroan Abbey','25 July 2026','19:00','TBC','Round 1'],
- ['Annanough','Mountmellick','25 July 2026','19:30','TBC','Round 1'],
-].forEach(r=>raw.push(mk('Laois',r[0],r[1],r[2],r[3],r[4],'Intermediate Football Championship',r[5])));
-
-// Laois - Senior Hurling Championship
-[
- ['Portlaoise','Ballyfin CLG','10 July 2026','19:30',"Laois Hire O'Moore Park, Portlaoise",'Round 1'],
- ['Camross GAA Club','The Harps','11 July 2026','17:30',"Laois Hire O'Moore Park, Portlaoise",'Round 1'],
- ['Baile na Coille CLG','Rathdowney Errill','11 July 2026','19:00',"Laois Hire O'Moore Park, Portlaoise",'Round 1'],
- ['Borris in Ossory Kilcotton','Abbeyleix St Lazarians GAA & Camogie','12 July 2026','17:30',"Laois Hire O'Moore Park, Portlaoise",'Round 1'],
- ['Clough/Ballacolla','Rosenallis','12 July 2026','19:00',"Laois Hire O'Moore Park, Portlaoise",'Round 1'],
- ['Ballyfin CLG','Rosenallis','16 July 2026','19:30',"Laois Hire O'Moore Park, Portlaoise",'Round 2'],
- ['Baile na Coille CLG','Clough/Ballacolla','17 July 2026','17:30',"Laois Hire O'Moore Park, Portlaoise",'Round 2'],
- ['The Harps','Abbeyleix St Lazarians GAA & Camogie','18 July 2026','16:00',"Laois Hire O'Moore Park, Portlaoise",'Round 2'],
- ['Portlaoise','Borris in Ossory Kilcotton','18 July 2026','17:30',"Laois Hire O'Moore Park, Portlaoise",'Round 2'],
- ['Rathdowney Errill','Camross GAA Club','18 July 2026','19:00',"Laois Hire O'Moore Park, Portlaoise",'Round 2'],
- ['Camross GAA Club','Clough/Ballacolla','31 July 2026','19:30',"Laois Hire O'Moore Park, Portlaoise",'Round 3'],
- ['Baile na Coille CLG','Borris in Ossory Kilcotton','1 August 2026','17:30',"Laois Hire O'Moore Park, Portlaoise",'Round 3'],
- ['Rathdowney Errill','Rosenallis','1 August 2026','19:00',"Laois Hire O'Moore Park, Portlaoise",'Round 3'],
- ['The Harps','Portlaoise','2 August 2026','13:30',"Laois Hire O'Moore Park, Portlaoise",'Round 3'],
- ['Ballyfin CLG','Abbeyleix St Lazarians GAA & Camogie','2 August 2026','15:00',"Laois Hire O'Moore Park, Portlaoise",'Round 3'],
- ['The Harps','Rosenallis','14 August 2026','19:30',"Laois Hire O'Moore Park, Portlaoise",'Round 4'],
- ['Ballyfin CLG','Baile na Coille CLG','15 August 2026','17:30',"Laois Hire O'Moore Park, Portlaoise",'Round 4'],
- ['Borris in Ossory Kilcotton','Camross GAA Club','15 August 2026','19:00',"Laois Hire O'Moore Park, Portlaoise",'Round 4'],
- ['Rathdowney Errill','Portlaoise','16 August 2026','14:00',"Laois Hire O'Moore Park, Portlaoise",'Round 4'],
- ['Clough/Ballacolla','Abbeyleix St Lazarians GAA & Camogie','16 August 2026','15:30',"Laois Hire O'Moore Park, Portlaoise",'Round 4'],
- ['Borris in Ossory Kilcotton','Rosenallis','6 September 2026','TBC',"Laois Hire O'Moore Park, Portlaoise",'Round 5'],
- ['Rathdowney Errill','Abbeyleix St Lazarians GAA & Camogie','6 September 2026','TBC',"Laois Hire O'Moore Park, Portlaoise",'Round 5'],
- ['Camross GAA Club','Ballyfin CLG','6 September 2026','TBC',"Laois Hire O'Moore Park, Portlaoise",'Round 5'],
- ['Baile na Coille CLG','The Harps','6 September 2026','TBC',"Laois Hire O'Moore Park, Portlaoise",'Round 5'],
- ['Clough/Ballacolla','Portlaoise','6 September 2026','TBC',"Laois Hire O'Moore Park, Portlaoise",'Round 5'],
-].forEach(r=>raw.push(mk('Laois',r[0],r[1],r[2],r[3],r[4],'Senior Hurling Championship',r[5])));
-
-// Laois - Intermediate Hurling Championship Group A
-[
- ['The Harps','Borris in Ossory Kilcotton','15 July 2026','19:30','The Harps GAA','Round 1'],
- ['Clough/Ballacolla','Abbeyleix St Lazarians GAA & Camogie','16 July 2026','19:30','TBC','Round 1'],
- ['Abbeyleix St Lazarians GAA & Camogie','The Harps','30 July 2026','19:30','Abbeyleix','Round 2'],
- ['Borris in Ossory Kilcotton','Clough/Ballacolla','30 July 2026','19:30','TBC','Round 2'],
- ['Borris in Ossory Kilcotton','Abbeyleix St Lazarians GAA & Camogie','13 August 2026','19:00','TBC','Round 3'],
- ['Clough/Ballacolla','The Harps','13 August 2026','19:00','TBC','Round 3'],
-].forEach(r=>raw.push(mk('Laois',r[0],r[1],r[2],r[3],r[4],'Intermediate Hurling Championship Group A',r[5])));
-
-// Laois - Intermediate Hurling Championship Group B
-[
- ['Tromaire/Trumera','Naomh Fiontáin Maighean Rátha','16 July 2026','19:30','Trumera GAA Grounds','Round 1'],
- ['Slieve Bloom','Ballypickas/Baile Piocas','16 July 2026','19:30','Slieve Bloom GAA Grounds','Round 1'],
- ['Ballypickas/Baile Piocas','Tromaire/Trumera','30 July 2026','19:30','Ballypickas GAA Grounds','Round 2'],
- ['Naomh Fiontáin Maighean Rátha','Slieve Bloom','30 July 2026','19:30',"St. Fintan's GAA Grounds",'Round 2'],
- ['Naomh Fiontáin Maighean Rátha','Ballypickas/Baile Piocas','14 August 2026','19:00',"St. Fintan's GAA Grounds",'Round 3'],
- ['Slieve Bloom','Tromaire/Trumera','14 August 2026','19:00','Slieve Bloom GAA Grounds','Round 3'],
-].forEach(r=>raw.push(mk('Laois',r[0],r[1],r[2],r[3],r[4],'Intermediate Hurling Championship Group B',r[5])));
-
-// Laois - Premier Intermediate Hurling Championship Group A
-[
- ['Clonad GAA and Camogie Club','Clonaslee St Manmans/Cluain na Slí Naomh Meanmain','15 July 2026','19:30','TBC','Round 1'],
- ['Camross GAA Club','Mountmellick','15 July 2026','19:30','TBC','Round 1'],
- ['Mountmellick','Clonad GAA and Camogie Club','31 July 2026','19:30','TBC','Round 2'],
- ['Clonaslee St Manmans/Cluain na Slí Naomh Meanmain','Camross GAA Club','2 August 2026','12:00','TBC','Round 2'],
- ['Camross GAA Club','Clonad GAA and Camogie Club','16 August 2026','12:00','TBC','Round 3'],
- ['Clonaslee St Manmans/Cluain na Slí Naomh Meanmain','Mountmellick','16 August 2026','12:00','TBC','Round 3'],
-].forEach(r=>raw.push(mk('Laois',r[0],r[1],r[2],r[3],r[4],'Premier Intermediate Hurling Championship Group A',r[5])));
-
-// Laois - Premier Intermediate Hurling Championship Group B
-[
- ['Clough/Ballacolla','Colt Shanahoe','15 July 2026','19:30','TBC','Round 1'],
- ['Castletown','Rathdowney Errill','15 July 2026','19:30','TBC','Round 1'],
- ['Colt Shanahoe','Castletown','31 July 2026','19:30','TBC','Round 2'],
- ['Rathdowney Errill','Clough/Ballacolla','2 August 2026','12:00','TBC','Round 2'],
- ['Colt Shanahoe','Rathdowney Errill','15 August 2026','18:00','TBC','Round 3'],
- ['Castletown','Clough/Ballacolla','15 August 2026','18:00','TBC','Round 3'],
-].forEach(r=>raw.push(mk('Laois',r[0],r[1],r[2],r[3],r[4],'Premier Intermediate Hurling Championship Group B',r[5])));
+// Cloudflare Worker that scrapes the source sites server-side (avoids
+// browser CORS restrictions) and returns normalized fixture JSON.
+// Replace with your deployed Worker URL after running: wrangler deploy
+const WORKER_URL = 'https://gaa-fixtures-proxy.YOUR-SUBDOMAIN.workers.dev/';
 
 // ---- App state ----
-let fixtures = raw.map((f,i)=>({id:i+1,...f}));
+let fixtures = [];
+let nextId = 1;
+let lastLoadInfo = "";
 
 const tbody=document.getElementById('tbody');
 const countyFilter=document.getElementById('countyFilter');
@@ -420,6 +148,8 @@ const rejectBtn=document.getElementById('rejectBtn');
 const removeBtn=document.getElementById('removeBtn');
 const emptyMsg=document.getElementById('emptyMsg');
 const rowCount=document.getElementById('rowCount');
+const refreshBtn=document.getElementById('refreshBtn');
+const loadStatus=document.getElementById('loadStatus');
 
 let selected=new Set();
 let sortKey='date', sortDir=1;
@@ -528,8 +258,45 @@ document.querySelectorAll('thead th[data-key]').forEach(th=>{
   });
 });
 
-populateFilterOptions();
-render();
+function keyOf(f){
+  return `${f.county}|${f.competition}|${f.teamA}|${f.teamB}|${f.date}`;
+}
+
+function mergeFixtures(incoming){
+  const existingByKey=new Map(fixtures.map(f=>[keyOf(f),f]));
+  fixtures = incoming.map(inc=>{
+    const ex=existingByKey.get(keyOf(inc));
+    if(ex) return {...inc, id:ex.id, status:ex.status};
+    return {...inc, id:nextId++, status:'Proposed'};
+  });
+  selected.clear();
+}
+
+async function loadFixtures(isRefresh){
+  refreshBtn.disabled=true;
+  refreshBtn.textContent=isRefresh?'Refreshing…':'Loading…';
+  loadStatus.textContent='Loading fixtures from source websites…';
+  try{
+    const res=await fetch(WORKER_URL,{cache:'no-store'});
+    if(!res.ok) throw new Error(`Worker responded ${res.status}`);
+    const json=await res.json();
+    if(json.error) throw new Error(json.error);
+    const incoming=(json.fixtures||[]).map(f=>mk(f.county,f.teamA,f.teamB,f.date,f.time,f.venue,f.competition,f.round));
+    mergeFixtures(incoming);
+    const fetchedAt=json.fetchedAt?new Date(json.fetchedAt).toLocaleString():new Date().toLocaleString();
+    loadStatus.textContent=`Loaded ${incoming.length} fixtures · last updated ${fetchedAt}`;
+  }catch(err){
+    loadStatus.textContent=`Could not load live fixtures (${err.message}). Click Refresh to retry.`;
+  }
+  populateFilterOptions();
+  render();
+  refreshBtn.disabled=false;
+  refreshBtn.textContent='Refresh';
+}
+
+refreshBtn.addEventListener('click',()=>loadFixtures(true));
+
+loadFixtures(false);
 </script>
 </body>
 </html>
