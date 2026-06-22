@@ -20,12 +20,15 @@ const WATERFORD_COMPETITIONS = [
   { id: '214354', name: 'Premier Intermediate HC Group B' },
 ];
 
+// Order matters: more specific names must be checked before substrings of
+// themselves (e.g. "Premier Intermediate Hurling Championship" contains
+// "Intermediate Hurling Championship", so it must come first).
 const LAOIS_TARGETS = [
   { match: 'Senior Football Championship', name: 'Senior Football Championship' },
   { match: 'Intermediate Football Championship', name: 'Intermediate Football Championship' },
   { match: 'Senior Hurling Championship', name: 'Senior Hurling Championship' },
-  { match: 'Intermediate Hurling Championship', name: 'Intermediate Hurling Championship' },
   { match: 'Premier Intermediate Hurling Championship', name: 'Premier Intermediate Hurling Championship' },
+  { match: 'Intermediate Hurling Championship', name: 'Intermediate Hurling Championship' },
 ];
 
 const MONTHS = {
@@ -154,10 +157,14 @@ function classifyLaoisComp(compRaw) {
   return null;
 }
 
+function emptyBuf() {
+  return { home: undefined, time: undefined, away: undefined, venue: undefined };
+}
+
 function parseLaoisHtml(html, out) {
   let curDate = null;
   let curComp = null;
-  let buf = {};
+  let buf = emptyBuf();
   const re = new RegExp(LAOIS_TOKEN_RE);
   let m;
   while ((m = re.exec(html))) {
@@ -165,9 +172,10 @@ function parseLaoisHtml(html, out) {
       curDate = m[2].trim();
     } else if (m[4] !== undefined) {
       curComp = decodeEntities(m[4].trim().replace(/\s+/g, ' '));
-      buf = {};
+      buf = emptyBuf();
     } else if (m[6] !== undefined) {
-      buf = { home: decodeEntities(m[6].trim()) };
+      buf = emptyBuf();
+      buf.home = decodeEntities(m[6].trim());
     } else if (m[8] !== undefined) {
       buf.time = m[8].trim();
     } else if (m[10] !== undefined) {
@@ -187,23 +195,49 @@ function parseLaoisHtml(html, out) {
           round: cls.round,
         });
       }
-      buf = {};
+      buf = emptyBuf();
     }
   }
 }
 
-async function fetchLaois() {
+async function fetchLaois(debug) {
   const out = [];
   let page = 0;
   let hasMore = true;
   const seen = new Set();
   while (hasMore && page < 15) {
     const url = `https://laoisgaa.ie/fixtures-results/?ajax=1&feed_type=fixtures&page=${page}&size=50`;
-    const res = await fetch(url, { headers: { 'User-Agent': UA, Accept: 'application/json' } });
-    if (!res.ok) break;
-    const json = await res.json();
-    if (!json.ok) break;
+    let res, bodyText, json;
+    try {
+      res = await fetch(url, {
+        headers: {
+          'User-Agent': UA,
+          Accept: 'application/json',
+          Referer: 'https://laoisgaa.ie/fixtures-results/',
+        },
+      });
+    } catch (err) {
+      debug.push({ page, stage: 'fetch-threw', error: String(err) });
+      break;
+    }
+    if (!res.ok) {
+      debug.push({ page, stage: 'http-error', status: res.status });
+      break;
+    }
+    bodyText = await res.text();
+    try {
+      json = JSON.parse(bodyText);
+    } catch (err) {
+      debug.push({ page, stage: 'json-parse-failed', status: res.status, bodySnippet: bodyText.slice(0, 300) });
+      break;
+    }
+    if (!json.ok) {
+      debug.push({ page, stage: 'json-not-ok', bodySnippet: bodyText.slice(0, 300) });
+      break;
+    }
+    const before = out.length;
     parseLaoisHtml(json.html, out);
+    debug.push({ page, stage: 'ok', htmlLength: json.html.length, newRows: out.length - before, hasMore: json.hasMore });
     hasMore = !!json.hasMore;
     page++;
   }
@@ -231,10 +265,11 @@ export default {
     }
 
     try {
+      const laoisDebug = [];
       const [corkResults, waterfordResults, laoisResults] = await Promise.all([
         Promise.all(CORK_COMPETITIONS.map(fetchCorkCompetition)),
         Promise.all(WATERFORD_COMPETITIONS.map(fetchWaterfordCompetition)),
-        fetchLaois(),
+        fetchLaois(laoisDebug),
       ]);
 
       const fixtures = [
@@ -243,8 +278,15 @@ export default {
         ...laoisResults,
       ];
 
+      const url = new URL(request.url);
+      const includeDebug = url.searchParams.has('debug');
+
       return new Response(
-        JSON.stringify({ fetchedAt: new Date().toISOString(), fixtures }),
+        JSON.stringify({
+          fetchedAt: new Date().toISOString(),
+          fixtures,
+          ...(includeDebug ? { laoisDebug } : {}),
+        }),
         {
           headers: {
             'Content-Type': 'application/json',
