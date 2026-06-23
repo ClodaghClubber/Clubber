@@ -74,6 +74,7 @@
     <button class="btn-approve" id="approveBtn" disabled>Approve</button>
     <button class="btn-reject" id="rejectBtn" disabled>Reject</button>
     <button class="btn-remove" id="removeBtn" disabled>Remove</button>
+    <button class="btn-remove" id="exportBtn" style="background:#1f7a4d;" disabled>Export to Excel</button>
     <button class="btn-remove" id="refreshBtn" style="background:#2d6cdf;">Refresh</button>
   </div>
 </div>
@@ -149,6 +150,7 @@ const removeBtn=document.getElementById('removeBtn');
 const emptyMsg=document.getElementById('emptyMsg');
 const rowCount=document.getElementById('rowCount');
 const refreshBtn=document.getElementById('refreshBtn');
+const exportBtn=document.getElementById('exportBtn');
 const loadStatus=document.getElementById('loadStatus');
 
 let selected=new Set();
@@ -224,7 +226,34 @@ function updateActionButtons(){
   approveBtn.disabled = selFixtures.length===0;
   rejectBtn.disabled = selFixtures.length===0;
   removeBtn.disabled = selFixtures.length===0 || !selFixtures.every(f=>f.status==='Rejected');
+  exportBtn.disabled = selFixtures.length===0;
 }
+
+function csvEscape(val){
+  const s=String(val==null?'':val);
+  if(/[",\n]/.test(s)) return '"'+s.replace(/"/g,'""')+'"';
+  return s;
+}
+
+function exportSelectedToExcel(){
+  const selFixtures=fixtures.filter(f=>selected.has(f.id));
+  if(!selFixtures.length) return;
+  const headers=['County','Team A','Team B','Date','Day','Time','Venue','Competition','Round','Status'];
+  const rows=selFixtures.map(f=>[f.county,f.teamA,f.teamB,f.date,f.day,f.time,f.venue,f.competition,f.round,f.status]);
+  const csv=[headers,...rows].map(row=>row.map(csvEscape).join(',')).join('\r\n');
+  const blob=new Blob(['﻿'+csv],{type:'application/vnd.ms-excel;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const stamp=new Date().toISOString().slice(0,10);
+  a.href=url;
+  a.download=`gaa-fixtures-export-${stamp}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+exportBtn.addEventListener('click',exportSelectedToExcel);
 
 selectAll.addEventListener('change',()=>{
   const list=getFiltered();
