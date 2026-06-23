@@ -1,7 +1,7 @@
-// Cloudflare Worker: scrapes Cork, Waterford, Laois, Wexford and Kerry GAA
-// fixture pages server-side (avoiding browser CORS restrictions), merges in
-// Kildare's and Carlow's manually-transcribed static fixtures, and returns
-// normalized JSON for the fixtures dashboard to consume.
+// Cloudflare Worker: scrapes Cork, Waterford, Laois, Wexford, Kerry and
+// Offaly GAA fixture pages server-side (avoiding browser CORS restrictions),
+// merges in Kildare's and Carlow's manually-transcribed static fixtures, and
+// returns normalized JSON for the fixtures dashboard to consume.
 
 const UA = 'Mozilla/5.0 (compatible; FixturesDashboardBot/1.0)';
 
@@ -295,7 +295,9 @@ function parseCacHtmlDirect(html, out, county, competitionName) {
       buf.venue = decodeEntities(m[12].trim());
       if (buf.home && buf.away) {
         let competition = competitionName;
-        const groupMatch = (curComp || '').match(/Group\s+(\w+)/);
+        // Different counties label sub-groups differently: Kerry uses
+        // "Group N", Offaly uses "League Division N".
+        const groupMatch = (curComp || '').match(/(?:Group|Division)\s+(\w+)/i);
         if (groupMatch) competition += ` Group ${groupMatch[1]}`;
         const roundMatch = (curComp || '').match(/Round\s+(\d+)/);
         const round = roundMatch ? `Round ${roundMatch[1]}` : '';
@@ -315,8 +317,8 @@ function parseCacHtmlDirect(html, out, county, competitionName) {
   }
 }
 
-async function fetchKerryCompetition(comp, debug) {
-  const baseUrl = `https://www.kerrygaa.ie${comp.path}`;
+async function fetchCacDirectCompetition(county, baseDomain, comp, debug) {
+  const baseUrl = `https://${baseDomain}${comp.path}`;
   const out = [];
   for (const feedType of ['fixtures', 'results']) {
     const url = `${baseUrl}?ajax=1&feed_type=${feedType}&page=0&size=100&sport=${comp.sport}&level=${comp.level}&grade=${comp.grade}&competition=${comp.uuid}`;
@@ -325,18 +327,18 @@ async function fetchKerryCompetition(comp, debug) {
         headers: { 'User-Agent': UA, Accept: 'application/json', Referer: baseUrl },
       });
       if (!res.ok) {
-        debug.push({ county: 'Kerry', feedType, stage: 'http-error', status: res.status });
+        debug.push({ county, feedType, stage: 'http-error', status: res.status });
         continue;
       }
       const json = await res.json();
       if (!json.ok) {
-        debug.push({ county: 'Kerry', feedType, stage: 'json-not-ok' });
+        debug.push({ county, feedType, stage: 'json-not-ok' });
         continue;
       }
-      parseCacHtmlDirect(json.html, out, 'Kerry', comp.name);
-      debug.push({ county: 'Kerry', feedType, stage: 'ok', hasMore: json.hasMore, rows: out.length });
+      parseCacHtmlDirect(json.html, out, county, comp.name);
+      debug.push({ county, feedType, stage: 'ok', hasMore: json.hasMore, rows: out.length });
     } catch (err) {
-      debug.push({ county: 'Kerry', feedType, stage: 'fetch-threw', error: String(err) });
+      debug.push({ county, feedType, stage: 'fetch-threw', error: String(err) });
     }
   }
   return out;
@@ -350,6 +352,57 @@ const KERRY_COMPETITIONS = [
     level: 'club',
     grade: 'senior',
     name: 'Senior Hurling Championship',
+  },
+];
+
+const OFFALY_COMPETITIONS = [
+  {
+    path: '/fixtures-results/hurling/club/senior/2026-senior-hurling-championship/7441793c-f051-4489-8efb-cd7e41617f74/',
+    uuid: '7441793c-f051-4489-8efb-cd7e41617f74',
+    sport: 'hurling',
+    level: 'club',
+    grade: 'senior',
+    name: 'Senior Hurling Championship',
+  },
+  {
+    path: '/fixtures-results/hurling/club/senior/2026-senior-b-hurling-championship/c9ba5708-a15e-4a1e-98da-32f0af567fc0/',
+    uuid: 'c9ba5708-a15e-4a1e-98da-32f0af567fc0',
+    sport: 'hurling',
+    level: 'club',
+    grade: 'senior',
+    name: 'Senior B Hurling Championship',
+  },
+  {
+    path: '/fixtures-results/hurling/club/intermediate/2026-intermediate-hurling-championship/beab9c19-3849-4221-bf48-cdf0fe8b609b/',
+    uuid: 'beab9c19-3849-4221-bf48-cdf0fe8b609b',
+    sport: 'hurling',
+    level: 'club',
+    grade: 'intermediate',
+    name: 'Intermediate Hurling Championship',
+  },
+  {
+    path: '/fixtures-results/football/club/senior/2026-senior-football-championship/b4e6f100-d62e-4fb1-9a81-3131563be7f2/',
+    uuid: 'b4e6f100-d62e-4fb1-9a81-3131563be7f2',
+    sport: 'football',
+    level: 'club',
+    grade: 'senior',
+    name: 'Senior Football Championship',
+  },
+  {
+    path: '/fixtures-results/football/club/senior/2026-senior-b-football-championship/b0eaefd7-a6d0-4c86-a124-50b05a6c6c2d/',
+    uuid: 'b0eaefd7-a6d0-4c86-a124-50b05a6c6c2d',
+    sport: 'football',
+    level: 'club',
+    grade: 'senior',
+    name: 'Senior B Football Championship',
+  },
+  {
+    path: '/fixtures-results/football/club/intermediate/2026-intermediate-football-championship/5aeb35ee-d903-4133-b9ca-9fbf02e22972/',
+    uuid: '5aeb35ee-d903-4133-b9ca-9fbf02e22972',
+    sport: 'football',
+    level: 'club',
+    grade: 'intermediate',
+    name: 'Intermediate Football Championship',
   },
 ];
 
@@ -524,12 +577,13 @@ export default {
 
     try {
       const cacDebug = [];
-      const [corkResults, waterfordResults, laoisResults, wexfordResults, kerryResults] = await Promise.all([
+      const [corkResults, waterfordResults, laoisResults, wexfordResults, kerryResults, offalyResults] = await Promise.all([
         Promise.all(CORK_COMPETITIONS.map(fetchCorkCompetition)),
         Promise.all(WATERFORD_COMPETITIONS.map(fetchWaterfordCompetition)),
         fetchCacCounty('Laois', 'https://laoisgaa.ie/fixtures-results/', LAOIS_TARGETS, cacDebug),
         fetchCacCounty('Wexford', 'https://wexford.clubandcounty.com/fixtures-results/', WEXFORD_TARGETS, cacDebug),
-        Promise.all(KERRY_COMPETITIONS.map((c) => fetchKerryCompetition(c, cacDebug))),
+        Promise.all(KERRY_COMPETITIONS.map((c) => fetchCacDirectCompetition('Kerry', 'www.kerrygaa.ie', c, cacDebug))),
+        Promise.all(OFFALY_COMPETITIONS.map((c) => fetchCacDirectCompetition('Offaly', 'offaly.gaa.ie', c, cacDebug))),
       ]);
 
       const fixtures = [
@@ -538,6 +592,7 @@ export default {
         ...laoisResults,
         ...wexfordResults,
         ...kerryResults.flat(),
+        ...offalyResults.flat(),
         ...KILDARE_FIXTURES,
         ...CARLOW_FIXTURES,
       ];
