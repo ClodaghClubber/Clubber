@@ -1,7 +1,7 @@
-// Cloudflare Worker: scrapes Cork, Waterford, Laois and Wexford GAA fixture
-// pages server-side (avoiding browser CORS restrictions), merges in Kildare's
-// and Carlow's manually-transcribed static fixtures, and returns normalized
-// JSON for the fixtures dashboard to consume.
+// Cloudflare Worker: scrapes Cork, Waterford, Laois, Wexford and Kerry GAA
+// fixture pages server-side (avoiding browser CORS restrictions), merges in
+// Kildare's and Carlow's manually-transcribed static fixtures, and returns
+// normalized JSON for the fixtures dashboard to consume.
 
 const UA = 'Mozilla/5.0 (compatible; FixturesDashboardBot/1.0)';
 
@@ -267,6 +267,92 @@ async function fetchCacCounty(county, baseUrl, targets, debug) {
   return deduped;
 }
 
+// ---- Kerry (kerrygaa.ie): same ClubAndCounty CMS as Laois/Wexford, but
+// unlike those two sites, kerrygaa.ie's AJAX feed actually honours the
+// `competition=<uuid>` query param, so each competition can be fetched
+// directly and precisely (fixtures feed + results feed) without needing
+// pagination through the whole site's unfiltered feed.
+function parseCacHtmlDirect(html, out, county, competitionName) {
+  let curDate = null;
+  let curComp = null;
+  let buf = emptyBuf();
+  const re = new RegExp(CAC_TOKEN_RE);
+  let m;
+  while ((m = re.exec(html))) {
+    if (m[2] !== undefined) {
+      curDate = m[2].trim();
+    } else if (m[4] !== undefined) {
+      curComp = decodeEntities(m[4].trim().replace(/\s+/g, ' '));
+      buf = emptyBuf();
+    } else if (m[6] !== undefined) {
+      buf = emptyBuf();
+      buf.home = decodeEntities(m[6].trim());
+    } else if (m[8] !== undefined) {
+      buf.time = m[8].trim();
+    } else if (m[10] !== undefined) {
+      buf.away = decodeEntities(m[10].trim());
+    } else if (m[12] !== undefined) {
+      buf.venue = decodeEntities(m[12].trim());
+      if (buf.home && buf.away) {
+        let competition = competitionName;
+        const groupMatch = (curComp || '').match(/Group\s+(\w+)/);
+        if (groupMatch) competition += ` Group ${groupMatch[1]}`;
+        const roundMatch = (curComp || '').match(/Round\s+(\d+)/);
+        const round = roundMatch ? `Round ${roundMatch[1]}` : '';
+        out.push({
+          county,
+          teamA: buf.home,
+          teamB: buf.away,
+          date: laoisDateToFull(curDate),
+          time: buf.time,
+          venue: buf.venue,
+          competition,
+          round,
+        });
+      }
+      buf = emptyBuf();
+    }
+  }
+}
+
+async function fetchKerryCompetition(comp, debug) {
+  const baseUrl = `https://www.kerrygaa.ie${comp.path}`;
+  const out = [];
+  for (const feedType of ['fixtures', 'results']) {
+    const url = `${baseUrl}?ajax=1&feed_type=${feedType}&page=0&size=100&sport=${comp.sport}&level=${comp.level}&grade=${comp.grade}&competition=${comp.uuid}`;
+    try {
+      const res = await fetch(url, {
+        headers: { 'User-Agent': UA, Accept: 'application/json', Referer: baseUrl },
+      });
+      if (!res.ok) {
+        debug.push({ county: 'Kerry', feedType, stage: 'http-error', status: res.status });
+        continue;
+      }
+      const json = await res.json();
+      if (!json.ok) {
+        debug.push({ county: 'Kerry', feedType, stage: 'json-not-ok' });
+        continue;
+      }
+      parseCacHtmlDirect(json.html, out, 'Kerry', comp.name);
+      debug.push({ county: 'Kerry', feedType, stage: 'ok', hasMore: json.hasMore, rows: out.length });
+    } catch (err) {
+      debug.push({ county: 'Kerry', feedType, stage: 'fetch-threw', error: String(err) });
+    }
+  }
+  return out;
+}
+
+const KERRY_COMPETITIONS = [
+  {
+    path: '/fixtures-results/hurling/club/senior/garveys-supervalu-senior-hurling-championship/124fff6c-39d9-4c73-b284-4e93043d3478/',
+    uuid: '124fff6c-39d9-4c73-b284-4e93043d3478',
+    sport: 'hurling',
+    level: 'club',
+    grade: 'senior',
+    name: 'Senior Hurling Championship',
+  },
+];
+
 // ---- Kildare: static data ----
 // Kildare's fixtures aren't published on a scrapable website; they were
 // manually transcribed from official Cill Dara CCC fixture-sheet images
@@ -438,11 +524,12 @@ export default {
 
     try {
       const cacDebug = [];
-      const [corkResults, waterfordResults, laoisResults, wexfordResults] = await Promise.all([
+      const [corkResults, waterfordResults, laoisResults, wexfordResults, kerryResults] = await Promise.all([
         Promise.all(CORK_COMPETITIONS.map(fetchCorkCompetition)),
         Promise.all(WATERFORD_COMPETITIONS.map(fetchWaterfordCompetition)),
         fetchCacCounty('Laois', 'https://laoisgaa.ie/fixtures-results/', LAOIS_TARGETS, cacDebug),
         fetchCacCounty('Wexford', 'https://wexford.clubandcounty.com/fixtures-results/', WEXFORD_TARGETS, cacDebug),
+        Promise.all(KERRY_COMPETITIONS.map((c) => fetchKerryCompetition(c, cacDebug))),
       ]);
 
       const fixtures = [
@@ -450,6 +537,7 @@ export default {
         ...waterfordResults.flat(),
         ...laoisResults,
         ...wexfordResults,
+        ...kerryResults.flat(),
         ...KILDARE_FIXTURES,
         ...CARLOW_FIXTURES,
       ];
