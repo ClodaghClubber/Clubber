@@ -297,7 +297,8 @@ removeBtn.addEventListener('click',()=>{
 });
 
 countyFilter.addEventListener('change',()=>{ populateCompOptions(); render(); });
-[compFilter,statusFilter,dateFrom,dateTo].forEach(el=>el.addEventListener('change',render));
+dateFrom.addEventListener('change',()=>{ dateTo.value=dateFrom.value; render(); });
+[compFilter,statusFilter,dateTo].forEach(el=>el.addEventListener('change',render));
 
 document.querySelectorAll('thead th[data-key]').forEach(th=>{
   th.addEventListener('click',()=>{
