@@ -1,6 +1,7 @@
 // Cloudflare Worker: scrapes Cork, Waterford, Laois and Wexford GAA fixture
-// pages server-side (avoiding browser CORS restrictions) and returns
-// normalized JSON for the fixtures dashboard to consume.
+// pages server-side (avoiding browser CORS restrictions), merges in Kildare's
+// manually-transcribed static fixtures, and returns normalized JSON for the
+// fixtures dashboard to consume.
 
 const UA = 'Mozilla/5.0 (compatible; FixturesDashboardBot/1.0)';
 
@@ -266,6 +267,127 @@ async function fetchCacCounty(county, baseUrl, targets, debug) {
   return deduped;
 }
 
+// ---- Kildare: static data ----
+// Kildare's fixtures aren't published on a scrapable website; they were
+// manually transcribed from official Cill Dara CCC fixture-sheet images
+// (sourced from SharePoint) and cross-checked between each competition's
+// "group view" and "round view" sheets for consistency.
+function mkStatic(county, teamA, teamB, date, time, venue, competition, round) {
+  return { county, teamA, teamB, date, time, venue, competition, round };
+}
+
+const KILDARE_FIXTURES = [];
+
+// Kildare - Intermediate Football Championship Group A
+[
+ ['Leixlip','Suncroft','8 August 2026','17:00','Conneff Park Clane','Round 1'],
+ ['Confey','Straffan','8 August 2026','17:15','Cedral St Conleth\'s','Round 1'],
+ ['Confey','Leixlip','22 August 2026','15:30','Conneff Park Clane','Round 2'],
+ ['Straffan','Suncroft','23 August 2026','13:30','Manguard Park Pitch 2','Round 2'],
+ ['Confey','Suncroft','4 September 2026','20:00','Manguard Park Pitch 1','Round 3'],
+ ['Leixlip','Straffan','4 September 2026','20:00','Manguard Park Pitch 2','Round 3'],
+].forEach(r=>KILDARE_FIXTURES.push(mkStatic('Kildare',r[0],r[1],r[2],r[3],r[4],'Intermediate Football Championship Group A',r[5])));
+
+// Kildare - Intermediate Football Championship Group B
+[
+ ['Kilcullen','Monasterevan','8 August 2026','15:30','Cedral St Conleth\'s','Round 1'],
+ ['Round Towers','St. Laurence\'s','9 August 2026','15:45','Cedral St Conleth\'s','Round 1'],
+ ['Kilcullen','St. Laurence\'s','22 August 2026','17:00','Manguard Park Pitch 2','Round 2'],
+ ['Monasterevan','Round Towers','23 August 2026','14:00','Cedral St Conleth\'s','Round 2'],
+ ['Kilcullen','Round Towers','5 September 2026','18:00','Raheens GAA','Round 3'],
+ ['Monasterevan','St. Laurence\'s','5 September 2026','18:00','Manguard Park Pitch 1','Round 3'],
+].forEach(r=>KILDARE_FIXTURES.push(mkStatic('Kildare',r[0],r[1],r[2],r[3],r[4],'Intermediate Football Championship Group B',r[5])));
+
+// Kildare - Intermediate Football Championship Group C
+[
+ ['Ballyteague','Milltown','7 August 2026','19:45','Cedral St Conleth\'s','Round 1'],
+ ['Grangenolvin','Nurney','8 August 2026','17:00','Manguard Park Pitch 1','Round 1'],
+ ['Ballyteague','Nurney','22 August 2026','15:30','Manguard Park Pitch 2','Round 2'],
+ ['Grangenolvin','Milltown','23 August 2026','18:00','Manguard Park Pitch 1','Round 2'],
+ ['Ballyteague','Grangenolvin','6 September 2026','14:00','Kilcullen','Round 3'],
+ ['Milltown','Nurney','6 September 2026','14:00','Manguard Park Pitch 2','Round 3'],
+].forEach(r=>KILDARE_FIXTURES.push(mkStatic('Kildare',r[0],r[1],r[2],r[3],r[4],'Intermediate Football Championship Group C',r[5])));
+
+// Kildare - Intermediate Football Championship Group D
+[
+ ['Castledermot','Two Mile House','8 August 2026','18:30','Manguard Park Pitch 1','Round 1'],
+ ['Ellistown','Rathangan','9 August 2026','14:00','Cedral St Conleth\'s','Round 1'],
+ ['Castledermot','Rathangan','23 August 2026','15:00','Manguard Park Pitch 1','Round 2'],
+ ['Ellistown','Two Mile House','23 August 2026','16:30','Manguard Park Pitch 2','Round 2'],
+ ['Ellistown','Castledermot','6 September 2026','15:30','St Laurence\'s','Round 3'],
+ ['Rathangan','Two Mile House','6 September 2026','15:30','Round Towers GFC','Round 3'],
+].forEach(r=>KILDARE_FIXTURES.push(mkStatic('Kildare',r[0],r[1],r[2],r[3],r[4],'Intermediate Football Championship Group D',r[5])));
+
+// Kildare - Senior Football Championship Group A
+[
+ ['Clane','Johnstownbridge','21 August 2026','20:00','Manguard Park Pitch 1','Round 1'],
+ ['Allenwood','Celbridge','22 August 2026','17:00','Conneff Park Clane','Round 1'],
+ ['Allenwood','Clane','6 September 2026','15:45','Cedral St Conleth\'s','Round 2'],
+ ['Celbridge','Johnstownbridge','6 September 2026','17:00','Manguard Park Pitch 1','Round 2'],
+ ['Allenwood','Johnstownbridge','18 September 2026','20:00','Manguard Park Pitch 1','Round 3'],
+ ['Celbridge','Clane','18 September 2026','20:00','Cedral St Conleth\'s','Round 3'],
+].forEach(r=>KILDARE_FIXTURES.push(mkStatic('Kildare',r[0],r[1],r[2],r[3],r[4],'Senior Football Championship Group A',r[5])));
+
+// Kildare - Senior Football Championship Group B
+[
+ ['Carbury','Sarsfields','22 August 2026','14:00','Manguard Park Pitch 1','Round 1'],
+ ['Caragh','Maynooth','22 August 2026','15:30','Cedral St Conleth\'s','Round 1'],
+ ['Caragh','Sarsfields','4 September 2026','19:45','Cedral St Conleth\'s','Round 2'],
+ ['Carbury','Maynooth','5 September 2026','17:15','Cedral St Conleth\'s','Round 2'],
+ ['Maynooth','Sarsfields','19 September 2026','15:00','Cedral St Conleth\'s','Round 3'],
+ ['Caragh','Carbury','19 September 2026','15:00','Manguard Park Pitch 1','Round 3'],
+].forEach(r=>KILDARE_FIXTURES.push(mkStatic('Kildare',r[0],r[1],r[2],r[3],r[4],'Senior Football Championship Group B',r[5])));
+
+// Kildare - Senior Football Championship Group C
+[
+ ['Raheens','Sallins','22 August 2026','17:00','Cedral St Conleth\'s','Round 1'],
+ ['Athy','Kilcock','23 August 2026','15:45','Cedral St Conleth\'s','Round 1'],
+ ['Athy','Sallins','6 September 2026','14:00','Cedral St Conleth\'s','Round 2'],
+ ['Kilcock','Raheens','6 September 2026','15:30','Manguard Park Pitch 1','Round 2'],
+ ['Kilcock','Sallins','20 September 2026','17:00','Manguard Park Pitch 1','Round 3'],
+ ['Athy','Raheens','20 September 2026','17:00','Cedral St Conleth\'s','Round 3'],
+].forEach(r=>KILDARE_FIXTURES.push(mkStatic('Kildare',r[0],r[1],r[2],r[3],r[4],'Senior Football Championship Group C',r[5])));
+
+// Kildare - Senior Football Championship Group D
+[
+ ['Moorefield','Naas','21 August 2026','19:45','Cedral St Conleth\'s','Round 1'],
+ ['Clogherinkoe','Eadestown','22 August 2026','18:30','Manguard Park Pitch 1','Round 1'],
+ ['Clogherinkoe','Moorefield','5 September 2026','15:00','Manguard Park Pitch 1','Round 2'],
+ ['Eadestown','Naas','5 September 2026','15:30','Cedral St Conleth\'s','Round 2'],
+ ['Eadestown','Moorefield','19 September 2026','16:45','Cedral St Conleth\'s','Round 3'],
+ ['Clogherinkoe','Naas','19 September 2026','16:45','Manguard Park Pitch 1','Round 3'],
+].forEach(r=>KILDARE_FIXTURES.push(mkStatic('Kildare',r[0],r[1],r[2],r[3],r[4],'Senior Football Championship Group D',r[5])));
+
+// Kildare - Junior Football Championship Group A
+[
+ ['Robertstown','St Kevin\'s','8 August 2026','15:30','Conneff Park Clane','Round 1'],
+ ['Rathcoffey','Rheban','9 August 2026','13:30','Manguard Park Pitch 1','Round 1'],
+ ['Rheban','St Kevin\'s','22 August 2026','17:00','Round Towers GFC','Round 2'],
+ ['Rathcoffey','Robertstown','23 August 2026','15:30','Conneff Park Clane','Round 2'],
+ ['Rathcoffey','St Kevin\'s','5 September 2026','16:30','Conneff Park Clane','Round 3'],
+ ['Rheban','Robertstown','5 September 2026','16:30','Manguard Park Pitch 2','Round 3'],
+].forEach(r=>KILDARE_FIXTURES.push(mkStatic('Kildare',r[0],r[1],r[2],r[3],r[4],'Junior Football Championship Group A',r[5])));
+
+// Kildare - Junior Football Championship Group B
+[
+ ['Cappagh','Castlemitchell','8 August 2026','15:30','Manguard Park Pitch 1','Round 1'],
+ ['Ballykelly','Kildangan','9 August 2026','15:00','Manguard Park Pitch 1','Round 1'],
+ ['Ballykelly','Cappagh','23 August 2026','14:00','Conneff Park Clane','Round 2'],
+ ['Castlemitchell','Kildangan','23 August 2026','14:00','Kilcullen','Round 2'],
+ ['Ballykelly','Castlemitchell','5 September 2026','15:00','Round Towers GFC','Round 3'],
+ ['Cappagh','Kildangan','5 September 2026','15:00','Conneff Park Clane','Round 3'],
+].forEach(r=>KILDARE_FIXTURES.push(mkStatic('Kildare',r[0],r[1],r[2],r[3],r[4],'Junior Football Championship Group B',r[5])));
+
+// Kildare - Junior Football Championship Group C
+[
+ ['Ardclough','Athgarvan','7 August 2026','20:00','Manguard Park Pitch 1','Round 1'],
+ ['Ballymore Eustace','Kill','9 August 2026','16:30','Manguard Park Pitch 1','Round 1'],
+ ['Ardclough','Ballymore Eustace','21 August 2026','19:45','Manguard Park Pitch 2','Round 2'],
+ ['Athgarvan','Kill','23 August 2026','14:00','Raheens GAA','Round 2'],
+ ['Athgarvan','Ballymore Eustace','3 September 2026','20:00','Manguard Park Pitch 1','Round 3'],
+ ['Ardclough','Kill','3 September 2026','20:00','Manguard Park Pitch 2','Round 3'],
+].forEach(r=>KILDARE_FIXTURES.push(mkStatic('Kildare',r[0],r[1],r[2],r[3],r[4],'Junior Football Championship Group C',r[5])));
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
@@ -292,6 +414,7 @@ export default {
         ...waterfordResults.flat(),
         ...laoisResults,
         ...wexfordResults,
+        ...KILDARE_FIXTURES,
       ];
 
       const url = new URL(request.url);
