@@ -174,7 +174,7 @@ let selected=new Set();
 let sortKey='date', sortDir=1;
 
 function populateFilterOptions(){
-  const counties=[...new Set(fixtures.map(f=>f.county))];
+  const counties=[...new Set(fixtures.map(f=>f.county))].sort((a,b)=>a.localeCompare(b));
   countyFilter.innerHTML='<option value="">All</option>'+counties.map(c=>`<option value="${c}">${c}</option>`).join('');
   populateCompOptions();
 }
@@ -182,7 +182,7 @@ function populateFilterOptions(){
 function populateCompOptions(){
   const prev=compFilter.value;
   const scoped = countyFilter.value ? fixtures.filter(f=>f.county===countyFilter.value) : fixtures;
-  const comps=[...new Set(scoped.map(f=>f.competition))];
+  const comps=[...new Set(scoped.map(f=>f.competition))].sort((a,b)=>a.localeCompare(b));
   compFilter.innerHTML='<option value="">All</option>'+comps.map(c=>`<option value="${c}">${c}</option>`).join('');
   if(comps.includes(prev)) compFilter.value=prev;
 }
