@@ -1,7 +1,7 @@
 // Cloudflare Worker: scrapes Cork, Waterford, Laois and Wexford GAA fixture
 // pages server-side (avoiding browser CORS restrictions), merges in Kildare's
-// manually-transcribed static fixtures, and returns normalized JSON for the
-// fixtures dashboard to consume.
+// and Carlow's manually-transcribed static fixtures, and returns normalized
+// JSON for the fixtures dashboard to consume.
 
 const UA = 'Mozilla/5.0 (compatible; FixturesDashboardBot/1.0)';
 
@@ -388,6 +388,42 @@ const KILDARE_FIXTURES = [];
  ['Ardclough','Kill','3 September 2026','20:00','Manguard Park Pitch 2','Round 3'],
 ].forEach(r=>KILDARE_FIXTURES.push(mkStatic('Kildare',r[0],r[1],r[2],r[3],r[4],'Junior Football Championship Group C',r[5])));
 
+// ---- Carlow: static data ----
+// Carlow publishes fixtures as PDF "Fixture Report" documents (carlowgaa.ie),
+// not as a scrapable HTML page, so these were extracted from the official
+// PDFs and transcribed here. BYE rounds (odd team count in the Intermediate
+// championship) are omitted since they aren't real fixtures.
+const CARLOW_FIXTURES = [];
+
+// Carlow - Senior Hurling Championship
+[
+ ['Naomh Moling','Ballinkillen','26 June 2026','19:30','McGrath Park Bagenalstown','Round 1'],
+ ['Bagenalstown Gaels GAA','Naomh Eoin','27 June 2026','17:00','Netwatch Cullen Park, Carlow','Round 1'],
+ ['Naomh Brid GAA','Mt Leinster Rangers','27 June 2026','18:30','Netwatch Cullen Park, Carlow','Round 1'],
+ ['Mt Leinster Rangers','Bagenalstown Gaels GAA','3 July 2026','19:30','Pitch 1 Training Centre','Round 2'],
+ ['Ballinkillen','Naomh Brid GAA','4 July 2026','17:00','Netwatch Cullen Park, Carlow','Round 2'],
+ ['Naomh Moling','Naomh Eoin','4 July 2026','18:30','Netwatch Cullen Park, Carlow','Round 2'],
+ ['Naomh Moling','Naomh Brid GAA','10 July 2026','19:30','McGrath Park Bagenalstown','Round 3'],
+ ['Mt Leinster Rangers','Naomh Eoin','11 July 2026','17:00','Netwatch Cullen Park, Carlow','Round 3'],
+ ['Ballinkillen','Bagenalstown Gaels GAA','11 July 2026','18:30','Netwatch Cullen Park, Carlow','Round 3'],
+].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Senior Hurling Championship',r[5])));
+
+// Carlow - Intermediate Hurling Championship
+[
+ ['Kildavin / Clonegal','Naomh Eoin','21 June 2026','18:00','Spellman Park','Round 1'],
+ ['Bagenalstown Gaels GAA','Burren Rangers Hurling and Camogie Club','21 June 2026','18:00','McGrath Park Bagenalstown','Round 1'],
+ ['Mt Leinster Rangers','Naomh Moling','21 June 2026','18:00','Mount Leinster Rangers','Round 1'],
+ ['Kildavin / Clonegal','Carlow Town Hurling Club','28 June 2026','18:00','Spellman Park','Round 2'],
+ ['Naomh Moling','Naomh Eoin','28 June 2026','18:00','Naomh Moling','Round 2'],
+ ['Mt Leinster Rangers','Bagenalstown Gaels GAA','28 June 2026','18:00','Mount Leinster Rangers','Round 2'],
+ ['Carlow Town Hurling Club','Mt Leinster Rangers','5 July 2026','18:00','Carlow Town HC','Round 3'],
+ ['Bagenalstown Gaels GAA','Naomh Eoin','5 July 2026','18:00','McGrath Park Bagenalstown','Round 3'],
+ ['Burren Rangers Hurling and Camogie Club','Naomh Moling','5 July 2026','18:00','Kilbride G.F.C.','Round 3'],
+ ['Burren Rangers Hurling and Camogie Club','Kildavin / Clonegal','11 July 2026','19:00','Kilbride G.F.C.','Round 4'],
+ ['Naomh Eoin','Carlow Town Hurling Club','12 July 2026','18:00','Myshall','Round 4'],
+ ['Naomh Moling','Bagenalstown Gaels GAA','12 July 2026','18:00','Naomh Moling','Round 4'],
+].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Intermediate Hurling Championship',r[5])));
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
@@ -415,6 +451,7 @@ export default {
         ...laoisResults,
         ...wexfordResults,
         ...KILDARE_FIXTURES,
+        ...CARLOW_FIXTURES,
       ];
 
       const url = new URL(request.url);
