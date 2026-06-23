@@ -1,6 +1,6 @@
-// Cloudflare Worker: scrapes Cork, Waterford and Laois GAA fixture pages
-// server-side (avoiding browser CORS restrictions) and returns normalized
-// JSON for the fixtures dashboard to consume.
+// Cloudflare Worker: scrapes Cork, Waterford, Laois and Wexford GAA fixture
+// pages server-side (avoiding browser CORS restrictions) and returns
+// normalized JSON for the fixtures dashboard to consume.
 
 const UA = 'Mozilla/5.0 (compatible; FixturesDashboardBot/1.0)';
 
@@ -29,6 +29,19 @@ const LAOIS_TARGETS = [
   { match: 'Senior Hurling Championship', name: 'Senior Hurling Championship' },
   { match: 'Premier Intermediate Hurling Championship', name: 'Premier Intermediate Hurling Championship' },
   { match: 'Intermediate Hurling Championship', name: 'Intermediate Hurling Championship' },
+];
+
+// Wexford's fixtures are hosted on the same "ClubAndCounty" platform as
+// Laois (clubandcounty.com), just embedded via iframe from wexfordgaa.ie.
+// These targets use full sponsor-prefixed names since they're unambiguous
+// and don't have the substring-collision risk the short Laois names have.
+const WEXFORD_TARGETS = [
+  { match: 'Pettitts Supervalue Senior Hurling Championship', name: 'Senior Hurling Championship' },
+  { match: 'Courtyard Ferns Intermediate Hurling Championship', name: 'Intermediate Hurling Championship' },
+  { match: 'Joyces Expert Wexford Intermediate A Hurling Championship', name: 'Intermediate A Hurling Championship' },
+  { match: 'Dominic Smith Expert Electrical Senior Football Championship', name: 'Senior Football Championship' },
+  { match: 'Amber Springs and Ashdown Park Hotels Intermediate Football Championship', name: 'Intermediate Football Championship' },
+  { match: 'Whizzy Internet Intermediate A Football Championship', name: 'Intermediate A Football Championship' },
 ];
 
 const MONTHS = {
@@ -138,13 +151,14 @@ async function fetchWaterfordCompetition(comp) {
   }));
 }
 
-// ---- Laois parser (different CMS: paginated AJAX feed of fixture cards) ----
-const LAOIS_TOKEN_RE =
+// ---- ClubAndCounty parser (Laois + Wexford share this CMS: paginated ----
+// ---- AJAX feed of fixture cards, different markup from SportLoMo)     ----
+const CAC_TOKEN_RE =
   /(fix_res_date py-2 text-center mb-0">([^<]*)<)|(competition-name flex-fill text-center p-2">\s*<a[^>]*>([^<]*)<\/a>)|(home_team col text-center text-md-right align-self-center">\s*<a[^>]*>\s*([^<]*?)\s*<\/a>)|(class="time rounded[^"]*">\s*([^<]*?)\s*<\/div>)|(away_team col text-center text-md-left align-self-center">\s*<a[^>]*>\s*([^<]*?)\s*<\/a>)|(<strong>Venue:<\/strong>\s*<a[^>]*>([^<]*)<\/a>)/g;
 
-function classifyLaoisComp(compRaw) {
+function classifyCacComp(compRaw, targets) {
   if (/Junior/i.test(compRaw)) return null;
-  for (const t of LAOIS_TARGETS) {
+  for (const t of targets) {
     if (compRaw.includes(t.match)) {
       let competition = t.name;
       const groupMatch = compRaw.match(/Group\s+([AB])/);
@@ -161,11 +175,11 @@ function emptyBuf() {
   return { home: undefined, time: undefined, away: undefined, venue: undefined };
 }
 
-function parseLaoisHtml(html, out) {
+function parseCacHtml(html, out, county, targets) {
   let curDate = null;
   let curComp = null;
   let buf = emptyBuf();
-  const re = new RegExp(LAOIS_TOKEN_RE);
+  const re = new RegExp(CAC_TOKEN_RE);
   let m;
   while ((m = re.exec(html))) {
     if (m[2] !== undefined) {
@@ -182,10 +196,10 @@ function parseLaoisHtml(html, out) {
       buf.away = decodeEntities(m[10].trim());
     } else if (m[12] !== undefined) {
       buf.venue = decodeEntities(m[12].trim());
-      const cls = classifyLaoisComp(curComp || '');
+      const cls = classifyCacComp(curComp || '', targets);
       if (cls && buf.home && buf.away) {
         out.push({
-          county: 'Laois',
+          county,
           teamA: buf.home,
           teamB: buf.away,
           date: laoisDateToFull(curDate),
@@ -200,44 +214,44 @@ function parseLaoisHtml(html, out) {
   }
 }
 
-async function fetchLaois(debug) {
+async function fetchCacCounty(county, baseUrl, targets, debug) {
   const out = [];
   let page = 0;
   let hasMore = true;
   const seen = new Set();
   while (hasMore && page < 15) {
-    const url = `https://laoisgaa.ie/fixtures-results/?ajax=1&feed_type=fixtures&page=${page}&size=50`;
+    const url = `${baseUrl}?ajax=1&feed_type=fixtures&page=${page}&size=50`;
     let res, bodyText, json;
     try {
       res = await fetch(url, {
         headers: {
           'User-Agent': UA,
           Accept: 'application/json',
-          Referer: 'https://laoisgaa.ie/fixtures-results/',
+          Referer: baseUrl,
         },
       });
     } catch (err) {
-      debug.push({ page, stage: 'fetch-threw', error: String(err) });
+      debug.push({ county, page, stage: 'fetch-threw', error: String(err) });
       break;
     }
     if (!res.ok) {
-      debug.push({ page, stage: 'http-error', status: res.status });
+      debug.push({ county, page, stage: 'http-error', status: res.status });
       break;
     }
     bodyText = await res.text();
     try {
       json = JSON.parse(bodyText);
     } catch (err) {
-      debug.push({ page, stage: 'json-parse-failed', status: res.status, bodySnippet: bodyText.slice(0, 300) });
+      debug.push({ county, page, stage: 'json-parse-failed', status: res.status, bodySnippet: bodyText.slice(0, 300) });
       break;
     }
     if (!json.ok) {
-      debug.push({ page, stage: 'json-not-ok', bodySnippet: bodyText.slice(0, 300) });
+      debug.push({ county, page, stage: 'json-not-ok', bodySnippet: bodyText.slice(0, 300) });
       break;
     }
     const before = out.length;
-    parseLaoisHtml(json.html, out);
-    debug.push({ page, stage: 'ok', htmlLength: json.html.length, newRows: out.length - before, hasMore: json.hasMore });
+    parseCacHtml(json.html, out, county, targets);
+    debug.push({ county, page, stage: 'ok', htmlLength: json.html.length, newRows: out.length - before, hasMore: json.hasMore });
     hasMore = !!json.hasMore;
     page++;
   }
@@ -265,17 +279,19 @@ export default {
     }
 
     try {
-      const laoisDebug = [];
-      const [corkResults, waterfordResults, laoisResults] = await Promise.all([
+      const cacDebug = [];
+      const [corkResults, waterfordResults, laoisResults, wexfordResults] = await Promise.all([
         Promise.all(CORK_COMPETITIONS.map(fetchCorkCompetition)),
         Promise.all(WATERFORD_COMPETITIONS.map(fetchWaterfordCompetition)),
-        fetchLaois(laoisDebug),
+        fetchCacCounty('Laois', 'https://laoisgaa.ie/fixtures-results/', LAOIS_TARGETS, cacDebug),
+        fetchCacCounty('Wexford', 'https://wexford.clubandcounty.com/fixtures-results/', WEXFORD_TARGETS, cacDebug),
       ]);
 
       const fixtures = [
         ...corkResults.flat(),
         ...waterfordResults.flat(),
         ...laoisResults,
+        ...wexfordResults,
       ];
 
       const url = new URL(request.url);
@@ -285,7 +301,7 @@ export default {
         JSON.stringify({
           fetchedAt: new Date().toISOString(),
           fixtures,
-          ...(includeDebug ? { laoisDebug } : {}),
+          ...(includeDebug ? { cacDebug } : {}),
         }),
         {
           headers: {
