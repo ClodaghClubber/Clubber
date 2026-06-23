@@ -133,9 +133,26 @@ function mk(county,teamA,teamB,date,time,venue,competition,round){
 const WORKER_URL = 'https://gaa-fixtures-proxy-v2.clodagh-b01.workers.dev/';
 
 // ---- App state ----
+const CACHE_KEY = 'gaaFixturesCache';
 let fixtures = [];
 let nextId = 1;
 let lastLoadInfo = "";
+
+function saveCache(){
+  try{
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ fixtures, nextId, savedAt: new Date().toISOString() }));
+  }catch(err){ /* storage full or unavailable; non-fatal */ }
+}
+
+function loadCache(){
+  try{
+    const raw=localStorage.getItem(CACHE_KEY);
+    if(!raw) return null;
+    const parsed=JSON.parse(raw);
+    if(!parsed || !Array.isArray(parsed.fixtures)) return null;
+    return parsed;
+  }catch(err){ return null; }
+}
 
 const tbody=document.getElementById('tbody');
 const countyFilter=document.getElementById('countyFilter');
@@ -264,15 +281,18 @@ selectAll.addEventListener('change',()=>{
 
 approveBtn.addEventListener('click',()=>{
   fixtures.forEach(f=>{ if(selected.has(f.id)) f.status='Approved'; });
+  saveCache();
   render();
 });
 rejectBtn.addEventListener('click',()=>{
   fixtures.forEach(f=>{ if(selected.has(f.id)) f.status='Rejected'; });
+  saveCache();
   render();
 });
 removeBtn.addEventListener('click',()=>{
   fixtures=fixtures.filter(f=>!(selected.has(f.id) && f.status==='Rejected'));
   selected.clear();
+  saveCache();
   render();
 });
 
@@ -299,6 +319,7 @@ function mergeFixtures(incoming){
     return {...inc, id:nextId++, status:'Proposed'};
   });
   selected.clear();
+  saveCache();
 }
 
 async function loadFixtures(isRefresh){
@@ -325,6 +346,16 @@ async function loadFixtures(isRefresh){
 
 refreshBtn.addEventListener('click',()=>loadFixtures(true));
 
+// Show cached data immediately (instant render), then fetch fresh data
+// from the Worker in the background and merge it in once it arrives.
+const cached=loadCache();
+if(cached){
+  fixtures=cached.fixtures;
+  nextId=cached.nextId||1;
+  populateFilterOptions();
+  render();
+  loadStatus.textContent=`Showing cached fixtures from ${new Date(cached.savedAt).toLocaleString()} · refreshing…`;
+}
 loadFixtures(false);
 </script>
 </body>
