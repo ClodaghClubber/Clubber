@@ -297,7 +297,9 @@ function parseCacHtmlDirect(html, out, county, competitionName) {
       buf.away = decodeEntities(m[10].trim());
     } else if (m[12] !== undefined) {
       buf.venue = decodeEntities(m[12].trim());
-      if (buf.home && buf.away) {
+      // "BYE" entries are auto-generated placeholders for odd team counts
+      // in a group/round, not real fixtures — skip them.
+      if (buf.home && buf.away && buf.home !== 'BYE' && buf.away !== 'BYE') {
         let competition = competitionName;
         // Different counties label sub-groups/stages differently: Kerry
         // uses "Group N", Offaly "League Division N", Tipperary often has
