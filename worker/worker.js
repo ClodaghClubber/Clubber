@@ -220,8 +220,12 @@ async function fetchCacCounty(county, baseUrl, targets, debug) {
   let page = 0;
   let hasMore = true;
   const seen = new Set();
-  while (hasMore && page < 15) {
-    const url = `${baseUrl}?ajax=1&feed_type=fixtures&page=${page}&size=50`;
+  // Cloudflare's free plan caps a single Worker invocation at 50
+  // subrequests total (across every county fetched), so page size and the
+  // page-count ceiling here are tuned to leave headroom for the other
+  // counties' fetches in the same request.
+  while (hasMore && page < 8) {
+    const url = `${baseUrl}?ajax=1&feed_type=fixtures&page=${page}&size=100`;
     let res, bodyText, json;
     try {
       res = await fetch(url, {
@@ -335,7 +339,12 @@ function stripBom(s) {
 async function fetchCacDirectCompetition(county, baseDomain, comp, debug) {
   const baseUrl = `https://${baseDomain}${comp.path}`;
   const out = [];
-  for (const feedType of ['fixtures', 'results']) {
+  // Only fetch upcoming fixtures, not past results — matches every other
+  // county (Cork/Waterford/Laois/Wexford only ever surface upcoming
+  // fixtures), and halves the subrequest cost of each competition, which
+  // matters under Cloudflare's free 50-subrequest-per-invocation cap now
+  // that there are many competitions across many counties in one request.
+  for (const feedType of ['fixtures']) {
     const url = `${baseUrl}?ajax=1&feed_type=${feedType}&page=0&size=100&sport=${comp.sport}&level=${comp.level}&grade=${comp.grade}&competition=${comp.uuid}`;
     try {
       const res = await fetch(url, {
