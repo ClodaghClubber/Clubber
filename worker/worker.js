@@ -1,7 +1,7 @@
-// Cloudflare Worker: scrapes Cork, Waterford, Laois, Wexford, Kerry and
-// Offaly GAA fixture pages server-side (avoiding browser CORS restrictions),
-// merges in Kildare's and Carlow's manually-transcribed static fixtures, and
-// returns normalized JSON for the fixtures dashboard to consume.
+// Cloudflare Worker: scrapes Cork, Waterford, Laois, Wexford, Kerry, Offaly
+// and Tipperary GAA fixture pages server-side (avoiding browser CORS
+// restrictions), merges in Kildare's and Carlow's manually-transcribed
+// static fixtures, and returns normalized JSON for the fixtures dashboard.
 
 const UA = 'Mozilla/5.0 (compatible; FixturesDashboardBot/1.0)';
 
@@ -241,7 +241,7 @@ async function fetchCacCounty(county, baseUrl, targets, debug) {
     }
     bodyText = await res.text();
     try {
-      json = JSON.parse(bodyText);
+      json = JSON.parse(stripBom(bodyText));
     } catch (err) {
       debug.push({ county, page, stage: 'json-parse-failed', status: res.status, bodySnippet: bodyText.slice(0, 300) });
       break;
@@ -295,12 +295,21 @@ function parseCacHtmlDirect(html, out, county, competitionName) {
       buf.venue = decodeEntities(m[12].trim());
       if (buf.home && buf.away) {
         let competition = competitionName;
-        // Different counties label sub-groups differently: Kerry uses
-        // "Group N", Offaly uses "League Division N".
-        const groupMatch = (curComp || '').match(/(?:Group|Division)\s+(\w+)/i);
+        // Different counties label sub-groups/stages differently: Kerry
+        // uses "Group N", Offaly "League Division N", Tipperary often has
+        // knockout stages ("Quarter Final", "Semi Final", "Final") instead
+        // of numbered rounds.
+        const compStr = curComp || '';
+        const groupMatch = compStr.match(/(?:Group|Division)\s+(\w+)/i);
         if (groupMatch) competition += ` Group ${groupMatch[1]}`;
-        const roundMatch = (curComp || '').match(/Round\s+(\d+)/);
-        const round = roundMatch ? `Round ${roundMatch[1]}` : '';
+        const roundMatch = compStr.match(/Round\s+(\d+)/i);
+        let round = roundMatch ? `Round ${roundMatch[1]}` : '';
+        if (!round) {
+          // Fallback: use whatever follows the last " - " separator as the
+          // stage label (e.g. "Quarter Final 2", "Semi-Final", "Final").
+          const parts = compStr.split(' - ');
+          if (parts.length > 1) round = parts[parts.length - 1].trim();
+        }
         out.push({
           county,
           teamA: buf.home,
@@ -317,6 +326,12 @@ function parseCacHtmlDirect(html, out, county, competitionName) {
   }
 }
 
+// Some sites (e.g. tipperary.gaa.ie) prefix their JSON responses with a
+// literal UTF-8 BOM character, which JSON.parse rejects as invalid syntax.
+function stripBom(s) {
+  return s.charCodeAt(0) === 0xfeff ? s.slice(1) : s;
+}
+
 async function fetchCacDirectCompetition(county, baseDomain, comp, debug) {
   const baseUrl = `https://${baseDomain}${comp.path}`;
   const out = [];
@@ -330,7 +345,8 @@ async function fetchCacDirectCompetition(county, baseDomain, comp, debug) {
         debug.push({ county, feedType, stage: 'http-error', status: res.status });
         continue;
       }
-      const json = await res.json();
+      const bodyText = await res.text();
+      const json = JSON.parse(stripBom(bodyText));
       if (!json.ok) {
         debug.push({ county, feedType, stage: 'json-not-ok' });
         continue;
@@ -403,6 +419,113 @@ const OFFALY_COMPETITIONS = [
     level: 'club',
     grade: 'intermediate',
     name: 'Intermediate Football Championship',
+  },
+];
+
+const TIPPERARY_COMPETITIONS = [
+  {
+    path: '/fixtures-results/hurling/club/senior/centenary-agri-mid-senior-hurling-championship/fc2d0d37-55b1-4b91-b88d-85ca2851afb7/',
+    uuid: 'fc2d0d37-55b1-4b91-b88d-85ca2851afb7',
+    sport: 'hurling',
+    level: 'club',
+    grade: 'senior',
+    name: 'Mid Tipperary Senior Hurling Championship',
+  },
+  {
+    path: '/fixtures-results/hurling/club/intermediate/doran-oil-mid-premier-intermediate-hurling-championship/dd2a713f-6a9f-4915-8712-82f9dd86043b/',
+    uuid: 'dd2a713f-6a9f-4915-8712-82f9dd86043b',
+    sport: 'hurling',
+    level: 'club',
+    grade: 'intermediate',
+    name: 'Mid Tipperary Premier Intermediate Hurling Championship',
+  },
+  {
+    path: '/fixtures-results/hurling/club/intermediate/roadstone-mid-intermediate-hurling-championship/7904e415-bf9e-45ab-9ca3-ae2f3416bfd1/',
+    uuid: '7904e415-bf9e-45ab-9ca3-ae2f3416bfd1',
+    sport: 'hurling',
+    level: 'club',
+    grade: 'intermediate',
+    name: 'Mid Tipperary Intermediate Hurling Championship',
+  },
+  {
+    path: '/fixtures-results/hurling/club/senior/cm-signs-cahill-cup/3aa03c3c-b46c-4a58-ba4e-bf77cf80a114/',
+    uuid: '3aa03c3c-b46c-4a58-ba4e-bf77cf80a114',
+    sport: 'hurling',
+    level: 'club',
+    grade: 'senior',
+    name: 'Mid Tipperary Cahill Cup',
+  },
+  {
+    path: '/fixtures-results/hurling/club/senior/munster-solar-north-senior-championship/9f004c92-dddb-4bb1-bdda-e9ce24bbe6ff/',
+    uuid: '9f004c92-dddb-4bb1-bdda-e9ce24bbe6ff',
+    sport: 'hurling',
+    level: 'club',
+    grade: 'senior',
+    name: 'North Tipperary Senior Championship',
+  },
+  {
+    path: '/fixtures-results/hurling/club/senior/buckley-car-sales-prem-inter-hurling/fd42b45a-9af6-43f7-87c7-3c2df798aaab/',
+    uuid: 'fd42b45a-9af6-43f7-87c7-3c2df798aaab',
+    sport: 'hurling',
+    level: 'club',
+    grade: 'senior',
+    name: 'North Tipperary Premier Intermediate Hurling Championship',
+  },
+  {
+    path: '/fixtures-results/hurling/club/senior/jim-mcloughney-menswear-intermediate-hurling/22baeb6c-1093-4003-95b3-c9ff0894126a/',
+    uuid: '22baeb6c-1093-4003-95b3-c9ff0894126a',
+    sport: 'hurling',
+    level: 'club',
+    grade: 'senior',
+    name: 'North Tipperary Intermediate Hurling Championship',
+  },
+  {
+    path: '/fixtures-results/hurling/club/senior/south-tipperary-senior-hurling-championship/34e44133-626c-449e-a1d7-96ae994f2eb6/',
+    uuid: '34e44133-626c-449e-a1d7-96ae994f2eb6',
+    sport: 'hurling',
+    level: 'club',
+    grade: 'senior',
+    name: 'South Tipperary Senior Hurling Championship',
+  },
+  {
+    path: '/fixtures-results/hurling/club/intermediate/south-tipperary-intermediate-hurling-championship/1bbeae2e-2cb0-486c-b588-678b426335bf/',
+    uuid: '1bbeae2e-2cb0-486c-b588-678b426335bf',
+    sport: 'hurling',
+    level: 'club',
+    grade: 'intermediate',
+    name: 'South Tipperary Intermediate Hurling Championship',
+  },
+  {
+    path: '/fixtures-results/hurling/club/senior/west-tipperary-senior-hurling-championship/d370f944-cd4b-47a1-89f9-b0a39243cbd9/',
+    uuid: 'd370f944-cd4b-47a1-89f9-b0a39243cbd9',
+    sport: 'hurling',
+    level: 'club',
+    grade: 'senior',
+    name: 'West Tipperary Senior Hurling Championship',
+  },
+  {
+    path: '/fixtures-results/hurling/club/intermediate/west-tipperary-premier-intermediate-hurling-championship/d506ec46-01af-4113-88d2-6114dc7b8969/',
+    uuid: 'd506ec46-01af-4113-88d2-6114dc7b8969',
+    sport: 'hurling',
+    level: 'club',
+    grade: 'intermediate',
+    name: 'West Tipperary Premier Intermediate Hurling Championship',
+  },
+  {
+    path: '/fixtures-results/hurling/club/intermediate/west-tipperary-intermediate-hurling-championship-2026/f39d79ac-ac77-41f1-886c-0061a660dd8a/',
+    uuid: 'f39d79ac-ac77-41f1-886c-0061a660dd8a',
+    sport: 'hurling',
+    level: 'club',
+    grade: 'intermediate',
+    name: 'West Tipperary Intermediate Hurling Championship',
+  },
+  {
+    path: '/fixtures-results/hurling/club/senior/crosco-cup-hurling/b7493f36-1d05-459d-80ec-45f3366b5fc2/',
+    uuid: 'b7493f36-1d05-459d-80ec-45f3366b5fc2',
+    sport: 'hurling',
+    level: 'club',
+    grade: 'senior',
+    name: 'West Tipperary Crosco Cup',
   },
 ];
 
@@ -577,13 +700,14 @@ export default {
 
     try {
       const cacDebug = [];
-      const [corkResults, waterfordResults, laoisResults, wexfordResults, kerryResults, offalyResults] = await Promise.all([
+      const [corkResults, waterfordResults, laoisResults, wexfordResults, kerryResults, offalyResults, tipperaryResults] = await Promise.all([
         Promise.all(CORK_COMPETITIONS.map(fetchCorkCompetition)),
         Promise.all(WATERFORD_COMPETITIONS.map(fetchWaterfordCompetition)),
         fetchCacCounty('Laois', 'https://laoisgaa.ie/fixtures-results/', LAOIS_TARGETS, cacDebug),
         fetchCacCounty('Wexford', 'https://wexford.clubandcounty.com/fixtures-results/', WEXFORD_TARGETS, cacDebug),
         Promise.all(KERRY_COMPETITIONS.map((c) => fetchCacDirectCompetition('Kerry', 'www.kerrygaa.ie', c, cacDebug))),
         Promise.all(OFFALY_COMPETITIONS.map((c) => fetchCacDirectCompetition('Offaly', 'offaly.gaa.ie', c, cacDebug))),
+        Promise.all(TIPPERARY_COMPETITIONS.map((c) => fetchCacDirectCompetition('Tipperary', 'tipperary.gaa.ie', c, cacDebug))),
       ]);
 
       const fixtures = [
@@ -593,6 +717,7 @@ export default {
         ...wexfordResults,
         ...kerryResults.flat(),
         ...offalyResults.flat(),
+        ...tipperaryResults.flat(),
         ...KILDARE_FIXTURES,
         ...CARLOW_FIXTURES,
       ];
