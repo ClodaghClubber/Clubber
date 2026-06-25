@@ -279,21 +279,45 @@ selectAll.addEventListener('change',()=>{
   render();
 });
 
+// Persists a status change to the shared Worker/KV store so other users
+// see it on their next load. Applies the change locally regardless of
+// whether the sync succeeds, but flags it in loadStatus if it fails.
+async function syncStatus(ids,status){
+  const keys=fixtures.filter(f=>ids.includes(f.id)).map(keyOf);
+  try{
+    const res=await fetch(WORKER_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({keys,status})
+    });
+    const json=await res.json();
+    if(!json.ok) throw new Error(json.error||'Update rejected');
+  }catch(err){
+    loadStatus.textContent=`Saved locally, but failed to sync with other users (${err.message}).`;
+  }
+}
+
 approveBtn.addEventListener('click',()=>{
+  const ids=[...selected];
   fixtures.forEach(f=>{ if(selected.has(f.id)) f.status='Approved'; });
   saveCache();
   render();
+  syncStatus(ids,'Approved');
 });
 rejectBtn.addEventListener('click',()=>{
+  const ids=[...selected];
   fixtures.forEach(f=>{ if(selected.has(f.id)) f.status='Rejected'; });
   saveCache();
   render();
+  syncStatus(ids,'Rejected');
 });
 removeBtn.addEventListener('click',()=>{
-  fixtures=fixtures.filter(f=>!(selected.has(f.id) && f.status==='Rejected'));
+  const ids=fixtures.filter(f=>selected.has(f.id) && f.status==='Rejected').map(f=>f.id);
+  fixtures=fixtures.filter(f=>!ids.includes(f.id));
   selected.clear();
   saveCache();
   render();
+  syncStatus(ids,'Removed');
 });
 
 countyFilter.addEventListener('change',()=>{ populateCompOptions(); render(); });
@@ -315,11 +339,14 @@ function keyOf(f){
 function mergeFixtures(incoming){
   const today=new Date().toISOString().slice(0,10);
   incoming=incoming.filter(f=>f.date>=today);
+  // Status now comes from the server (shared across all users via KV), so
+  // only the local row `id` needs to be carried over for checkbox/selection
+  // continuity across reloads — status itself is never preserved from the
+  // old client-side copy.
   const existingByKey=new Map(fixtures.map(f=>[keyOf(f),f]));
   fixtures = incoming.map(inc=>{
     const ex=existingByKey.get(keyOf(inc));
-    if(ex) return {...inc, id:ex.id, status:ex.status};
-    return {...inc, id:nextId++, status:'Proposed'};
+    return {...inc, id: ex ? ex.id : nextId++};
   });
   selected.clear();
   saveCache();
@@ -334,7 +361,7 @@ async function loadFixtures(isRefresh){
     if(!res.ok) throw new Error(`Worker responded ${res.status}`);
     const json=await res.json();
     if(json.error) throw new Error(json.error);
-    const incoming=(json.fixtures||[]).map(f=>mk(f.county,f.teamA,f.teamB,f.date,f.time,f.venue,f.competition,f.round));
+    const incoming=(json.fixtures||[]).map(f=>({...mk(f.county,f.teamA,f.teamB,f.date,f.time,f.venue,f.competition,f.round), status:f.status||'Proposed'}));
     mergeFixtures(incoming);
     const fetchedAt=json.fetchedAt?new Date(json.fetchedAt).toLocaleString():new Date().toLocaleString();
     loadStatus.textContent=`Loaded ${incoming.length} fixtures · last updated ${fetchedAt}`;

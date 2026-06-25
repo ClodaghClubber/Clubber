@@ -699,14 +699,81 @@ const CARLOW_FIXTURES = [];
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
+const VALID_STATUSES = ['Proposed', 'Approved', 'Rejected', 'Removed'];
+const STATUS_KV_KEY = 'statuses';
+
+// Same composite key the dashboard uses client-side to match a fixture
+// across reloads (county|competition|teamA|teamB|date), so Approve/Reject/
+// Remove decisions survive a re-scrape even though fixtures have no stable
+// upstream ID. Server-side fixture dates are 'D Month YYYY' strings (e.g.
+// "26 June 2026"); this converts to the same YYYY-MM-DD form the client
+// produces before computing the key.
+const MONTH_TO_NUM = {
+  January: '01', February: '02', March: '03', April: '04',
+  May: '05', June: '06', July: '07', August: '08',
+  September: '09', October: '10', November: '11', December: '12',
+};
+function toIsoDate(d) {
+  const [day, month, year] = d.split(' ');
+  return `${year}-${MONTH_TO_NUM[month] || month}-${day.padStart(2, '0')}`;
+}
+function fixtureKey(f) {
+  return `${f.county}|${f.competition}|${f.teamA}|${f.teamB}|${toIsoDate(f.date)}`;
+}
+
+async function getStatusMap(kv) {
+  if (!kv) return {};
+  const raw = await kv.get(STATUS_KV_KEY);
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+
 export default {
-  async fetch(request) {
+  async fetch(request, env) {
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: CORS_HEADERS });
+    }
+
+    const kv = env.FIXTURE_STATUS;
+
+    if (request.method === 'POST') {
+      try {
+        const body = await request.json();
+        const keys = Array.isArray(body.keys) ? body.keys : [];
+        const status = body.status;
+        if (!VALID_STATUSES.includes(status) || keys.length === 0) {
+          return new Response(
+            JSON.stringify({ ok: false, error: 'Invalid status or empty keys' }),
+            { status: 400, headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } }
+          );
+        }
+        if (!kv) {
+          return new Response(
+            JSON.stringify({ ok: false, error: 'No FIXTURE_STATUS KV namespace bound to this Worker' }),
+            { status: 500, headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } }
+          );
+        }
+        const statusMap = await getStatusMap(kv);
+        for (const key of keys) statusMap[key] = status;
+        await kv.put(STATUS_KV_KEY, JSON.stringify(statusMap));
+        return new Response(
+          JSON.stringify({ ok: true }),
+          { headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } }
+        );
+      } catch (err) {
+        return new Response(
+          JSON.stringify({ ok: false, error: String(err && err.message ? err.message : err) }),
+          { status: 500, headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } }
+        );
+      }
     }
 
     try {
@@ -721,7 +788,7 @@ export default {
         Promise.all(TIPPERARY_COMPETITIONS.map((c) => fetchCacDirectCompetition('Tipperary', 'tipperary.gaa.ie', c, cacDebug))),
       ]);
 
-      const fixtures = [
+      let fixtures = [
         ...corkResults.flat(),
         ...waterfordResults.flat(),
         ...laoisResults,
@@ -732,6 +799,11 @@ export default {
         ...KILDARE_FIXTURES,
         ...CARLOW_FIXTURES,
       ];
+
+      const statusMap = await getStatusMap(kv);
+      fixtures = fixtures
+        .map((f) => ({ ...f, status: statusMap[fixtureKey(f)] || 'Proposed' }))
+        .filter((f) => f.status !== 'Removed');
 
       const url = new URL(request.url);
       const includeDebug = url.searchParams.has('debug');
