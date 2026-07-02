@@ -41,13 +41,21 @@
 <body>
 <header>
   <h1>GAA Fixtures Dashboard</h1>
-  <p>Live fixtures from Cork, Waterford, Laois, Wexford, Kerry, Offaly &amp; Tipperary GAA, fetched fresh on page load via a server-side proxy &middot; Kildare &amp; Carlow fixtures are static (manually transcribed, not live-scraped)</p>
+  <p>Live fixtures from Cork, Waterford, Laois, Wexford, Kerry, Offaly, Tipperary &amp; Roscommon GAA, fetched fresh on page load via a server-side proxy &middot; Kildare &amp; Carlow fixtures are static (manually transcribed, not live-scraped)</p>
 </header>
 
 <div class="toolbar">
   <div>
     <label for="countyFilter">County</label>
     <select id="countyFilter"><option value="">All</option></select>
+  </div>
+  <div>
+    <label for="codeFilter">Code</label>
+    <select id="codeFilter">
+      <option value="">All</option>
+      <option value="Football">Football</option>
+      <option value="Hurling">Hurling</option>
+    </select>
   </div>
   <div>
     <label for="compFilter">Competition</label>
@@ -88,6 +96,7 @@
     <tr>
       <th><input type="checkbox" id="selectAll"></th>
       <th data-key="county">County</th>
+      <th data-key="code">Code</th>
       <th data-key="teamA">Team A</th>
       <th data-key="teamB">Team B</th>
       <th data-key="date">Date</th>
@@ -105,6 +114,17 @@
 </div>
 
 <script>
+// Derives Football/Hurling from competition name. Most counties embed the
+// sport in the competition string ("Hurling Championship", "HC", "FC", etc.).
+// Roscommon leagues don't, so the worker explicitly sets f.sport for those.
+function deriveCode(competition, sport) {
+  if (sport) return sport;
+  const c = competition.toLowerCase();
+  if (c.includes('hurling') || / hc\b/i.test(competition)) return 'Hurling';
+  if (c.includes('football') || / fc\b/i.test(competition)) return 'Football';
+  return '';
+}
+
 // ---- Date/time helpers shared with the Worker's output format ----
 function iso(d){ // d = 'D Month YYYY'
   const months={January:'01',February:'02',March:'03',April:'04',May:'05',June:'06',July:'07',August:'08',September:'09',October:'10',November:'11',December:'12'};
@@ -156,6 +176,7 @@ function loadCache(){
 
 const tbody=document.getElementById('tbody');
 const countyFilter=document.getElementById('countyFilter');
+const codeFilter=document.getElementById('codeFilter');
 const compFilter=document.getElementById('compFilter');
 const statusFilter=document.getElementById('statusFilter');
 const dateFrom=document.getElementById('dateFrom');
@@ -190,6 +211,7 @@ function populateCompOptions(){
 function getFiltered(){
   let list=fixtures.filter(f=>{
     if(countyFilter.value && f.county!==countyFilter.value) return false;
+    if(codeFilter.value && f.code!==codeFilter.value) return false;
     if(compFilter.value && f.competition!==compFilter.value) return false;
     if(statusFilter.value && f.status!==statusFilter.value) return false;
     if(dateFrom.value && f.date<dateFrom.value) return false;
@@ -216,6 +238,7 @@ function render(){
     tr.innerHTML=`
       <td><input type="checkbox" data-id="${f.id}" ${selected.has(f.id)?'checked':''}></td>
       <td>${f.county}</td>
+      <td>${f.code||''}</td>
       <td>${f.teamA}</td>
       <td>${f.teamB}</td>
       <td>${f.date}</td>
@@ -255,8 +278,8 @@ function csvEscape(val){
 function exportSelectedToExcel(){
   const selFixtures=fixtures.filter(f=>selected.has(f.id));
   if(!selFixtures.length) return;
-  const headers=['County','Team A','Team B','Date','Day','Time','Venue','Competition','Round','Status'];
-  const rows=selFixtures.map(f=>[f.county,f.teamA,f.teamB,f.date,f.day,f.time,f.venue,f.competition,f.round,f.status]);
+  const headers=['County','Code','Team A','Team B','Date','Day','Time','Venue','Competition','Round','Status'];
+  const rows=selFixtures.map(f=>[f.county,f.code||'',f.teamA,f.teamB,f.date,f.day,f.time,f.venue,f.competition,f.round,f.status]);
   const csv=[headers,...rows].map(row=>row.map(csvEscape).join(',')).join('\r\n');
   const blob=new Blob(['﻿'+csv],{type:'application/vnd.ms-excel;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
@@ -322,7 +345,7 @@ removeBtn.addEventListener('click',()=>{
 
 countyFilter.addEventListener('change',()=>{ populateCompOptions(); render(); });
 dateFrom.addEventListener('change',()=>{ dateTo.value=dateFrom.value; render(); });
-[compFilter,statusFilter,dateTo].forEach(el=>el.addEventListener('change',render));
+[codeFilter,compFilter,statusFilter,dateTo].forEach(el=>el.addEventListener('change',render));
 
 document.querySelectorAll('thead th[data-key]').forEach(th=>{
   th.addEventListener('click',()=>{
@@ -361,7 +384,7 @@ async function loadFixtures(isRefresh){
     if(!res.ok) throw new Error(`Worker responded ${res.status}`);
     const json=await res.json();
     if(json.error) throw new Error(json.error);
-    const incoming=(json.fixtures||[]).map(f=>({...mk(f.county,f.teamA,f.teamB,f.date,f.time,f.venue,f.competition,f.round), status:f.status||'Proposed'}));
+    const incoming=(json.fixtures||[]).map(f=>({...mk(f.county,f.teamA,f.teamB,f.date,f.time,f.venue,f.competition,f.round), code:deriveCode(f.competition,f.sport), status:f.status||'Proposed'}));
     mergeFixtures(incoming);
     const fetchedAt=json.fetchedAt?new Date(json.fetchedAt).toLocaleString():new Date().toLocaleString();
     loadStatus.textContent=`Loaded ${incoming.length} fixtures · last updated ${fetchedAt}`;
