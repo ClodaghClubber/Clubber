@@ -725,6 +725,121 @@ function fixtureKey(f) {
   return `${f.county}|${f.competition}|${f.teamA}|${f.teamB}|${toIsoDate(f.date)}`;
 }
 
+// ---- Fixture graphic validation ----
+// Accepts an uploaded image from the dashboard, sends it to the Claude API
+// (server-side, so the ANTHROPIC_API_KEY secret is never exposed to the
+// browser) asking it to read out the fixture details shown on the graphic,
+// and returns that as normalized JSON for the dashboard to compare against
+// the live-scraped fixtures already held in the page.
+const VALIDATE_PROMPT = `You are reading a GAA fixtures graphic that was created in Figma for social media, so a club/media team can double-check its details before publishing.
+
+List every individual fixture (match) shown in the image. Return ONLY a JSON array (no markdown code fences, no commentary) where each element has exactly these string fields:
+
+- "county": the GAA county this fixture is for, ONLY if it is explicitly printed somewhere in the image; otherwise "".
+- "teamA": the first team name exactly as written.
+- "teamB": the second team name exactly as written.
+- "date": the fixture date exactly as written in the image.
+- "time": the kickoff time exactly as written in the image.
+- "competition": the competition/league name as written.
+- "round": the round or stage (e.g. "Round 1", "Semi-Final"), ONLY if shown separately from the competition name; otherwise "".
+
+If a field isn't legible or isn't present in the image, use an empty string for it rather than guessing. Do not invent fixtures that aren't shown.`;
+
+async function handleValidateImage(request, env) {
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { headers: CORS_HEADERS });
+  }
+  if (request.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'Use POST with a JSON body' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
+    });
+  }
+
+  const apiKey = env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    return new Response(
+      JSON.stringify({ error: 'ANTHROPIC_API_KEY secret is not set on this Worker. Add it in the Cloudflare dashboard under Settings > Variables and Secrets.' }),
+      { status: 500, headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } }
+    );
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch (err) {
+    return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
+      status: 400, headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
+    });
+  }
+
+  const { imageBase64, mediaType } = body;
+  if (!imageBase64 || !mediaType) {
+    return new Response(JSON.stringify({ error: 'imageBase64 and mediaType are required' }), {
+      status: 400, headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
+    });
+  }
+
+  let anthropicRes;
+  try {
+    anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-5',
+        max_tokens: 2048,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'image', source: { type: 'base64', media_type: mediaType, data: imageBase64 } },
+              { type: 'text', text: VALIDATE_PROMPT },
+            ],
+          },
+        ],
+      }),
+    });
+  } catch (err) {
+    return new Response(
+      JSON.stringify({ error: `Could not reach the Claude API: ${String(err && err.message ? err.message : err)}` }),
+      { status: 502, headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } }
+    );
+  }
+
+  if (!anthropicRes.ok) {
+    const errText = await anthropicRes.text();
+    return new Response(
+      JSON.stringify({ error: `Claude API error (${anthropicRes.status}): ${errText.slice(0, 500)}` }),
+      { status: 502, headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } }
+    );
+  }
+
+  const anthropicJson = await anthropicRes.json();
+  const textOut = (anthropicJson.content || []).map((b) => b.text || '').join('');
+
+  let extracted;
+  try {
+    // Claude sometimes wraps JSON in ```json fences despite instructions not
+    // to; strip them defensively before parsing.
+    const cleaned = textOut.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+    extracted = JSON.parse(cleaned);
+    if (!Array.isArray(extracted)) throw new Error('Response was not a JSON array');
+  } catch (err) {
+    return new Response(
+      JSON.stringify({ error: 'Could not parse fixture data out of the Claude response.', raw: textOut }),
+      { status: 502, headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } }
+    );
+  }
+
+  return new Response(JSON.stringify({ fixtures: extracted }), {
+    headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
+  });
+}
+
 async function getStatusMap(kv) {
   if (!kv) return {};
   const raw = await kv.get(STATUS_KV_KEY);
@@ -738,6 +853,15 @@ async function getStatusMap(kv) {
 
 export default {
   async fetch(request, env) {
+    const url = new URL(request.url);
+
+    // Routed separately from the root fixtures/status endpoint below so it
+    // doesn't interfere with the existing GET (scrape) / POST (status
+    // update) behaviour on '/'.
+    if (url.pathname === '/validate-image' || url.pathname === '/validate-image/') {
+      return handleValidateImage(request, env);
+    }
+
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: CORS_HEADERS });
     }
@@ -805,7 +929,6 @@ export default {
         .map((f) => ({ ...f, status: statusMap[fixtureKey(f)] || 'Proposed' }))
         .filter((f) => f.status !== 'Removed');
 
-      const url = new URL(request.url);
       const includeDebug = url.searchParams.has('debug');
 
       return new Response(
