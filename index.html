@@ -34,20 +34,6 @@
   .empty{text-align:center;color:var(--muted);padding:40px;}
   .count{color:var(--muted);font-size:12px;padding:8px 24px;}
   .container{padding:0 0 40px;}
-  .validate-panel{margin:16px 24px;padding:16px;border:1px solid var(--border);border-radius:8px;background:var(--panel);}
-  .validate-panel h2{margin:0 0 6px;font-size:15px;}
-  .validate-panel .hint{margin:0 0 10px;color:var(--muted);font-size:12px;}
-  .validate-panel input[type=file]{color:var(--text);font-size:13px;}
-  .validate-panel button{margin-left:10px;background:#2d6cdf;}
-  .validate-status{margin-top:10px;font-size:12px;color:var(--muted);}
-  .fixture-check{border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-top:10px;font-size:13px;}
-  .fixture-check.match{border-color:var(--approve);}
-  .fixture-check.mismatch,.fixture-check.nomatch{border-color:var(--reject);}
-  .fixture-check .field-row{margin-top:4px;}
-  .fixture-check .field-bad{color:var(--reject);font-weight:600;}
-  .fixture-check .field-unsure{color:var(--propose);font-weight:600;}
-  .fixture-check .field-ok{color:var(--muted);}
-  .fixture-check .matched-to{color:var(--muted);font-size:12px;}
   ::-webkit-scrollbar{width:10px;height:10px;}
   ::-webkit-scrollbar-thumb{background:var(--border);border-radius:5px;}
 </style>
@@ -57,15 +43,6 @@
   <h1>GAA Fixtures Dashboard</h1>
   <p>Live fixtures from Cork, Waterford, Laois, Wexford, Kerry, Offaly, Tipperary &amp; Roscommon GAA, fetched fresh on page load via a server-side proxy &middot; Kildare &amp; Carlow fixtures are static (manually transcribed, not live-scraped)</p>
 </header>
-
-<div class="validate-panel">
-  <h2>Validate a Fixture Graphic</h2>
-  <p class="hint">Upload a fixture graphic (e.g. exported from Figma) to check its team names, date/time, county and competition/round against the live fixtures above. This refreshes the live data first, then compares.</p>
-  <input type="file" id="validateFile" accept="image/*">
-  <button id="validateBtn">Check Fixture Image</button>
-  <div class="validate-status" id="validateStatus"></div>
-  <div id="validateResults"></div>
-</div>
 
 <div class="toolbar">
   <div>
@@ -421,153 +398,6 @@ async function loadFixtures(isRefresh){
 }
 
 refreshBtn.addEventListener('click',()=>loadFixtures(true));
-
-// ---- Fixture graphic validation ----
-// Sends an uploaded image to the Worker (which forwards it to Claude for
-// reading), then compares the extracted fixture(s) against the live
-// `fixtures` array already held in memory. Only fields actually printed on
-// the graphic are compared — the Worker returns '' for anything it couldn't
-// read, so those are skipped rather than flagged as mismatches.
-const validateFile=document.getElementById('validateFile');
-const validateBtn=document.getElementById('validateBtn');
-const validateStatus=document.getElementById('validateStatus');
-const validateResults=document.getElementById('validateResults');
-const VALIDATE_URL = WORKER_URL.replace(/\/?$/, '/') + 'validate-image';
-
-function fileToBase64(file){
-  return new Promise((resolve,reject)=>{
-    const reader=new FileReader();
-    reader.onload=()=>{
-      const result=reader.result; // "data:image/png;base64,AAAA..."
-      resolve(result.slice(result.indexOf(',')+1));
-    };
-    reader.onerror=()=>reject(new Error('Could not read the selected file'));
-    reader.readAsDataURL(file);
-  });
-}
-
-function normTeam(s){ return (s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(); }
-
-// Best-effort date normalizer -> 'YYYY-MM-DD', or null if unparseable.
-// Handles the live data's 'YYYY-MM-DD' as well as typical graphic formats
-// like "Friday 8th August 2026", "8 Aug 2026", "08/08/2026".
-function normDate(raw){
-  if(!raw) return null;
-  let s=raw.trim();
-  const weekdays=['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
-  s=s.replace(/^([a-z]+),?\s+/i,(m,wd)=>weekdays.includes(wd.toLowerCase())?'':m);
-  s=s.replace(/(\d+)(st|nd|rd|th)\b/gi,'$1');
-  const dmy=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
-  if(dmy){
-    let [,dd,mm,yy]=dmy;
-    if(yy.length===2) yy='20'+yy;
-    return `${yy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`;
-  }
-  const d=new Date(s);
-  if(!isNaN(d.getTime())) return d.toISOString().slice(0,10);
-  return null;
-}
-
-// Best-effort time normalizer -> minutes since midnight, 'TBC', or null.
-function normTime(raw){
-  if(!raw) return null;
-  let s=raw.trim().toLowerCase().replace(/\./g,':').replace(/\s+/g,'');
-  if(/tbc|tba/.test(s)) return 'TBC';
-  const m=s.match(/^(\d{1,2}):?(\d{2})?(am|pm)?$/);
-  if(!m) return null;
-  let [,h,min,ap]=m;
-  h=parseInt(h,10); min=min?parseInt(min,10):0;
-  if(ap==='pm' && h!==12) h+=12;
-  if(ap==='am' && h===12) h=0;
-  return h*60+min;
-}
-
-// Tri-state field comparison: true/false when both sides parse cleanly,
-// null ('unsure') when one side couldn't be confidently parsed — shown to
-// the user for a manual look rather than silently guessed at.
-function compareRaw(label,imgVal,liveVal){
-  const same=(imgVal||'').toLowerCase().trim()===(liveVal||'').toLowerCase().trim();
-  return {label,imgVal,liveVal,same};
-}
-function compareDate(imgVal,liveVal){
-  const a=normDate(imgVal), b=normDate(liveVal);
-  return {label:'Date',imgVal,liveVal,same:(a&&b)?a===b:null};
-}
-function compareTime(imgVal,liveVal){
-  const a=normTime(imgVal), b=normTime(liveVal);
-  return {label:'Time',imgVal,liveVal,same:(a!==null&&b!==null)?a===b:null};
-}
-
-function findMatch(ext){
-  const a=normTeam(ext.teamA), b=normTeam(ext.teamB);
-  if(!a||!b) return null;
-  return fixtures.find(f=>{
-    const fa=normTeam(f.teamA), fb=normTeam(f.teamB);
-    return (fa===a&&fb===b)||(fa===b&&fb===a);
-  });
-}
-
-function renderFixtureCheck(ext){
-  const card=document.createElement('div');
-  const match=findMatch(ext);
-  if(!match){
-    card.className='fixture-check nomatch';
-    card.innerHTML=`<strong>${ext.teamA||'?'} vs ${ext.teamB||'?'}</strong>
-      <div class="field-row field-bad">No matching live fixture found — check the team names, or this fixture may not be in the live data yet.</div>`;
-    return card;
-  }
-  const checks=[
-    ext.county ? compareRaw('County',ext.county,match.county) : null,
-    ext.date ? compareDate(ext.date,match.date) : null,
-    ext.time ? compareTime(ext.time,match.time) : null,
-    (ext.competition||ext.round) ? compareRaw('Competition/Round',
-      [ext.competition,ext.round].filter(Boolean).join(' '),
-      [match.competition,match.round].filter(Boolean).join(' ')) : null,
-  ].filter(Boolean);
-  const allGood=checks.every(c=>c.same===true);
-  const anyBad=checks.some(c=>c.same===false);
-  card.className='fixture-check '+(anyBad?'mismatch':(allGood?'match':''));
-  card.innerHTML=`<strong>${ext.teamA} vs ${ext.teamB}</strong> `+
-    `<span class="matched-to">(matched to live fixture: ${match.county} · ${match.competition}${match.round?' '+match.round:''})</span>`+
-    checks.map(c=>{
-      const cls=c.same===true?'field-ok':(c.same===false?'field-bad':'field-unsure');
-      const verdict=c.same===true?'matches live data':(c.same===false?`— live data says "${c.liveVal}"`:'— could not confirm automatically, check manually');
-      return `<div class="field-row ${cls}">${c.label}: image says "${c.imgVal}" ${verdict}</div>`;
-    }).join('');
-  return card;
-}
-
-async function validateImage(){
-  const file=validateFile.files[0];
-  if(!file){ validateStatus.textContent='Choose an image first.'; return; }
-  validateBtn.disabled=true;
-  validateResults.innerHTML='';
-  validateStatus.textContent='Refreshing live fixtures…';
-  try{
-    await loadFixtures(true);
-    validateStatus.textContent='Reading fixture graphic (this can take a few seconds)…';
-    const imageBase64=await fileToBase64(file);
-    const res=await fetch(VALIDATE_URL,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({imageBase64,mediaType:file.type||'image/png'})
-    });
-    const json=await res.json();
-    if(json.error) throw new Error(json.error);
-    const extractedList=json.fixtures||[];
-    if(!extractedList.length){
-      validateStatus.textContent='No fixtures were detected in that image.';
-      return;
-    }
-    extractedList.forEach(ext=>validateResults.appendChild(renderFixtureCheck(ext)));
-    validateStatus.textContent=`Compared ${extractedList.length} fixture${extractedList.length!==1?'s':''} from the image against ${fixtures.length} live fixtures.`;
-  }catch(err){
-    validateStatus.textContent=`Couldn't validate image: ${err.message}`;
-  }
-  validateBtn.disabled=false;
-}
-
-validateBtn.addEventListener('click',validateImage);
 
 // Show cached data immediately (instant render), then fetch fresh data
 // from the Worker in the background and merge it in once it arrives.
