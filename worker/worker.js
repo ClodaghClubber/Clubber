@@ -1,7 +1,9 @@
-// Cloudflare Worker: scrapes Cork, Waterford, Laois, Wexford, Kerry, Offaly
-// and Tipperary GAA fixture pages server-side (avoiding browser CORS
-// restrictions), merges in Kildare's and Carlow's manually-transcribed
-// static fixtures, and returns normalized JSON for the fixtures dashboard.
+﻿// Cloudflare Worker: scrapes Cork, Waterford, Laois, Wexford, Kerry, Offaly,
+// Tipperary, Roscommon and Kilkenny GAA fixture pages server-side (avoiding
+// browser CORS restrictions), fetches Longford via the Foireann Open Data API
+// (requires FOIREANN_API_KEY env var), merges in Kildare's and Carlow's
+// manually-transcribed static fixtures, and returns normalized JSON for the
+// fixtures dashboard.
 
 const UA = 'Mozilla/5.0 (compatible; FixturesDashboardBot/1.0)';
 
@@ -21,28 +23,21 @@ const WATERFORD_COMPETITIONS = [
   { id: '214354', name: 'Premier Intermediate HC Group B' },
 ];
 
-// Order matters: more specific names must be checked before substrings of
-// themselves (e.g. "Premier Intermediate Hurling Championship" contains
-// "Intermediate Hurling Championship", so it must come first).
-const LAOIS_TARGETS = [
-  { match: 'Senior Football Championship', name: 'Senior Football Championship' },
-  { match: 'Intermediate Football Championship', name: 'Intermediate Football Championship' },
-  { match: 'Senior Hurling Championship', name: 'Senior Hurling Championship' },
-  { match: 'Premier Intermediate Hurling Championship', name: 'Premier Intermediate Hurling Championship' },
-  { match: 'Intermediate Hurling Championship', name: 'Intermediate Hurling Championship' },
+const LAOIS_COMPETITIONS = [
+  { path: '/fixtures-results/football/club/senior/senior-football-championship/6cca5451-31a9-4b52-b984-7774b4983e2b/', uuid: '6cca5451-31a9-4b52-b984-7774b4983e2b', sport: 'football', level: 'club', grade: 'senior', name: 'Senior Football Championship' },
+  { path: '/fixtures-results/football/club/intermediate/intermediate-football-championship/5f030f3c-2cf2-4750-9a1d-9be5a3fb21da/', uuid: '5f030f3c-2cf2-4750-9a1d-9be5a3fb21da', sport: 'football', level: 'club', grade: 'intermediate', name: 'Intermediate Football Championship' },
+  { path: '/fixtures-results/hurling/club/senior/senior-hurling-championship/45807eed-e83d-4556-b993-09377bea07bf/', uuid: '45807eed-e83d-4556-b993-09377bea07bf', sport: 'hurling', level: 'club', grade: 'senior', name: 'Senior Hurling Championship' },
+  { path: '/fixtures-results/hurling/club/intermediate/premier-intermediate-hurling-championship/927f09db-237e-41a9-b085-183cb42aabdc/', uuid: '927f09db-237e-41a9-b085-183cb42aabdc', sport: 'hurling', level: 'club', grade: 'intermediate', name: 'Premier Intermediate Hurling Championship' },
+  { path: '/fixtures-results/hurling/club/intermediate/intermediate-hurling-championship/4636a85b-fd62-48e6-a848-235546e99d42/', uuid: '4636a85b-fd62-48e6-a848-235546e99d42', sport: 'hurling', level: 'club', grade: 'intermediate', name: 'Intermediate Hurling Championship' },
 ];
 
-// Wexford's fixtures are hosted on the same "ClubAndCounty" platform as
-// Laois (clubandcounty.com), just embedded via iframe from wexfordgaa.ie.
-// These targets use full sponsor-prefixed names since they're unambiguous
-// and don't have the substring-collision risk the short Laois names have.
-const WEXFORD_TARGETS = [
-  { match: 'Pettitts Supervalue Senior Hurling Championship', name: 'Senior Hurling Championship' },
-  { match: 'Courtyard Ferns Intermediate Hurling Championship', name: 'Intermediate Hurling Championship' },
-  { match: 'Joyces Expert Wexford Intermediate A Hurling Championship', name: 'Intermediate A Hurling Championship' },
-  { match: 'Dominic Smith Expert Electrical Senior Football Championship', name: 'Senior Football Championship' },
-  { match: 'Amber Springs and Ashdown Park Hotels Intermediate Football Championship', name: 'Intermediate Football Championship' },
-  { match: 'Whizzy Internet Intermediate A Football Championship', name: 'Intermediate A Football Championship' },
+const WEXFORD_COMPETITIONS = [
+  { path: '/fixtures-results/hurling/club/senior/pettitts-supervalue-senior-hurling-championship/b6c4a297-e08a-4188-9e8d-53c06cfaf50e/', uuid: 'b6c4a297-e08a-4188-9e8d-53c06cfaf50e', sport: 'hurling', level: 'club', grade: 'senior', name: 'Senior Hurling Championship' },
+  { path: '/fixtures-results/hurling/club/intermediate/the-courtyard-ferns-intermediate-hurling-championship/c4efa6b0-a7e8-4546-ac7d-068fb7e81294/', uuid: 'c4efa6b0-a7e8-4546-ac7d-068fb7e81294', sport: 'hurling', level: 'club', grade: 'intermediate', name: 'Intermediate Hurling Championship' },
+  { path: '/fixtures-results/hurling/club/intermediate/joyces-expert-wexford-intermediate-a-hurling-championship/3aab003e-2e33-4967-9121-4c23f31e6d79/', uuid: '3aab003e-2e33-4967-9121-4c23f31e6d79', sport: 'hurling', level: 'club', grade: 'intermediate', name: 'Intermediate A Hurling Championship' },
+  { path: '/fixtures-results/football/club/senior/dominic-smith-expert-electrical-senior-football-championship/892924d0-b2fb-40f8-8244-50324f3822c2/', uuid: '892924d0-b2fb-40f8-8244-50324f3822c2', sport: 'football', level: 'club', grade: 'senior', name: 'Senior Football Championship' },
+  { path: '/fixtures-results/football/club/intermediate/amber-springs-and-ashdown-park-hotels-intermediate-football-championship/0d8a8195-b0db-4583-9426-86f5c37d9d5d/', uuid: '0d8a8195-b0db-4583-9426-86f5c37d9d5d', sport: 'football', level: 'club', grade: 'intermediate', name: 'Intermediate Football Championship' },
+  { path: '/fixtures-results/football/club/intermediate/whizzy-internet-intermediate-a-football-championship/2e8cc25f-84e5-430a-9a25-435f02e5e459/', uuid: '2e8cc25f-84e5-430a-9a25-435f02e5e459', sport: 'football', level: 'club', grade: 'intermediate', name: 'Intermediate A Football Championship' },
 ];
 
 const MONTHS = {
@@ -58,7 +53,7 @@ function decodeEntities(s) {
     .replace(/&quot;/g, '"')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
-    .replace(/�/g, ''); // strip stray replacement chars from mojibake
+    .replace(/�/g, ''); // strip Unicode replacement chars (U+FFFD) from mojibake
 }
 
 // "31 Jul 2026" -> "31 July 2026"
@@ -148,7 +143,7 @@ async function fetchWaterfordCompetition(comp) {
     time: r.time,
     venue: r.venue,
     competition: comp.name,
-    round: r.comment || '',
+    round: (r.comment || '').replace(/^Round(\d+)$/i, 'Round $1'),
   }));
 }
 
@@ -224,7 +219,7 @@ async function fetchCacCounty(county, baseUrl, targets, debug) {
   // subrequests total (across every county fetched), so page size and the
   // page-count ceiling here are tuned to leave headroom for the other
   // counties' fetches in the same request.
-  while (hasMore && page < 8) {
+  while (hasMore && page < 6) {
     const url = `${baseUrl}?ajax=1&feed_type=fixtures&page=${page}&size=100`;
     let res, bodyText, json;
     try {
@@ -277,16 +272,35 @@ async function fetchCacCounty(county, baseUrl, targets, debug) {
 // directly and precisely (fixtures feed + results feed) without needing
 // pagination through the whole site's unfiltered feed.
 function parseCacHtmlDirect(html, out, county, competitionName) {
+  // Pre-pass: extract competition headings with their character positions.
+  // Done separately from CAC_TOKEN_RE because the heading text spans multiple
+  // lines and [^<]* inside a large alternation can silently fail to cross
+  // newlines in Cloudflare's V8. [\s\S]*? is explicit and reliable here.
+  const compPositions = [];
+  {
+    const cpRe = /competition-name[^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/g;
+    let cm;
+    while ((cm = cpRe.exec(html))) {
+      compPositions.push({ idx: cm.index, text: cm[1].trim().replace(/\s+/g, ' ') });
+    }
+  }
+
   let curDate = null;
   let curComp = null;
   let buf = emptyBuf();
   const re = new RegExp(CAC_TOKEN_RE);
   let m;
   while ((m = re.exec(html))) {
+    // Update curComp to the most recent competition heading before this position
+    for (const cp of compPositions) {
+      if (cp.idx > m.index) break;
+      curComp = cp.text;
+    }
     if (m[2] !== undefined) {
       curDate = m[2].trim();
     } else if (m[4] !== undefined) {
-      curComp = decodeEntities(m[4].trim().replace(/\s+/g, ' '));
+      // Competition match from main regex — keep buf reset behaviour but
+      // curComp is now managed by the pre-pass lookup above.
       buf = emptyBuf();
     } else if (m[6] !== undefined) {
       buf = emptyBuf();
@@ -371,6 +385,99 @@ async function fetchCacDirectCompetition(county, baseDomain, comp, debug) {
   return out;
 }
 
+const KILKENNY_COMPETITIONS = [
+  {
+    path: '/fixtures-results/hurling/club/senior/st-canices-credit-union-senior-hurling-league/bf2fc916-357c-402a-be39-e5c119d1fea9/',
+    uuid: 'bf2fc916-357c-402a-be39-e5c119d1fea9',
+    sport: 'hurling',
+    level: 'club',
+    grade: 'senior',
+    name: 'Senior Hurling League',
+  },
+  {
+    path: '/fixtures-results/hurling/club/intermediate/michael-lyng-motors-hyundai-intermediate-league/1518a925-dc42-4ac2-8e0c-686876f0b28c/',
+    uuid: '1518a925-dc42-4ac2-8e0c-686876f0b28c',
+    sport: 'hurling',
+    level: 'club',
+    grade: 'intermediate',
+    name: 'Intermediate Hurling League',
+  },
+  {
+    path: '/fixtures-results/hurling/club/junior/jj-kavanagh-premier-jnr-league/f0ffc6b6-6e0b-4a16-b7a8-9de4766b2af6/',
+    uuid: 'f0ffc6b6-6e0b-4a16-b7a8-9de4766b2af6',
+    sport: 'hurling',
+    level: 'club',
+    grade: 'junior',
+    name: 'Premier Junior Hurling League',
+  },
+];
+
+const MONAGHAN_COMPETITIONS = [
+  {
+    path: '/fixtures-results/football/club/senior/senior-football-championship/5d0d90fc-8f40-4280-817b-7a5d71b6d62a/',
+    uuid: '5d0d90fc-8f40-4280-817b-7a5d71b6d62a',
+    sport: 'football',
+    level: 'club',
+    grade: 'senior',
+    name: 'Senior Football Championship',
+  },
+  {
+    path: '/fixtures-results/football/club/senior/senior-football-league/9f2a204f-20cd-4cec-852b-2760b4216812/',
+    uuid: '9f2a204f-20cd-4cec-852b-2760b4216812',
+    sport: 'football',
+    level: 'club',
+    grade: 'senior',
+    name: 'Senior Football League',
+  },
+  {
+    path: '/fixtures-results/football/club/intermediate/intermediate-football-championship/1b9079d3-c2aa-4c06-9479-17b8fbbd93a3/',
+    uuid: '1b9079d3-c2aa-4c06-9479-17b8fbbd93a3',
+    sport: 'football',
+    level: 'club',
+    grade: 'intermediate',
+    name: 'Intermediate Football Championship',
+  },
+  {
+    path: '/fixtures-results/football/club/junior/junior-football-championship/b5a5d354-a19b-482b-8826-119499a17114/',
+    uuid: 'b5a5d354-a19b-482b-8826-119499a17114',
+    sport: 'football',
+    level: 'club',
+    grade: 'junior',
+    name: 'Junior Football Championship',
+  },
+  {
+    path: '/fixtures-results/hurling/club/senior/senior-hurling-championship/de727338-5845-4233-8236-beffed1b5160/',
+    uuid: 'de727338-5845-4233-8236-beffed1b5160',
+    sport: 'hurling',
+    level: 'club',
+    grade: 'senior',
+    name: 'Senior Hurling Championship',
+  },
+  {
+    path: '/fixtures-results/hurling/club/senior/senior-hurling-league-2026/0f17c081-8272-4ace-9829-e212c19f1c6b/',
+    uuid: '0f17c081-8272-4ace-9829-e212c19f1c6b',
+    sport: 'hurling',
+    level: 'club',
+    grade: 'senior',
+    name: 'Senior Hurling League',
+  },
+];
+
+const MEATH_COMPETITIONS = [
+  { path: '/fixtures-results/hurling/club/senior/2026-shc-ted-murtagh-clothing-footwear-trim/ede1b15c-2b0f-40d4-b69f-0125767718f8/', uuid: 'ede1b15c-2b0f-40d4-b69f-0125767718f8', sport: 'hurling', level: 'club', grade: 'senior', name: 'Senior Hurling Championship' },
+  { path: '/fixtures-results/hurling/club/intermediate/2026-ihc-abbey-pharmacy/7a4e5912-efee-486f-b4de-b69563253d31/', uuid: '7a4e5912-efee-486f-b4de-b69563253d31', sport: 'hurling', level: 'club', grade: 'intermediate', name: 'Intermediate Hurling Championship' },
+  { path: '/fixtures-results/hurling/club/intermediate/2026-ihc-b-abbey-pharmacy/63320d74-f53a-456f-a21d-331965580e49/', uuid: '63320d74-f53a-456f-a21d-331965580e49', sport: 'hurling', level: 'club', grade: 'intermediate', name: 'Intermediate Hurling Championship B' },
+  { path: '/fixtures-results/football/club/senior/2026-sfc-gr-a-fairyhouse-steel/6d1e3b7a-13f7-40b3-9538-43c568d94770/', uuid: '6d1e3b7a-13f7-40b3-9538-43c568d94770', sport: 'football', level: 'club', grade: 'senior', name: 'Senior Football Championship' },
+  { path: '/fixtures-results/football/club/senior/2026-sfc-gr-b-fairyhouse-steel/6559156e-a91e-418e-8db5-d4261f3d06a2/', uuid: '6559156e-a91e-418e-8db5-d4261f3d06a2', sport: 'football', level: 'club', grade: 'senior', name: 'Senior Football Championship' },
+  { path: '/fixtures-results/football/club/senior/2026-sfc-gr-c-fairyhouse-steel/11d7a6ba-9d24-4451-ab0b-6429430b3c77/', uuid: '11d7a6ba-9d24-4451-ab0b-6429430b3c77', sport: 'football', level: 'club', grade: 'senior', name: 'Senior Football Championship' },
+  { path: '/fixtures-results/football/club/senior/2026-sfc-gr-d-fairyhouse-steel/72b01516-aacf-4474-9f80-743cf35f58f5/', uuid: '72b01516-aacf-4474-9f80-743cf35f58f5', sport: 'football', level: 'club', grade: 'senior', name: 'Senior Football Championship' },
+  { path: '/fixtures-results/football/club/intermediate/2026-iacfc-meath-cleaning-supplies/699b7e0f-a44c-4c4b-b76c-551a1b002c13/', uuid: '699b7e0f-a44c-4c4b-b76c-551a1b002c13', sport: 'football', level: 'club', grade: 'intermediate', name: 'Intermediate A Football Championship' },
+  { path: '/fixtures-results/football/club/intermediate/2026-ifc-gr-a-meade-farm/ab5bfe87-ec32-481b-b082-704908036527/', uuid: 'ab5bfe87-ec32-481b-b082-704908036527', sport: 'football', level: 'club', grade: 'intermediate', name: 'Intermediate Football Championship' },
+  { path: '/fixtures-results/football/club/intermediate/2026-ifc-gr-b-meade-farm/f395ac08-91fe-4c4f-ba54-940187674cb7/', uuid: 'f395ac08-91fe-4c4f-ba54-940187674cb7', sport: 'football', level: 'club', grade: 'intermediate', name: 'Intermediate Football Championship' },
+  { path: '/fixtures-results/football/club/intermediate/2026-ifc-gr-c-meade-farm/ec52c8c0-58e7-4d73-9b0d-7e66247e21ce/', uuid: 'ec52c8c0-58e7-4d73-9b0d-7e66247e21ce', sport: 'football', level: 'club', grade: 'intermediate', name: 'Intermediate Football Championship' },
+  { path: '/fixtures-results/football/club/intermediate/2026-ifc-gr-d-meade-farm/78bce439-10c8-4e7b-958f-58839f72a93f/', uuid: '78bce439-10c8-4e7b-958f-58839f72a93f', sport: 'football', level: 'club', grade: 'intermediate', name: 'Intermediate Football Championship' },
+];
+
 const KERRY_COMPETITIONS = [
   {
     path: '/fixtures-results/hurling/club/senior/garveys-supervalu-senior-hurling-championship/124fff6c-39d9-4c73-b284-4e93043d3478/',
@@ -380,7 +487,64 @@ const KERRY_COMPETITIONS = [
     grade: 'senior',
     name: 'Senior Hurling Championship',
   },
+  {
+    path: '/fixtures-results/football/club/senior/kerry-petroleum-senior-football-club-championship/f4820e52-a11e-4085-baef-108c5d4d242f/',
+    uuid: 'f4820e52-a11e-4085-baef-108c5d4d242f',
+    sport: 'football',
+    level: 'club',
+    grade: 'senior',
+    name: 'Senior Football Championship',
+  },
+  {
+    path: '/fixtures-results/football/club/intermediate/kerry-petroleum-intermediate-football-club-championship/5016bcb8-80fa-483a-9a28-5a734797ef03/',
+    uuid: '5016bcb8-80fa-483a-9a28-5a734797ef03',
+    sport: 'football',
+    level: 'club',
+    grade: 'intermediate',
+    name: 'Intermediate Football Championship',
+  },
+  {
+    path: '/fixtures-results/football/club/junior/kerry-petroleum-premier-junior-football-club-championship/f85fed08-f780-408c-824e-d12cd3d9aeb9/',
+    uuid: 'f85fed08-f780-408c-824e-d12cd3d9aeb9',
+    sport: 'football',
+    level: 'club',
+    grade: 'junior',
+    name: 'Premier Junior Football Championship',
+  },
+  {
+    path: '/fixtures-results/football/club/junior/kerry-petroleum-junior-football-club-championship/d03c65a4-fd20-4f75-b996-40d7f318b275/',
+    uuid: 'd03c65a4-fd20-4f75-b996-40d7f318b275',
+    sport: 'football',
+    level: 'club',
+    grade: 'junior',
+    name: 'Junior Football Championship',
+  },
 ];
+
+const CORK_NAME_FIX = {
+  'ODonovan Rossa': 'O Donovan Rossa',
+  'BéalÁtha\'n Ghaorthaidh': 'Béal Átha\'n Ghaorthaidh',
+};
+function fixCorkName(s) { return CORK_NAME_FIX[s] || s; }
+
+const KERRY_NAME_FIX = {
+  'KillarneyLegion': 'Killarney Legion',
+  'StMary\'s': 'St Mary\'s',
+  'StBrendan\'s': 'St Brendan\'s',
+  'StPatsBlennerville': 'St Pats Blennerville',
+  'ValentiaYoungIslanders': 'Valentia Young Islanders',
+  'SkelligRangers': 'Skellig Rangers',
+  'LauneRangers': 'Laune Rangers',
+  'JohnMitchels': 'John Mitchels',
+  'ListowelEmmets': 'Listowel Emmets',
+  'KerinsO`Rahilly\'s': 'Kerins O\'Rahilly\'s',
+  'CastlegregoryGAAClub': 'Castlegregory GAA Club',
+  'PiarsaighNaDromoda': 'Piarsaigh Na Dromoda',
+  'AnGhaeltacht': 'An Ghaeltacht',
+  'JPOSullivan Park(Laune Rangers)': "JP O'Sullivan Park (Laune Rangers)",
+  'JPO Sullivan Park(Laune Rangers)': "JP O'Sullivan Park (Laune Rangers)",
+};
+function fixKerryName(s) { return KERRY_NAME_FIX[s] || s; }
 
 const OFFALY_COMPETITIONS = [
   {
@@ -435,12 +599,28 @@ const OFFALY_COMPETITIONS = [
 
 const TIPPERARY_COMPETITIONS = [
   {
-    path: '/fixtures-results/hurling/club/senior/centenary-agri-mid-senior-hurling-championship/fc2d0d37-55b1-4b91-b88d-85ca2851afb7/',
-    uuid: 'fc2d0d37-55b1-4b91-b88d-85ca2851afb7',
+    path: '/fixtures-results/hurling/club/senior/fbd-insurance-county-tipperary-senior-hurling-championship-dan-breen-cup/1f70265b-652f-43e4-a23e-fa36a3a23f7f/',
+    uuid: '1f70265b-652f-43e4-a23e-fa36a3a23f7f',
     sport: 'hurling',
     level: 'club',
     grade: 'senior',
-    name: 'Mid Tipperary Senior Hurling Championship',
+    name: 'Tipperary Senior Hurling Championship',
+  },
+  {
+    path: '/fixtures-results/hurling/club/intermediate/fbd-insurance-county-tipperary-intermediate-hurling-championship-michael-maher-cup/a23baf2f-0e3c-4947-98f1-4411ebda06c8/',
+    uuid: 'a23baf2f-0e3c-4947-98f1-4411ebda06c8',
+    sport: 'hurling',
+    level: 'club',
+    grade: 'intermediate',
+    name: 'Tipperary Intermediate Hurling Championship',
+  },
+  {
+    path: '/fixtures-results/hurling/club/intermediate/fbd-insurance-county-tipperary-premier-intermediate-hurling-championship-seamus-o-riain-cup/06b306f8-f68a-4099-9dbc-0e38b6f7ed55/',
+    uuid: '06b306f8-f68a-4099-9dbc-0e38b6f7ed55',
+    sport: 'hurling',
+    level: 'club',
+    grade: 'intermediate',
+    name: 'Tipperary Premier Intermediate Hurling Championship',
   },
   {
     path: '/fixtures-results/hurling/club/intermediate/doran-oil-mid-premier-intermediate-hurling-championship/dd2a713f-6a9f-4915-8712-82f9dd86043b/',
@@ -467,14 +647,6 @@ const TIPPERARY_COMPETITIONS = [
     name: 'Mid Tipperary Cahill Cup',
   },
   {
-    path: '/fixtures-results/hurling/club/senior/munster-solar-north-senior-championship/9f004c92-dddb-4bb1-bdda-e9ce24bbe6ff/',
-    uuid: '9f004c92-dddb-4bb1-bdda-e9ce24bbe6ff',
-    sport: 'hurling',
-    level: 'club',
-    grade: 'senior',
-    name: 'North Tipperary Senior Championship',
-  },
-  {
     path: '/fixtures-results/hurling/club/senior/buckley-car-sales-prem-inter-hurling/fd42b45a-9af6-43f7-87c7-3c2df798aaab/',
     uuid: 'fd42b45a-9af6-43f7-87c7-3c2df798aaab',
     sport: 'hurling',
@@ -491,28 +663,12 @@ const TIPPERARY_COMPETITIONS = [
     name: 'North Tipperary Intermediate Hurling Championship',
   },
   {
-    path: '/fixtures-results/hurling/club/senior/south-tipperary-senior-hurling-championship/34e44133-626c-449e-a1d7-96ae994f2eb6/',
-    uuid: '34e44133-626c-449e-a1d7-96ae994f2eb6',
-    sport: 'hurling',
-    level: 'club',
-    grade: 'senior',
-    name: 'South Tipperary Senior Hurling Championship',
-  },
-  {
     path: '/fixtures-results/hurling/club/intermediate/south-tipperary-intermediate-hurling-championship/1bbeae2e-2cb0-486c-b588-678b426335bf/',
     uuid: '1bbeae2e-2cb0-486c-b588-678b426335bf',
     sport: 'hurling',
     level: 'club',
     grade: 'intermediate',
     name: 'South Tipperary Intermediate Hurling Championship',
-  },
-  {
-    path: '/fixtures-results/hurling/club/senior/west-tipperary-senior-hurling-championship/d370f944-cd4b-47a1-89f9-b0a39243cbd9/',
-    uuid: 'd370f944-cd4b-47a1-89f9-b0a39243cbd9',
-    sport: 'hurling',
-    level: 'club',
-    grade: 'senior',
-    name: 'West Tipperary Senior Hurling Championship',
   },
   {
     path: '/fixtures-results/hurling/club/intermediate/west-tipperary-premier-intermediate-hurling-championship/d506ec46-01af-4113-88d2-6114dc7b8969/',
@@ -540,6 +696,330 @@ const TIPPERARY_COMPETITIONS = [
   },
 ];
 
+// ---- Roscommon: custom WordPress site (gaaroscommon.ie) ----
+// Fixtures are server-rendered in a #foireannFixures div. Current HTML structure:
+//   <h3 class="results-date">Friday 31st Jul 2026</h3>
+//   <div class="competition-title"><a href="...">Sponsor Name Competition - Round N</a></div>
+//   <div class="gaa-match-time"><div class="time">6:30 PM</div></div>
+//   <div class="gaa-team gaa-team-home"><div class="team-logo">...</div><strong>HOME</strong></div>
+//   <div class="gaa-team gaa-team-away"><div class="team-logo">...</div><strong>AWAY</strong></div>
+//   <div class="gaa-match-meta"><div><strong>Venue:</strong><br>VenueName</div></div>
+// Token groups: [1]=date [2]=comp title [3]=time [4]=home [5]=away [6]=venue
+
+function roscommonTo24h(timeStr) {
+  const m = timeStr.trim().match(/(\d+):(\d{2})\s*(AM|PM)/i);
+  if (!m) return timeStr;
+  let h = parseInt(m[1], 10);
+  const min = m[2];
+  const ap = m[3].toUpperCase();
+  if (ap === 'PM' && h !== 12) h += 12;
+  if (ap === 'AM' && h === 12) h = 0;
+  return `${String(h).padStart(2, '0')}:${min}`;
+}
+
+const ROSCOMMON_TOKEN_RE =
+  /class="results-date">([^<]+)<\/h3>|class="competition-title">\s*<a[^>]*>([^<]+)<\/a>|class="time">([^<]+)<\/div>|class="gaa-team gaa-team-home">\s*<div[^>]*>[\s\S]*?<\/div>\s*<strong>([^<]+)<\/strong>|class="gaa-team gaa-team-away">\s*<div[^>]*>[\s\S]*?<\/div>\s*<strong>([^<]+)<\/strong>|<strong>Venue:<\/strong><br>\s*([^\r\n<]+)/g;
+
+function roscommonParsePanel(panelHtml, compNameFn, sport) {
+  const out = [];
+  let curDate = null;
+  let curComp = null;
+  let curRound = null;
+  let buf = emptyBuf();
+  const re = new RegExp(ROSCOMMON_TOKEN_RE);
+  let m;
+  while ((m = re.exec(panelHtml))) {
+    if (m[1] !== undefined) {
+      curDate = m[1].trim();
+      buf = emptyBuf();
+    } else if (m[2] !== undefined) {
+      const raw = decodeEntities(m[2].trim());
+      const dashIdx = raw.lastIndexOf(' - ');
+      curRound = dashIdx !== -1 ? raw.slice(dashIdx + 3).trim() : '';
+      curComp = compNameFn ? compNameFn(raw) : (dashIdx !== -1 ? raw.slice(0, dashIdx).trim() : raw);
+      buf = emptyBuf();
+    } else if (m[3] !== undefined) {
+      buf = emptyBuf();
+      buf.time = roscommonTo24h(m[3].trim());
+    } else if (m[4] !== undefined) {
+      buf.home = decodeEntities(m[4].trim());
+    } else if (m[5] !== undefined) {
+      buf.away = decodeEntities(m[5].trim());
+    } else if (m[6] !== undefined) {
+      buf.venue = decodeEntities(m[6].trim()).trim();
+      if (buf.home && buf.away && curDate && curComp) {
+        out.push({
+          county: 'Roscommon',
+          teamA: buf.home,
+          teamB: buf.away,
+          date: laoisDateToFull(curDate),
+          time: buf.time || '',
+          venue: buf.venue,
+          competition: curComp,
+          round: curRound || '',
+          sport,
+        });
+      }
+      buf = emptyBuf();
+    }
+  }
+  return out;
+}
+
+async function fetchRoscommonSport(sport) {
+  const url = `https://www.gaaroscommon.ie/matches/${sport}/senior/`;
+  const res = await fetch(url, { headers: { 'User-Agent': UA } });
+  if (!res.ok) throw new Error(`Roscommon ${sport} fetch failed: ${res.status}`);
+  const html = await res.text();
+  const startIdx = html.indexOf('id="foireannFixures"');
+  const endIdx = html.indexOf('id="foireannResults"');
+  const panelHtml = (startIdx !== -1 && endIdx !== -1)
+    ? html.slice(startIdx, endIdx)
+    : (startIdx !== -1 ? html.slice(startIdx) : html);
+  return roscommonParsePanel(panelHtml, null, sport === 'football' ? 'Football' : 'Hurling');
+}
+
+// Maps website competition title (sponsor-prefixed) to the user-facing short name.
+// Returns null for non-championship competitions (underage etc.) which are skipped.
+function roscommonFootballCompName(raw) {
+  if (/Junior A Football Championship/i.test(raw)) return 'Junior A Football Championship';
+  if (/Intermediate Football Championship/i.test(raw)) return 'Intermediate Football Championship';
+  if (/Senior Football Championship/i.test(raw)) return 'Senior Football Championship';
+  return null;
+}
+
+// Static fixture data from the 2026 Roscommon GAA Championship Fixtures spreadsheet.
+// Used as fallback when a fixture is not yet on the website; website data takes priority.
+const ROSCOMMON_FOOTBALL_STATIC = [
+  // Senior Football Championship
+  mkStatic('Roscommon','Oran (Football)','Elphin','31 July 2026','19:30','Rockfield,Oran','Senior Football Championship','Round 1'),
+  mkStatic('Roscommon','St Brigids','Michael Glaveys','31 July 2026','20:00',"St Brigid's GAA, Kiltoom",'Senior Football Championship','Round 1'),
+  mkStatic('Roscommon','Pádraig Pearses GAA','Roscommon Gaels','31 July 2026','20:00','Woodmount','Senior Football Championship','Round 1'),
+  mkStatic('Roscommon','Boyle','Clann na nGael','1 August 2026','17:00','Abbey Park','Senior Football Championship','Round 1'),
+  mkStatic('Roscommon','Western Gaels','Strokestown','1 August 2026','19:30','Nash Park','Senior Football Championship','Round 1'),
+  mkStatic('Roscommon','St. Faithleach\'s','Castlerea St Kevins','2 August 2026','15:00','Ballyleague','Senior Football Championship','Round 1'),
+  mkStatic('Roscommon','Pádraig Pearses GAA','Boyle','14 August 2026','20:00','Strokestown','Senior Football Championship','Round 2'),
+  mkStatic('Roscommon','Western Gaels','St Brigids','15 August 2026','18:00','Tulsk','Senior Football Championship','Round 2'),
+  mkStatic('Roscommon','Elphin','Castlerea St Kevins','15 August 2026','18:00','Rockfield,Oran','Senior Football Championship','Round 2'),
+  mkStatic('Roscommon','Strokestown','Michael Glaveys','16 August 2026','15:00','Enfield','Senior Football Championship','Round 2'),
+  mkStatic('Roscommon','St. Faithleach\'s','Oran (Football)','16 August 2026','15:00','Kilbride','Senior Football Championship','Round 2'),
+  mkStatic('Roscommon','Clann na nGael','Roscommon Gaels','16 August 2026','16:00',"St Brigid's GAA, Kiltoom",'Senior Football Championship','Round 2'),
+  mkStatic('Roscommon','Clann na nGael','Pádraig Pearses GAA','28 August 2026','20:00','Johnstown','Senior Football Championship','Round 3'),
+  mkStatic('Roscommon','Roscommon Gaels','Boyle','28 August 2026','20:00','Roscommon Gaels Club, Lisnamult, Roscommon','Senior Football Championship','Round 3'),
+  mkStatic('Roscommon','Castlerea St Kevins','Oran (Football)','29 August 2026','18:00',"O'Rourke Park",'Senior Football Championship','Round 3'),
+  mkStatic('Roscommon','Elphin','St. Faithleach\'s','29 August 2026','18:00','Orchard Park','Senior Football Championship','Round 3'),
+  mkStatic('Roscommon','Strokestown','St Brigids','30 August 2026','16:00','Strokestown','Senior Football Championship','Round 3'),
+  mkStatic('Roscommon','Michael Glaveys','Western Gaels','30 August 2026','16:00','Ballinlough','Senior Football Championship','Round 3'),
+  // Intermediate Football Championship
+  mkStatic('Roscommon','Tulsk Lord Edwards','St. Dominic\'s G.A.A. Club','31 July 2026','19:30','Tulsk','Intermediate Football Championship','Round 1'),
+  mkStatic('Roscommon','Fuerty','Éire Óg','31 July 2026','19:30','Mulhern Park, Fuerty','Intermediate Football Championship','Round 1'),
+  mkStatic('Roscommon','St Brigids','Naomh Bearrai','1 August 2026','17:00',"St Brigid's GAA, Kiltoom",'Intermediate Football Championship','Round 1'),
+  mkStatic('Roscommon','Pádraig Pearses GAA','St Michael\'s','1 August 2026','17:00','Woodmount','Intermediate Football Championship','Round 1'),
+  mkStatic('Roscommon','Shannon Gaels','Creggs','1 August 2026','18:00','Tom Collins Park Croghan','Intermediate Football Championship','Round 1'),
+  mkStatic('Roscommon','Kilmore','St. Croans','2 August 2026','17:00','Tom Collins Park Croghan','Intermediate Football Championship','Round 1'),
+  mkStatic('Roscommon','Naomh Bearrai','Tulsk Lord Edwards','14 August 2026','20:00','Tarmonbarry','Intermediate Football Championship','Round 2'),
+  mkStatic('Roscommon','Éire Óg','St. Croans','14 August 2026','19:15','Ballinlough','Intermediate Football Championship','Round 2'),
+  mkStatic('Roscommon','Shannon Gaels','Pádraig Pearses GAA','15 August 2026','17:00','Lisnamult','Intermediate Football Championship','Round 2'),
+  mkStatic('Roscommon','Kilmore','Fuerty','15 August 2026','17:00','Strokestown','Intermediate Football Championship','Round 2'),
+  mkStatic('Roscommon','Creggs','St Michael\'s','16 August 2026','12:00','Enfield','Intermediate Football Championship','Round 2'),
+  mkStatic('Roscommon','St. Dominic\'s G.A.A. Club','St Brigids','16 August 2026','13:00','Knockcroghery','Intermediate Football Championship','Round 2'),
+  mkStatic('Roscommon','Naomh Bearrai','St. Dominic\'s G.A.A. Club','28 August 2026','20:00','Strokestown','Intermediate Football Championship','Round 3'),
+  mkStatic('Roscommon','St Brigids','Tulsk Lord Edwards','28 August 2026','20:00','Ballyforan','Intermediate Football Championship','Round 3'),
+  mkStatic('Roscommon','Creggs','Pádraig Pearses GAA','29 August 2026','17:00','Creggs GAA Pitch','Intermediate Football Championship','Round 3'),
+  mkStatic('Roscommon','St Michael\'s','Shannon Gaels','29 August 2026','17:00','Ardcarne Park','Intermediate Football Championship','Round 3'),
+  mkStatic('Roscommon','Éire Óg','Kilmore','30 August 2026','14:00',"O'Rourke Park",'Intermediate Football Championship','Round 3'),
+  mkStatic('Roscommon','St. Croans','Fuerty','30 August 2026','14:00','Enfield','Intermediate Football Championship','Round 3'),
+  // Junior A Football Championship
+  mkStatic('Roscommon','St Joseph\'s GAA Club (Kilteevan)','St Ronan\'s GAA Club','1 August 2026','17:00','Kilteevan','Junior A Football Championship','Round 1'),
+  mkStatic('Roscommon','St. Dominic\'s G.A.A. Club','St Aidan\'s','2 August 2026','13:00','Knockcroghery','Junior A Football Championship','Round 1'),
+  mkStatic('Roscommon','Ballinameen','Boyle','2 August 2026','13:00','Davonna Park Ballinameen','Junior A Football Championship','Round 1'),
+  mkStatic('Roscommon','Clann na nGael','St Brigids','2 August 2026','13:00','Johnstown','Junior A Football Championship','Round 1'),
+  mkStatic('Roscommon','Kilbride','Roscommon Gaels','2 August 2026','13:00','Kilbride','Junior A Football Championship','Round 1'),
+  mkStatic('Roscommon','Western Gaels','Kilglass Gaels','2 August 2026','15:00','Nash Park','Junior A Football Championship','Round 1'),
+  mkStatic('Roscommon','St Brigids','Roscommon Gaels','14 August 2026','19:15','Knockcroghery','Junior A Football Championship','Round 2'),
+  mkStatic('Roscommon','Clann na nGael','Kilbride','14 August 2026','20:00','Ballyforan','Junior A Football Championship','Round 2'),
+  mkStatic('Roscommon','St. Dominic\'s G.A.A. Club','Ballinameen','15 August 2026','17:00','Kilbride','Junior A Football Championship','Round 2'),
+  mkStatic('Roscommon','St Ronan\'s GAA Club','Kilglass Gaels','16 August 2026','13:00','Tom Collins Park Croghan','Junior A Football Championship','Round 2'),
+  mkStatic('Roscommon','St Joseph\'s GAA Club (Kilteevan)','Western Gaels','16 August 2026','13:00','Orchard Park','Junior A Football Championship','Round 2'),
+  mkStatic('Roscommon','St Aidan\'s','Boyle','16 August 2026','15:00',"O'Rourke Park",'Junior A Football Championship','Round 2'),
+  mkStatic('Roscommon','Kilglass Gaels','St Joseph\'s GAA Club (Kilteevan)','29 August 2026','16:30','Kilglass Gaels GAA Grounds','Junior A Football Championship','Round 3'),
+  mkStatic('Roscommon','St Ronan\'s GAA Club','Western Gaels','29 August 2026','16:30','Kilronan Park','Junior A Football Championship','Round 3'),
+  mkStatic('Roscommon','Roscommon Gaels','Clann na nGael','29 August 2026','19:00','Lisnamult','Junior A Football Championship','Round 3'),
+  mkStatic('Roscommon','St Brigids','Kilbride','29 August 2026','19:00',"St Brigid's GAA, Kiltoom",'Junior A Football Championship','Round 3'),
+  mkStatic('Roscommon','St Aidan\'s','Ballinameen','30 August 2026','13:00','Ballyforan','Junior A Football Championship','Round 3'),
+  mkStatic('Roscommon','Boyle','St. Dominic\'s G.A.A. Club','30 August 2026','13:00','Abbey Park','Junior A Football Championship','Round 3'),
+];
+
+async function fetchRoscommonFootball() {
+  let webFixtures = [];
+  try {
+    const res = await fetch('https://www.gaaroscommon.ie/matches/football/', { headers: { 'User-Agent': UA } });
+    if (res.ok) {
+      const html = await res.text();
+      const startIdx = html.indexOf('id="foireannFixures"');
+      const endIdx = html.indexOf('id="foireannResults"');
+      const panelHtml = (startIdx !== -1 && endIdx !== -1)
+        ? html.slice(startIdx, endIdx)
+        : (startIdx !== -1 ? html.slice(startIdx) : html);
+      webFixtures = roscommonParsePanel(panelHtml, roscommonFootballCompName, 'Football')
+        .filter(f => f.competition !== null);
+    }
+  } catch (_) { /* static fallback */ }
+
+  const webKeys = new Set(webFixtures.map(f => `${f.teamA}|${f.teamB}|${f.date}`));
+  const out = [...webFixtures];
+  for (const s of ROSCOMMON_FOOTBALL_STATIC) {
+    if (!webKeys.has(`${s.teamA}|${s.teamB}|${s.date}`)) out.push(s);
+  }
+  return out;
+}
+
+// ---- Longford: Foireann Open Data API ----
+// longfordgaa.ie uses a Foireann-powered JavaScript widget — the fixture data
+// is not in the HTML. The Foireann Open Data API (api.foireann.ie) is the
+// canonical source, but requires a Bearer API key restricted to Longford's
+// unit. Set FOIREANN_API_KEY as a Cloudflare Worker environment variable.
+// Apply for a key at: https://gmssupport.zendesk.com/hc/en-gb/articles/14473705878812
+//
+// User's filter:
+//   Senior Football  – all Club Senior Football fixtures
+//   Intermediate     – only "Longford Championship" fixtures (Group A & B)
+
+const FOIREANN_BASE = 'https://api.foireann.ie/open-data/v1/fixtures';
+const FOIREANN_MONTHS = [
+  'January','February','March','April','May','June',
+  'July','August','September','October','November','December',
+];
+
+function foireannDateToFull(isoStr) {
+  // "2026-08-15T19:30:00" or "2026-08-15T19:30:00Z"
+  const d = new Date(isoStr);
+  const day = d.getUTCDate();
+  const month = FOIREANN_MONTHS[d.getUTCMonth()];
+  const year = d.getUTCFullYear();
+  return `${day} ${month} ${year}`;
+}
+
+function foireannTime(isoStr) {
+  const d = new Date(isoStr);
+  return `${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}`;
+}
+
+async function fetchFoireannPage(apiKey, activity, grade, page) {
+  const url = `${FOIREANN_BASE}?competition.activity=${activity}&competition.grade=${grade}&isResult=false&page=${page}&size=100`;
+  const res = await fetch(url, {
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Accept': 'application/json',
+      'User-Agent': UA,
+    },
+  });
+  if (!res.ok) throw new Error(`Foireann ${activity}/${grade} p${page} => ${res.status}`);
+  return res.json();
+}
+
+async function fetchLongfordGrade(apiKey, activity, grade, compFilter) {
+  const out = [];
+  let page = 0;
+  while (page < 5) {
+    const data = await fetchFoireannPage(apiKey, activity, grade, page);
+    const items = data.content || [];
+    for (const fix of items) {
+      const compName = (fix.competition && fix.competition.name) ? fix.competition.name : '';
+      if (compFilter && !compFilter(compName)) continue;
+      if (!fix.homeTeam || !fix.awayTeam || !fix.startDate) continue;
+      out.push({
+        county: 'Longford',
+        teamA: fix.homeTeam.name || '',
+        teamB: fix.awayTeam.name || '',
+        date: foireannDateToFull(fix.startDate),
+        time: foireannTime(fix.startDate),
+        venue: (fix.place && fix.place.name) ? fix.place.name : '',
+        competition: compName,
+        round: (fix.round && fix.round.name) ? fix.round.name : '',
+        sport: activity === 'hurling' ? 'Hurling' : 'Football',
+      });
+    }
+    if (page + 1 >= (data.totalPages || 1)) break;
+    page++;
+  }
+  return out;
+}
+
+async function fetchLongford(apiKey) {
+  if (!apiKey) return [];
+  const [sfcSenior, sfcIntermediate, shcSenior, shcIntermediate] = await Promise.all([
+    fetchLongfordGrade(apiKey, 'football', 'senior', null),
+    fetchLongfordGrade(apiKey, 'football', 'intermediate', (name) =>
+      /longford\s+championship|intermediate\s+football\s+championship/i.test(name)),
+    fetchLongfordGrade(apiKey, 'hurling', 'senior', null),
+    fetchLongfordGrade(apiKey, 'hurling', 'intermediate', (name) =>
+      /longford\s+championship|intermediate\s+hurling\s+championship/i.test(name)),
+  ]);
+  return [...sfcSenior, ...sfcIntermediate, ...shcSenior, ...shcIntermediate];
+}
+
+// ---- Longford: static data ----
+// From LONGFORD 2026 Fixtures.docx. Covers SFC (Groups A & B, Rds 1-5),
+// IFC (Groups A & B, Rds 1-3), and Senior Hurling Championship (Rds 1-3).
+// Longford only has 3 hurling clubs so there is no Intermediate Hurling Championship.
+// Foireann API fetch (fetchLongford) is kept for when FOIREANN_API_KEY is available.
+const LONGFORD_FIXTURES = [];
+[
+  ['Longford Slashers','Clonguish Gaels','11 July 2026','19:00','C & D Devine Park','Round 1'],
+  ['Longford Slashers','Wolfe Tones','31 July 2026','20:00','Allen Park','Round 2'],
+  ['Clonguish Gaels','Wolfe Tones','22 August 2026','20:00','','Round 3'],
+].forEach(r=>LONGFORD_FIXTURES.push(mkStatic('Longford',r[0],r[1],r[2],r[3],r[4],'Senior Hurling Championship',r[5])));
+
+[
+  ['Mullinalaghta St. Columba\'s','Killoe Young Emmets','16 July 2026','20:00','Glennon Brothers Pearse Park','Round 1'],
+  ['Rathcline','Abbeylara','17 July 2026','20:00','Glennon Brothers Pearse Park','Round 1'],
+  ['Ardagh Moydow','Dromard','18 July 2026','19:00','Monaduff','Round 1'],
+  ['Abbeylara','Ardagh Moydow','24 July 2026','20:00','C & D Devine Park','Round 2'],
+  ['Dromard','Mullinalaghta St. Columba\'s','25 July 2026','19:00','Fr. McGee Park','Round 2'],
+  ['Killoe Young Emmets','Rathcline','25 July 2026','19:00','Leo Casey Park','Round 2'],
+  ['Killoe Young Emmets','Abbeylara','7 August 2026','20:00','Fr. McGee Park','Round 3'],
+  ['Mullinalaghta St. Columba\'s','Ardagh Moydow','8 August 2026','19:00','Higginstown','Round 3'],
+  ['Dromard','Rathcline','9 August 2026','14:00','Oliver Lynch Park','Round 3'],
+  ['Ardagh Moydow','Killoe Young Emmets','14 August 2026','20:00','Allen Park','Round 4'],
+  ['Abbeylara','Dromard','15 August 2026','19:00','Emmet Park','Round 4'],
+  ['Rathcline','Mullinalaghta St. Columba\'s','15 August 2026','19:00','Michael Moran Park','Round 4'],
+  ['Mullinalaghta St. Columba\'s','Abbeylara','28 August 2026','','Higginstown','Round 5'],
+  ['Ardagh Moydow','Rathcline','28 August 2026','','Michael Fay Park','Round 5'],
+  ['Dromard','Killoe Young Emmets','28 August 2026','','Monaduff','Round 5'],
+].forEach(r=>LONGFORD_FIXTURES.push(mkStatic('Longford',r[0],r[1],r[2],r[3],r[4],'Senior Football Championship Group A',r[5])));
+
+[
+  ['St. Mary\'s Granard','Colmcille','17 July 2026','20:00','Maguire Park','Round 1'],
+  ['Carrickedmond','Longford Slashers','18 July 2026','19:00','Dunbeggan','Round 1'],
+  ['Clonguish','St. Mary\'s Granard','23 July 2026','20:00','Glennon Brothers Pearse Park','Round 2'],
+  ['Colmcille','Carrickedmond','24 July 2026','20:00','Emmet Park','Round 2'],
+  ['Carrickedmond','Clonguish','7 August 2026','20:00','McGann Park','Round 3'],
+  ['Longford Slashers','Colmcille','9 August 2026','18:00','Allen Park','Round 3'],
+  ['Clonguish','Longford Slashers','15 August 2026','19:00','Monaduff','Round 4'],
+  ['St. Mary\'s Granard','Carrickedmond','16 August 2026','18:00','Páirc na nGael','Round 4'],
+  ['Longford Slashers','St. Mary\'s Granard','28 August 2026','','Keenan Park','Round 5'],
+  ['Colmcille','Clonguish','28 August 2026','','Oliver Lynch Park','Round 5'],
+].forEach(r=>LONGFORD_FIXTURES.push(mkStatic('Longford',r[0],r[1],r[2],r[3],r[4],'Senior Football Championship Group B',r[5])));
+
+[
+  ['Grattan Óg','Killoe Young Emmets','8 August 2026','19:00','Michael Fay Park','Round 1'],
+  ['Ballymahon','St. Brigid\'s Killashee','8 August 2026','19:00','Páirc Chiaráin','Round 1'],
+  ['St. Brigid\'s Killashee','Grattan Óg','14 August 2026','20:00','McGann Park','Round 2'],
+  ['Killoe Young Emmets','Ballymahon','16 August 2026','14:00','Dunbeggan','Round 2'],
+  ['Killoe Young Emmets','St. Brigid\'s Killashee','28 August 2026','','C & D Devine Park','Round 3'],
+  ['Ballymahon','Grattan Óg','28 August 2026','','Flood Park','Round 3'],
+].forEach(r=>LONGFORD_FIXTURES.push(mkStatic('Longford',r[0],r[1],r[2],r[3],r[4],'Intermediate Football Championship Group A',r[5])));
+
+[
+  ['Cashel','Fr. Manning Gaels','9 August 2026','16:00','Killashee','Round 1'],
+  ['Mostrim','Seán Connolly\'s','9 August 2026','16:00','Keenan Park','Round 1'],
+  ['Fr. Manning Gaels','Mostrim','16 August 2026','16:00','Páirc na nGael','Round 2'],
+  ['Seán Connolly\'s','Cashel','16 August 2026','16:00','Clonbonny','Round 2'],
+  ['Seán Connolly\'s','Fr. Manning Gaels','28 August 2026','','Ballybrien','Round 3'],
+  ['Cashel','Mostrim','28 August 2026','','Leo Casey Park','Round 3'],
+].forEach(r=>LONGFORD_FIXTURES.push(mkStatic('Longford',r[0],r[1],r[2],r[3],r[4],'Intermediate Football Championship Group B',r[5])));
+
 // ---- Kildare: static data ----
 // Kildare's fixtures aren't published on a scrapable website; they were
 // manually transcribed from official Cill Dara CCC fixture-sheet images
@@ -548,6 +1028,25 @@ const TIPPERARY_COMPETITIONS = [
 function mkStatic(county, teamA, teamB, date, time, venue, competition, round) {
   return { county, teamA, teamB, date, time, venue, competition, round };
 }
+
+const TIPPERARY_FIXTURES = [];
+
+// Tipperary - Intermediate Hurling Championship Round 2
+// Groups 2-4 not yet on tipperary.gaa.ie; Groups 1+ (Senior, Prm Int, Int Grp 1) served by CAC feed.
+[
+  ['Arravale Rovers','Shannon Rovers','9 August 2026','18:30','Newport','Round 2'],
+  ['Carrick Davins','Clonakenny','9 August 2026','17:00','Cashel','Round 2'],
+].forEach(r=>TIPPERARY_FIXTURES.push(mkStatic('Tipperary',r[0],r[1],r[2],r[3],r[4],'Intermediate Hurling Championship Group 2',r[5])));
+
+[
+  ['Ballingarry','Cappawhite','7 August 2026','19:15','New Inn','Round 2'],
+  ['Holycross Ballycahill','Skeheenarinky','9 August 2026','14:30','Golden','Round 2'],
+].forEach(r=>TIPPERARY_FIXTURES.push(mkStatic('Tipperary',r[0],r[1],r[2],r[3],r[4],'Intermediate Hurling Championship Group 3',r[5])));
+
+[
+  ['Borrisokane','Newport','9 August 2026','14:15','Nenagh','Round 2'],
+  ['Ballybacon Grange','Moyle Rovers','8 August 2026','18:00','Cahir','Round 2'],
+].forEach(r=>TIPPERARY_FIXTURES.push(mkStatic('Tipperary',r[0],r[1],r[2],r[3],r[4],'Intermediate Hurling Championship Group 4',r[5])));
 
 const KILDARE_FIXTURES = [];
 
@@ -697,6 +1196,179 @@ const CARLOW_FIXTURES = [];
  ['Naomh Moling','Bagenalstown Gaels GAA','12 July 2026','18:00','Naomh Moling','Round 4'],
 ].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Intermediate Hurling Championship',r[5])));
 
+// Carlow Football Championship - Rounds 1-3
+// Senior Football Championship
+[
+  ['Old Leighlin','Fenagh','16 July 2026','20:30','NCP','Round 1'],
+  ['Bagenalstown','Eire Og','16 July 2026','19:00','NCP','Round 1'],
+  ['Rathvilly','Grange','17 July 2026','20:30','NCP','Round 1'],
+  ['Palatine','MLR','18 July 2026','18:00','NCP','Round 1'],
+  ['Rathvilly','Bagenalstown','23 July 2026','19:30','NCP','Round 2'],
+  ['Old Leighlin','Palatine','24 July 2026','20:30','NCP','Round 2'],
+  ['Fenagh','Grange','24 July 2026','19:00','NCP','Round 2'],
+  ['Eire Og','MLR','25 July 2026','19:30','NCP','Round 2'],
+  ['Rathvilly','Palatine','31 July 2026','20:30','NCP','Round 3'],
+  ['Bagenalstown','Grange','1 August 2026','18:00','NCP','Round 3'],
+  ['Old Leighlin','Eire Og','1 August 2026','19:30','NCP','Round 3'],
+  ['Fenagh','MLR','2 August 2026','16:00','Spellman Park','Round 3'],
+].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Senior Football Championship',r[5])));
+
+// Intermediate Football Championship
+[
+  ['St.Patricks','Tinryland','16 July 2026','19:30','COE','Round 1'],
+  ['Fighting Cocks','Clonmore','17 July 2026','19:30','Br. Leo Park','Round 1'],
+  ['Kildavin/Clonegal','Eire Og','17 July 2026','19:00','NCP','Round 1'],
+  ['Ballinabranna','Ballon','17 July 2026','19:30','COE','Round 1'],
+  ['Fighting Cocks','Eire Og','23 July 2026','19:30','COE','Round 2'],
+  ['Tinryland','Clonmore','24 July 2026','19:30','COE','Round 2'],
+  ['Kildavin/Clonegal','Ballinabranna','24 July 2026','19:30','Br. Leo Park','Round 2'],
+  ['St.Patricks','Ballon','25 July 2026','18:00','NCP','Round 2'],
+  ['Fighting Cocks','Ballon','31 July 2026','19:00','NCP','Round 3'],
+  ['Tinryland','Kildavin/Clonegal','1 August 2026','18:00','COE','Round 3'],
+  ['Ballinabranna','Eire Og','2 August 2026','14:30','McGrath Park','Round 3'],
+  ['St.Patricks','Clonmore','2 August 2026','14:30','Spellman Park','Round 3'],
+].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Intermediate Football Championship',r[5])));
+
+// Junior A Football Championship
+[
+  ['Asca','Naomh Eoin','16 July 2026','19:30','Pres College','Round 1'],
+  ['Leighlinbridge','Palatine','18 July 2026','19:30','NCP','Round 1'],
+  ['Kilbride','O Hanrahans','18 July 2026','19:30','COE','Round 1'],
+  ['Eire Og','Rathvilly','18 July 2026','19:30','Pairc Ui Bhriain','Round 1'],
+  ['Leighlinbridge','Naomh Eoin','23 July 2026','19:30','Leighlinbridge','Round 2'],
+  ['Asca','Eire Og','24 July 2026','19:30','Pres College','Round 2'],
+  ['Palatine','Kilbride','25 July 2026','19:30','Palatine','Round 2'],
+  ['O Hanrahans','Rathvilly','25 July 2026','19:30','O Hanrahans','Round 2'],
+  ['Naomh Eoin','Eire Og','31 July 2026','19:30','Myshall','Round 3'],
+  ['Kilbride','Leighlinbridge','31 July 2026','19:30','Kilbride','Round 3'],
+  ['O Hanrahans','Palatine','1 August 2026','19:30','O Hanrahans','Round 3'],
+  ['Rathvilly','Asca','2 August 2026','18:00','Fr. Ryan Park','Round 3'],
+].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Junior A Football Championship',r[5])));
+
+// Junior B Football Championship
+[
+  ['St.Patricks','Tinryland','18 July 2026','18:00','Br. Leo Park','Round 1'],
+  ['Naomh Eoin','Clonmore','18 July 2026','18:00','Myshall','Round 1'],
+  ['Bagenalstown','Kildavin','18 July 2026','18:00','McGrath Park','Round 1'],
+  ['Old Leighlin','Ballinabranna','18 July 2026','18:00','Old Leighlin','Round 1'],
+  ['Bagenalstown','St.Patricks','24 July 2026','19:30','McGrath Park','Round 2'],
+  ['Kildavin','Old Leighlin','25 July 2026','18:00','Spellman Park','Round 2'],
+  ['Naomh Eoin','Tinryland','25 July 2026','18:00','Myshall','Round 2'],
+  ['Clonmore','Ballinabranna','25 July 2026','18:00','Clonmore','Round 2'],
+  ['Kildavin','Clonmore','31 July 2026','19:30','Spellman Park','Round 3'],
+  ['Tinryland','Ballinabranna','31 July 2026','19:30','Tinryland','Round 3'],
+  ['St.Patricks','Naomh Eoin','1 August 2026','18:00','Br. Leo Park','Round 3'],
+  ['Old Leighlin','Bagenalstown','2 August 2026','18:00','Old Leighlin','Round 3'],
+].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Junior B Football Championship',r[5])));
+
+// Junior C Football Championship
+[
+  ['St.Patricks','Ballon','22 July 2026','19:30','Br. Leo Park','Round 1'],
+  ['Palatine','Fighting Cocks','22 July 2026','19:30','Palatine','Round 1'],
+  ['Palatine','St.Patricks','29 July 2026','19:30','Palatine','Round 2'],
+  ['Fenagh','O Hanrahans','29 July 2026','19:30','JJ Hogan Park','Round 2'],
+  ['Ballon','MLR','29 July 2026','19:30','Ballon','Round 2'],
+  ['Asca','Grange','29 July 2026','19:30','Pres College','Round 2'],
+  ['St.Patricks','Fighting Cocks','3 August 2026','19:30','Br. Leo Park','Round 3'],
+  ['Asca','Fenagh','3 August 2026','19:30','Pres College','Round 3'],
+  ['MLR','Palatine','3 August 2026','19:30','MLR','Round 3'],
+  ['Grange','O Hanrahans','3 August 2026','19:30','Grange','Round 3'],
+].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Junior C Football Championship',r[5])));
+
+// ---- Louth: static data ----
+// Louth publishes fixtures as PDF documents (louthgaa.ie), not a scrapable
+// HTML page. Extracted from "LOUTH Championship Fixtures 2026". All code=Football.
+const LOUTH_FIXTURES = [];
+
+// Louth - Junior Football Championship Group 1
+[
+  ['Naomh Malachi','Annaghminnon Rovers','15 August 2026','17:00','Páirc de Róiste','Round 1'],
+  ['Winner of Round 1','Cuchulainn Gaels','22 August 2026','17:00','Dundalk Gaels','Round 2'],
+  ['Cuchulainn Gaels','Loser of Round 1','28 August 2026','20:00','Páirc de Róiste','Round 3'],
+].forEach(r=>LOUTH_FIXTURES.push(mkStatic('Louth',r[0],r[1],r[2],r[3],r[4],'Junior Football Championship Group 1',r[5])));
+
+// Louth - Junior Football Championship Group 2
+[
+  ['Westerns','Glyde Rangers','17 August 2026','20:00','Cullen Auto Parts Louth GAA Training Centre, Darver','Round 1'],
+  ['Winner of Round 1','St Nicholas','23 August 2026','16:00','The Grove','Round 2'],
+  ['St Nicholas','Loser of Round 1','29 August 2026','17:30','Shawport Páirc Mac Diarmada','Round 3'],
+].forEach(r=>LOUTH_FIXTURES.push(mkStatic('Louth',r[0],r[1],r[2],r[3],r[4],'Junior Football Championship Group 2',r[5])));
+
+// Louth - Junior Football Championship Group 3
+[
+  ['Lann Leire G.F.C.','Dowdallshill','16 August 2026','14:00','Shawport Páirc Mac Diarmada','Round 1'],
+  ['Dundalk Young Irelands','O\'Connells','16 August 2026','16:30','Páirc Uí Taibh','Round 1'],
+  ['Lann Leire C.P.G./Dowdallshill','Dundalk Young Irelands/O\'Connells GFC','21 August 2026','19:00','Cullen Auto Parts Louth GAA Training Centre, Darver','Round 2'],
+  ['Lann Leire C.P.G./Dowdallshill','Dundalk Young Irelands/O\'Connells','29 August 2026','16:00','Páirc Baile Fiach','Round 3'],
+  ['Lann Leire C.P.G/Dowdallshill','Dundalk Young Irelands/O\'Connells GFC','29 August 2026','16:00','Páirc Uí Taibh','Round 3'],
+].forEach(r=>LOUTH_FIXTURES.push(mkStatic('Louth',r[0],r[1],r[2],r[3],r[4],'Junior Football Championship Group 3',r[5])));
+
+// Louth - Junior Football Championship Group 4
+[
+  ['Na Piarsaigh - Blackrock','Sean McDermotts','15 August 2026','19:30','Cullen Auto Parts Louth GAA Training Centre, Darver','Round 1'],
+  ['John Mitchels','St Finbarrs','16 August 2026','19:00','Páirc Baile Fiach','Round 1'],
+  ['Na Piarsaigh-Blackrock/Sean McDermotts','John Mitchels/Naomh Fionnbarra','22 August 2026','16:00','Cullen Auto Parts Louth GAA Training Centre, Darver','Round 2'],
+  ['Na Piarsaigh-Blackrock/Sean McDermotts','John Mitchels/Naomh Fionnbarra','23 August 2026','12:00','Cullen Auto Parts Louth GAA Training Centre, Darver','Round 2'],
+  ['Na Piarsaigh-Blackrock/Sean McDermotts','John Mitchels/Naomh Fionnbarra','30 August 2026','12:00','Cullen Auto Parts Louth GAA Training Centre, Darver','Round 3'],
+  ['Na Piarsaigh-Blackrock/Sean McDermotts','John Mitchels/Naomh Fionnbarra','30 August 2026','12:00','Páirc Mochta','Round 3'],
+].forEach(r=>LOUTH_FIXTURES.push(mkStatic('Louth',r[0],r[1],r[2],r[3],r[4],'Junior Football Championship Group 4',r[5])));
+
+// Louth - Senior Football Championship Group 1
+[
+  ['St Josephs','St Fechins','23 August 2026','18:00','Páirc Uí Mhuirí, Dunleer','Round 1'],
+  ['Winner of Round 1','Naomh Mairtin','31 August 2026','20:00','Cullen Auto Parts Louth GAA Training Centre, Darver','Round 2'],
+  ['Naomh Mairtin','Loser of Round 1','6 September 2026','14:00','DEFY Páirc Mhuire, Ardee','Round 3'],
+].forEach(r=>LOUTH_FIXTURES.push(mkStatic('Louth',r[0],r[1],r[2],r[3],r[4],'Senior Football Championship Group 1',r[5])));
+
+// Louth - Senior Football Championship Group 2
+[
+  ['St Marys','St Mochtas','24 August 2026','20:00','Cullen Auto Parts Louth GAA Training Centre, Darver','Round 1'],
+  ['Winner of Round 1','Hunterstown Rovers','30 August 2026','19:30','Cullen Auto Parts Louth GAA Training Centre, Darver','Round 2'],
+  ['Hunterstown Rovers','Loser of Round 1','6 September 2026','19:30','Cullen Auto Parts Louth GAA Training Centre, Darver','Round 3'],
+].forEach(r=>LOUTH_FIXTURES.push(mkStatic('Louth',r[0],r[1],r[2],r[3],r[4],'Senior Football Championship Group 2',r[5])));
+
+// Louth - Senior Football Championship Group 3
+[
+  ['Newtown Blues','Dreadnots','22 August 2026','18:30','Integral GAA Grounds, Drogheda','Round 1'],
+  ['Winner of Round 1','Cooley Kickhams','29 August 2026','20:00','Páirc Séamus Mhic hEochaidh, Haggardstown','Round 2'],
+  ['Cooley Kickhams','Loser of Round 1','7 September 2026','20:00','Cullen Auto Parts Louth GAA Training Centre, Darver','Round 3'],
+].forEach(r=>LOUTH_FIXTURES.push(mkStatic('Louth',r[0],r[1],r[2],r[3],r[4],'Senior Football Championship Group 3',r[5])));
+
+// Louth - Senior Football Championship Group 4
+[
+  ['Roche Emmets','Dundalk Gaels','23 August 2026','14:00','Fr McEvoy Park, Cooley','Round 1'],
+  ['Winner of Round 1','St Patricks','30 August 2026','17:00','Páirc Séamus Mhic hEochaidh, Haggardstown','Round 2'],
+  ['St Patricks','Loser of Round 1','5 September 2026','18:00','Páirc Séamus Mhic hEochaidh, Haggardstown','Round 3'],
+].forEach(r=>LOUTH_FIXTURES.push(mkStatic('Louth',r[0],r[1],r[2],r[3],r[4],'Senior Football Championship Group 4',r[5])));
+
+// Louth - Intermediate Football Championship Group 1
+[
+  ['Glen Emmets','O\'Raghallaighs','29 August 2026','18:00','Cullen Auto Parts Louth GAA Training Centre, Darver','Round 1'],
+  ['Winner of Round 1','Stabannon Parnells','5 September 2026','16:00','Páirc Uí Mhuirí, Dunleer','Round 2'],
+  ['Stabannon Parnells','Loser of Round 1','13 September 2026','14:00','DEFY Páirc Mhuire, Ardee','Round 3'],
+].forEach(r=>LOUTH_FIXTURES.push(mkStatic('Louth',r[0],r[1],r[2],r[3],r[4],'Intermediate Football Championship Group 1',r[5])));
+
+// Louth - Intermediate Football Championship Group 2
+[
+  ['Wolfe Tones','Oliver Plunketts','30 August 2026','16:00','Integral GAA Grounds, Drogheda','Round 1'],
+  ['Winner of Round 1','Kilkerley Emmets','4 September 2026','20:00','Stabannon Parnells','Round 2'],
+  ['Kilkerley Emmets','Loser of Round 1','12 September 2026','17:00','The Grove','Round 3'],
+].forEach(r=>LOUTH_FIXTURES.push(mkStatic('Louth',r[0],r[1],r[2],r[3],r[4],'Intermediate Football Championship Group 2',r[5])));
+
+// Louth - Intermediate Football Championship Group 3
+[
+  ['St Brides','Geraldines','28 August 2026','20:00','Cullen Auto Parts Louth GAA Training Centre, Darver','Round 1'],
+  ['Winner of Round 1','Clan Na Gael','5 September 2026','20:00','Cullen Auto Parts Louth GAA Training Centre, Darver','Round 2'],
+  ['Clan Na Gael','Loser of Round 1','12 September 2026','19:30','Fr McEvoy Park, Cooley','Round 3'],
+].forEach(r=>LOUTH_FIXTURES.push(mkStatic('Louth',r[0],r[1],r[2],r[3],r[4],'Intermediate Football Championship Group 3',r[5])));
+
+// Louth - Intermediate Football Championship Group 4
+[
+  ['St. Kevins','Mattock Rangers','30 August 2026','14:00','DEFY Páirc Mhuire, Ardee','Round 1'],
+  ['Winner of Round 1','Sean O\'Mahonys','6 September 2026','17:00','Pairc Naomh Brid','Round 2'],
+  ['Sean O\'Mahonys','Loser of Round 1','14 September 2026','20:00','Cullen Auto Parts Louth GAA Training Centre, Darver','Round 3'],
+].forEach(r=>LOUTH_FIXTURES.push(mkStatic('Louth',r[0],r[1],r[2],r[3],r[4],'Intermediate Football Championship Group 4',r[5])));
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -778,26 +1450,46 @@ export default {
 
     try {
       const cacDebug = [];
-      const [corkResults, waterfordResults, laoisResults, wexfordResults, kerryResults, offalyResults, tipperaryResults] = await Promise.all([
+      const [corkResults, waterfordResults, laoisResults, wexfordResults, kerryResults, offalyResults, tipperaryResults, roscommonFootballResults, roscommonHurlingResults, kilkennyResults, monaghanResults, meathResults, longfordResults] = await Promise.all([
         Promise.all(CORK_COMPETITIONS.map(fetchCorkCompetition)),
         Promise.all(WATERFORD_COMPETITIONS.map(fetchWaterfordCompetition)),
-        fetchCacCounty('Laois', 'https://laoisgaa.ie/fixtures-results/', LAOIS_TARGETS, cacDebug),
-        fetchCacCounty('Wexford', 'https://wexford.clubandcounty.com/fixtures-results/', WEXFORD_TARGETS, cacDebug),
+        Promise.all(LAOIS_COMPETITIONS.map((c) => fetchCacDirectCompetition('Laois', 'laoisgaa.ie', c, cacDebug))),
+        Promise.all(WEXFORD_COMPETITIONS.map((c) => fetchCacDirectCompetition('Wexford', 'wexford.clubandcounty.com', c, cacDebug))),
         Promise.all(KERRY_COMPETITIONS.map((c) => fetchCacDirectCompetition('Kerry', 'www.kerrygaa.ie', c, cacDebug))),
         Promise.all(OFFALY_COMPETITIONS.map((c) => fetchCacDirectCompetition('Offaly', 'offaly.gaa.ie', c, cacDebug))),
         Promise.all(TIPPERARY_COMPETITIONS.map((c) => fetchCacDirectCompetition('Tipperary', 'tipperary.gaa.ie', c, cacDebug))),
+        fetchRoscommonFootball(),
+        fetchRoscommonSport('hurling'),
+        Promise.all(KILKENNY_COMPETITIONS.map((c) => fetchCacDirectCompetition('Kilkenny', 'kilkennygaa.ie', c, cacDebug))),
+        Promise.all(MONAGHAN_COMPETITIONS.map((c) => fetchCacDirectCompetition('Monaghan', 'www.monaghangaa.ie', c, cacDebug))),
+        Promise.all(MEATH_COMPETITIONS.map((c) => fetchCacDirectCompetition('Meath', 'meath.gaa.ie', c, cacDebug))),
+        fetchLongford(env.FOIREANN_API_KEY),
       ]);
 
+      const fixCamel = s => s
+        .replace(/([a-z])([A-Z])/g, '$1 $2')      // camelCase: e.g. KillarneyLegion → Killarney Legion
+        .replace(/([A-Z]{2,})([A-Z][a-z])/g, '$1 $2'); // ACRONYM+Word: e.g. GAAGrounds → GAA Grounds
+      const fixNames = f => ({ ...f, teamA: fixCamel(f.teamA), teamB: fixCamel(f.teamB), venue: fixCamel(f.venue) });
+
       let fixtures = [
-        ...corkResults.flat(),
-        ...waterfordResults.flat(),
-        ...laoisResults,
-        ...wexfordResults,
-        ...kerryResults.flat(),
-        ...offalyResults.flat(),
-        ...tipperaryResults.flat(),
+        ...corkResults.flat().map(f => fixNames({ ...f, teamA: fixCorkName(f.teamA), teamB: fixCorkName(f.teamB), venue: fixCorkName(f.venue) })),
+        ...waterfordResults.flat().map(fixNames),
+        ...laoisResults.flat().map(fixNames),
+        ...wexfordResults.flat().map(fixNames),
+        ...kerryResults.flat().map(f => { const g = fixNames({ ...f, teamA: fixKerryName(f.teamA), teamB: fixKerryName(f.teamB), venue: fixKerryName(f.venue) }); return { ...g, teamA: fixKerryName(g.teamA), teamB: fixKerryName(g.teamB), venue: fixKerryName(g.venue) }; }),
+        ...offalyResults.flat().map(fixNames),
+        ...tipperaryResults.flat().map(fixNames),
+        ...roscommonFootballResults.map(fixNames),
+        ...roscommonHurlingResults.map(fixNames),
+        ...kilkennyResults.flat().map(fixNames),
+        ...monaghanResults.flat().map(fixNames),
+        ...meathResults.flat().map(fixNames),
+        ...longfordResults,
+        ...LONGFORD_FIXTURES,
+        ...TIPPERARY_FIXTURES,
         ...KILDARE_FIXTURES,
         ...CARLOW_FIXTURES,
+        ...LOUTH_FIXTURES,
       ];
 
       const statusMap = await getStatusMap(kv);
