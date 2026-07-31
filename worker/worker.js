@@ -386,30 +386,9 @@ async function fetchCacDirectCompetition(county, baseDomain, comp, debug) {
 }
 
 const KILKENNY_COMPETITIONS = [
-  {
-    path: '/fixtures-results/hurling/club/senior/st-canices-credit-union-senior-hurling-league/bf2fc916-357c-402a-be39-e5c119d1fea9/',
-    uuid: 'bf2fc916-357c-402a-be39-e5c119d1fea9',
-    sport: 'hurling',
-    level: 'club',
-    grade: 'senior',
-    name: 'Senior Hurling League',
-  },
-  {
-    path: '/fixtures-results/hurling/club/intermediate/michael-lyng-motors-hyundai-intermediate-league/1518a925-dc42-4ac2-8e0c-686876f0b28c/',
-    uuid: '1518a925-dc42-4ac2-8e0c-686876f0b28c',
-    sport: 'hurling',
-    level: 'club',
-    grade: 'intermediate',
-    name: 'Intermediate Hurling League',
-  },
-  {
-    path: '/fixtures-results/hurling/club/junior/jj-kavanagh-premier-jnr-league/f0ffc6b6-6e0b-4a16-b7a8-9de4766b2af6/',
-    uuid: 'f0ffc6b6-6e0b-4a16-b7a8-9de4766b2af6',
-    sport: 'hurling',
-    level: 'club',
-    grade: 'junior',
-    name: 'Premier Junior Hurling League',
-  },
+  { path: '/fixtures-results/hurling/club/senior/st-canices-credit-union-senior-hurling-league/bf2fc916-357c-402a-be39-e5c119d1fea9/', uuid: 'bf2fc916-357c-402a-be39-e5c119d1fea9', sport: 'hurling', level: 'club', grade: 'senior', name: 'Senior Hurling League' },
+  { path: '/fixtures-results/hurling/club/intermediate/michael-lyng-motors-hyundai-intermediate-league/1518a925-dc42-4ac2-8e0c-686876f0b28c/', uuid: '1518a925-dc42-4ac2-8e0c-686876f0b28c', sport: 'hurling', level: 'club', grade: 'intermediate', name: 'Intermediate Hurling League' },
+  { path: '/fixtures-results/hurling/club/junior/jj-kavanagh-premier-jnr-league/f0ffc6b6-6e0b-4a16-b7a8-9de4766b2af6/', uuid: 'f0ffc6b6-6e0b-4a16-b7a8-9de4766b2af6', sport: 'hurling', level: 'club', grade: 'junior', name: 'Premier Junior Hurling League' },
 ];
 
 const MONAGHAN_COMPETITIONS = [
@@ -421,14 +400,7 @@ const MONAGHAN_COMPETITIONS = [
     grade: 'senior',
     name: 'Senior Football Championship',
   },
-  {
-    path: '/fixtures-results/football/club/senior/senior-football-league/9f2a204f-20cd-4cec-852b-2760b4216812/',
-    uuid: '9f2a204f-20cd-4cec-852b-2760b4216812',
-    sport: 'football',
-    level: 'club',
-    grade: 'senior',
-    name: 'Senior Football League',
-  },
+  { path: '/fixtures-results/football/club/senior/senior-football-league/9f2a204f-20cd-4cec-852b-2760b4216812/', uuid: '9f2a204f-20cd-4cec-852b-2760b4216812', sport: 'football', level: 'club', grade: 'senior', name: 'Senior Football League' },
   {
     path: '/fixtures-results/football/club/intermediate/intermediate-football-championship/1b9079d3-c2aa-4c06-9479-17b8fbbd93a3/',
     uuid: '1b9079d3-c2aa-4c06-9479-17b8fbbd93a3',
