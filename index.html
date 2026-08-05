@@ -102,6 +102,7 @@
   #fixtureTable.hide-competition th:nth-child(10),#fixtureTable.hide-competition td:nth-child(10){display:none;}
   #fixtureTable.hide-round       th:nth-child(11),#fixtureTable.hide-round       td:nth-child(11){display:none;}
   #fixtureTable.hide-status      th:nth-child(12),#fixtureTable.hide-status      td:nth-child(12){display:none;}
+  #fixtureTable.hide-socials     th:nth-child(13),#fixtureTable.hide-socials     td:nth-child(13){display:none;}
 </style>
 </head>
 <body>
@@ -177,6 +178,7 @@
       <th data-key="competition">Competition</th>
       <th data-key="round">Round</th>
       <th data-key="status">Status</th>
+      <th data-key="socials">Socials</th>
     </tr>
   </thead>
   <tbody id="tbody">
@@ -197,6 +199,7 @@
         <button type="button" class="qa-save" onclick="qaSave()" title="Save">✓</button>
         <button type="button" class="qa-cancel" onclick="qaCancel()" title="Cancel">✗</button>
       </td>
+      <td><select id="qa_socials" class="qa-sel"><option value="">—</option></select></td>
     </tr>
   </tbody>
 </table>
@@ -300,6 +303,17 @@
           </div>
         </div>
       </div>
+      <div class="modal-section">
+        <div class="modal-section-title">Socials</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Socials Person</label>
+            <select id="f_socials">
+              <option value="">— None —</option>
+            </select>
+          </div>
+        </div>
+      </div>
       <div class="modal-actions">
         <button type="button" id="cancelFixtureBtn" class="btn-modal-cancel">Cancel</button>
         <button type="submit" class="btn-modal-add">Add Fixture</button>
@@ -309,6 +323,23 @@
 </div>
 
 <script>
+const SOCIALS=[
+  {name:'Ciarán', email:'ciaran@clubbertv.com'},
+  {name:'Mark',   email:'mark@clubbertv.com'},
+  {name:'Cathal', email:'cathal@clubbertv.com'},
+  {name:'Joe',    email:'creminjoe99@gmail.com'},
+  {name:'Paul',   email:'paul@clubbertv.com'},
+  {name:'Éanna',  email:'eannag12@icloud.com'},
+  {name:'Odhran', email:'odhranpoleary@gmail.com'},
+  {name:'Louis',  email:'coughlanlouis2006@gmail.com'},
+  {name:'Ryan',   email:'ryanokeeffe98@gmail.com'},
+  {name:'Mark C', email:'markcampion25@gmail.com'},
+  {name:'Jamie',  email:'jbrowne2002@gmail.com'},
+  {name:'James',  email:'jamesleahym12@gmail.com'},
+  {name:'Aidan',  email:'aidanoconnell242@gmail.com'},
+  {name:'Jack',   email:'creminjoe99@gmail.com'},
+  {name:'Gile',   email:'gilefmartin@gmail.com'},
+];
 // Derives Football/Hurling from competition name. Most counties embed the
 // sport in the competition string ("Hurling Championship", "HC", "FC", etc.).
 // Roscommon leagues don't, so the worker explicitly sets f.sport for those.
@@ -433,6 +464,8 @@ function openAddModal(){
     +`<option value="__new__">— Add new competition —</option>`;
   g('f_competitionNew').style.display='none'; g('f_competitionNew').value='';
   g('f_date').value=''; g('f_time').value=''; g('f_round').value='';
+  g('f_socials').innerHTML='<option value="">— None —</option>'
+    +SOCIALS.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
   document.getElementById('addModal').classList.add('open');
 }
 
@@ -484,6 +517,8 @@ function setupModal(){
     const venueVal=fv.value==='__new__'?fvNew.value.trim():fv.value;
     const compVal=fc.value==='__new__'?fcNew.value.trim():fc.value;
     const dateVal=g('f_date').value, timeVal=g('f_time').value, roundVal=g('f_round').value.trim();
+    const socialsName=g('f_socials').value;
+    const socialsEmail=(SOCIALS.find(s=>s.name===socialsName)||{}).email||'';
     if(!countyVal) return alert('Please select or enter a county for Team A.');
     if(!teamAVal)  return alert('Please select or enter Team A.');
     if(!teamBVal)  return alert('Please select or enter Team B.');
@@ -492,7 +527,8 @@ function setupModal(){
       id:nextId++, county:countyVal, teamA:teamAVal, teamB:teamBVal,
       date:dateVal, day:dayName(dateVal), time:timeVal?to12h(timeVal):'',
       venue:venueVal||'', competition:compVal||'', round:roundVal,
-      code:deriveCode(compVal||'',null), status:'Proposed', manual:true
+      code:deriveCode(compVal||'',null), status:'Proposed', manual:true,
+      socials:socialsName, socialsEmail
     };
     manualFixtures.push(f); fixtures.push(f);
     saveManualFixtures(); saveCache();
@@ -600,6 +636,7 @@ function render(){
       <td>${f.competition}</td>
       <td>${f.round}</td>
       <td><span class="status status-${f.status.toLowerCase()}">${f.status}</span></td>
+      <td>${f.socials||''}</td>
     `;
     tbody.appendChild(tr);
   });
@@ -795,6 +832,8 @@ function openQuickAdd(){
   g('qa_round_sel').innerHTML='<option value="">Round…</option>'
     +rounds.map(r=>`<option value="${r}">${r}</option>`).join('')
     +'<option value="__new__">+ New round</option>';
+  g('qa_socials').innerHTML='<option value="">—</option>'
+    +SOCIALS.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
   g('qa_code').value='';
   g('qa_date').value=''; g('qa_time').value='';
   g('qa_day_cell').textContent='';
@@ -843,6 +882,8 @@ function qaSave(){
   const roundVal=resolve('qa_round_sel','qa_roundNew');
   const dateVal=g('qa_date').value, timeVal=g('qa_time').value;
   const codeVal=g('qa_code').value;
+  const socialsName=g('qa_socials').value;
+  const socialsEmail=(SOCIALS.find(s=>s.name===socialsName)||{}).email||'';
   if(!countyVal) return alert('County is required.');
   if(!teamAVal)  return alert('Team A is required.');
   if(!teamBVal)  return alert('Team B is required.');
@@ -851,7 +892,8 @@ function qaSave(){
     id:nextId++, county:countyVal, teamA:teamAVal, teamB:teamBVal,
     date:dateVal, day:dayName(dateVal), time:timeVal?to12h(timeVal):'',
     venue:venueVal||'', competition:compVal||'', round:roundVal,
-    code:codeVal||deriveCode(compVal||'',null), status:'Proposed', manual:true
+    code:codeVal||deriveCode(compVal||'',null), status:'Proposed', manual:true,
+    socials:socialsName, socialsEmail
   };
   manualFixtures.push(f); fixtures.push(f);
   saveManualFixtures(); saveCache();
@@ -879,6 +921,7 @@ const COLS=[
   {key:'competition',label:'Competition'},
   {key:'round',label:'Round'},
   {key:'status',label:'Status'},
+  {key:'socials',label:'Socials'},
 ];
 let hiddenCols=new Set();
 function loadColPrefs(){try{const r=localStorage.getItem(COL_PREFS_KEY);if(r){const a=JSON.parse(r);if(Array.isArray(a))hiddenCols=new Set(a);}}catch(e){}}
