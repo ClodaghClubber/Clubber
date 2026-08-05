@@ -580,6 +580,8 @@ async function syncStatus(ids,status){
 approveBtn.addEventListener('click',()=>{
   const ids=[...selected];
   fixtures.forEach(f=>{ if(selected.has(f.id)) f.status='Approved'; });
+  manualFixtures.forEach(f=>{ if(ids.includes(f.id)) f.status='Approved'; });
+  saveManualFixtures();
   saveCache();
   render();
   syncStatus(ids,'Approved');
@@ -587,6 +589,8 @@ approveBtn.addEventListener('click',()=>{
 rejectBtn.addEventListener('click',()=>{
   const ids=[...selected];
   fixtures.forEach(f=>{ if(selected.has(f.id)) f.status='Rejected'; });
+  manualFixtures.forEach(f=>{ if(ids.includes(f.id)) f.status='Rejected'; });
+  saveManualFixtures();
   saveCache();
   render();
   syncStatus(ids,'Rejected');
