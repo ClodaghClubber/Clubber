@@ -53,6 +53,17 @@
   .btn-modal-cancel{background:var(--border);color:var(--text);}
   .btn-modal-add{background:#5a4fcf;color:#fff;}
   .badge-manual{font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:rgba(90,79,207,.2);color:#9b8fe8;padding:2px 6px;border-radius:8px;margin-left:6px;vertical-align:middle;}
+  /* ---- Quick Add Row ---- */
+  #quickAddBtn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:4px;width:22px;height:22px;font-size:16px;line-height:1;cursor:pointer;margin-left:6px;padding:0;vertical-align:middle;}
+  #quickAddBtn:hover{color:var(--text);border-color:var(--accent);}
+  .quick-add-row td{background:#192030;padding:5px 6px;border-bottom:2px solid var(--accent);}
+  .qa-sel,.qa-inp{background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:4px 6px;font-size:12px;width:100%;min-width:0;display:block;}
+  .qa-sel:focus,.qa-inp:focus{outline:1px solid var(--accent);border-color:var(--accent);}
+  .qa-new{display:none;margin-top:3px;}
+  .qa-day{font-size:12px;color:var(--muted);}
+  .qa-save,.qa-cancel{background:none;border:none;font-size:16px;cursor:pointer;padding:2px 5px;border-radius:4px;line-height:1;}
+  .qa-save{color:var(--approve);} .qa-save:hover{background:rgba(39,174,96,.15);}
+  .qa-cancel{color:var(--reject);} .qa-cancel:hover{background:rgba(192,57,43,.15);}
   .picker-wrap{position:relative;}
   .picker-wrap input{padding-right:38px;width:100%;}
   .picker-icon{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;padding:4px;cursor:pointer;color:var(--muted);display:flex;align-items:center;border-radius:4px;}
@@ -116,7 +127,7 @@
 <table>
   <thead>
     <tr>
-      <th><input type="checkbox" id="selectAll"></th>
+      <th><input type="checkbox" id="selectAll"><button id="quickAddBtn" title="Quick add fixture">+</button></th>
       <th data-key="county">County</th>
       <th data-key="code">Code</th>
       <th data-key="teamA">Team A</th>
@@ -130,7 +141,25 @@
       <th data-key="status">Status</th>
     </tr>
   </thead>
-  <tbody id="tbody"></tbody>
+  <tbody id="tbody">
+    <tr id="quickAddRow" class="quick-add-row" style="display:none;">
+      <td style="white-space:nowrap;">
+        <button type="button" class="qa-save" id="qa_save" title="Save">✓</button>
+        <button type="button" class="qa-cancel" id="qa_cancel" title="Cancel">✗</button>
+      </td>
+      <td><select id="qa_county" class="qa-sel"></select><input type="text" id="qa_countyNew" class="qa-inp qa-new" placeholder="County name"></td>
+      <td id="qa_code_cell" class="qa-day"></td>
+      <td><select id="qa_teamA" class="qa-sel"></select><input type="text" id="qa_teamANew" class="qa-inp qa-new" placeholder="Team name"></td>
+      <td><select id="qa_teamB" class="qa-sel"></select><input type="text" id="qa_teamBNew" class="qa-inp qa-new" placeholder="Team name"></td>
+      <td><input type="date" id="qa_date" class="qa-inp"></td>
+      <td id="qa_day_cell" class="qa-day"></td>
+      <td><input type="time" id="qa_time" class="qa-inp"></td>
+      <td><select id="qa_venue" class="qa-sel"></select><input type="text" id="qa_venueNew" class="qa-inp qa-new" placeholder="Venue name"></td>
+      <td><select id="qa_comp" class="qa-sel"></select><input type="text" id="qa_compNew" class="qa-inp qa-new" placeholder="Competition"></td>
+      <td><input type="text" id="qa_round" class="qa-inp" placeholder="Round"></td>
+      <td><span class="status status-proposed">Proposed</span></td>
+    </tr>
+  </tbody>
 </table>
 <div class="empty" id="emptyMsg" style="display:none;">No fixtures match the current filters.</div>
 </div>
@@ -509,7 +538,10 @@ function getFiltered(){
 
 function render(){
   const list=getFiltered();
+  const qaRow=document.getElementById('quickAddRow');
+  const qaShowing=qaRow&&qaRow.style.display!=='none';
   tbody.innerHTML='';
+  if(qaShowing) tbody.prepend(qaRow);
   emptyMsg.style.display=list.length?'none':'block';
   rowCount.textContent=`${list.length} fixture${list.length!==1?'s':''} shown`;
   list.forEach(f=>{
@@ -701,6 +733,105 @@ if(cached){
 }
 loadFixtures(false);
 setupModal();
+setupQuickAdd();
+
+function setupQuickAdd(){
+  const g=id=>document.getElementById(id);
+
+  function qaCountyOpts(lk){
+    return '<option value="">County…</option>'
+      +lk.counties.map(c=>`<option value="${c}">${c}</option>`).join('')
+      +'<option value="__new__">+ New county</option>';
+  }
+  function qaTeamOpts(lk,county){
+    const list=[...(lk.teams[county]||new Set())].sort();
+    return '<option value="">Team…</option>'
+      +list.map(t=>`<option value="${t}">${t}</option>`).join('')
+      +'<option value="__new__">+ New team</option>';
+  }
+  function qaVenueOpts(lk,county){
+    const list=[...(lk.venues[county]||new Set())].sort();
+    return '<option value="">Venue…</option>'
+      +list.map(v=>`<option value="${v}">${v}</option>`).join('')
+      +'<option value="__new__">+ New venue</option>';
+  }
+  function qaToggleNew(sel,inp){
+    const isNew=sel.value==='__new__';
+    inp.style.display=isNew?'block':'none';
+    if(!isNew) inp.value='';
+  }
+  function qaResolve(sel,inp){
+    return sel.value==='__new__'?inp.value.trim():sel.value;
+  }
+
+  g('quickAddBtn').addEventListener('click',()=>{
+    const lk=_buildLookups();
+    g('quickAddRow')._lk=lk;
+    g('qa_county').innerHTML=qaCountyOpts(lk); g('qa_countyNew').style.display='none'; g('qa_countyNew').value='';
+    g('qa_teamA').innerHTML='<option value="">Select county first…</option>'; g('qa_teamANew').style.display='none'; g('qa_teamANew').value='';
+    g('qa_teamB').innerHTML='<option value="">Select county first…</option>'; g('qa_teamBNew').style.display='none'; g('qa_teamBNew').value='';
+    g('qa_venue').innerHTML='<option value="">Venue…</option><option value="__new__">+ New venue</option>'; g('qa_venueNew').style.display='none'; g('qa_venueNew').value='';
+    g('qa_comp').innerHTML='<option value="">Competition…</option>'
+      +lk.comps.map(c=>`<option value="${c}">${c}</option>`).join('')
+      +'<option value="__new__">+ New competition</option>';
+    g('qa_compNew').style.display='none'; g('qa_compNew').value='';
+    g('qa_date').value=''; g('qa_time').value=''; g('qa_round').value='';
+    g('qa_day_cell').textContent=''; g('qa_code_cell').textContent='';
+    g('quickAddRow').style.display='';
+    tbody.prepend(g('quickAddRow'));
+    g('qa_county').focus();
+  });
+
+  g('qa_county').addEventListener('change',()=>{
+    const lk=g('quickAddRow')._lk;
+    qaToggleNew(g('qa_county'),g('qa_countyNew'));
+    const county=g('qa_county').value==='__new__'?'':g('qa_county').value;
+    g('qa_teamA').innerHTML=qaTeamOpts(lk,county); g('qa_teamANew').style.display='none'; g('qa_teamANew').value='';
+    g('qa_teamB').innerHTML=qaTeamOpts(lk,county); g('qa_teamBNew').style.display='none'; g('qa_teamBNew').value='';
+    g('qa_venue').innerHTML=qaVenueOpts(lk,county); g('qa_venueNew').style.display='none'; g('qa_venueNew').value='';
+  });
+
+  g('qa_teamA').addEventListener('change',()=>qaToggleNew(g('qa_teamA'),g('qa_teamANew')));
+  g('qa_teamB').addEventListener('change',()=>qaToggleNew(g('qa_teamB'),g('qa_teamBNew')));
+  g('qa_venue').addEventListener('change', ()=>qaToggleNew(g('qa_venue'),g('qa_venueNew')));
+  g('qa_comp').addEventListener('change', ()=>{
+    qaToggleNew(g('qa_comp'),g('qa_compNew'));
+    const comp=g('qa_comp').value==='__new__'?'':g('qa_comp').value;
+    g('qa_code_cell').textContent=deriveCode(comp,null)||'';
+  });
+  g('qa_date').addEventListener('change',()=>{
+    const d=g('qa_date').value;
+    g('qa_day_cell').textContent=d?dayName(d):'';
+  });
+
+  g('qa_save').addEventListener('click',()=>{
+    const countyVal=qaResolve(g('qa_county'),g('qa_countyNew'));
+    const teamAVal=qaResolve(g('qa_teamA'),g('qa_teamANew'));
+    const teamBVal=qaResolve(g('qa_teamB'),g('qa_teamBNew'));
+    const venueVal=qaResolve(g('qa_venue'),g('qa_venueNew'));
+    const compVal =qaResolve(g('qa_comp'), g('qa_compNew'));
+    const dateVal=g('qa_date').value, timeVal=g('qa_time').value, roundVal=g('qa_round').value.trim();
+    if(!countyVal) return alert('County is required.');
+    if(!teamAVal)  return alert('Team A is required.');
+    if(!teamBVal)  return alert('Team B is required.');
+    if(!dateVal)   return alert('Date is required.');
+    const f={
+      id:nextId++, county:countyVal, teamA:teamAVal, teamB:teamBVal,
+      date:dateVal, day:dayName(dateVal), time:timeVal?to12h(timeVal):'',
+      venue:venueVal||'', competition:compVal||'', round:roundVal,
+      code:deriveCode(compVal||'',null), status:'Proposed', manual:true
+    };
+    manualFixtures.push(f); fixtures.push(f);
+    saveManualFixtures(); saveCache();
+    g('quickAddRow').style.display='none';
+    populateFilterOptions(); render();
+  });
+
+  g('qa_cancel').addEventListener('click',()=>{
+    g('quickAddRow').style.display='none';
+    render();
+  });
+}
 </script>
 </body>
 </html>
