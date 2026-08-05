@@ -318,6 +318,17 @@
             <input type="text" id="f_round" placeholder="e.g. Round 1">
           </div>
         </div>
+        <div class="form-row" style="margin-top:12px;">
+          <div class="form-group">
+            <label>Code</label>
+            <select id="f_code">
+              <option value="">— Auto-detect —</option>
+              <option value="Football">Football</option>
+              <option value="Hurling">Hurling</option>
+              <option value="Camogie">Camogie</option>
+            </select>
+          </div>
+        </div>
       </div>
       <div class="modal-section">
         <div class="modal-section-title">Roles</div>
@@ -395,6 +406,15 @@ function to12h(t){ // '19:15' -> '7:15 PM'
   h=h%12; if(h===0)h=12;
   return `${h}:${String(m).padStart(2,'0')} ${ap}`;
 }
+function from12h(t){ // '7:15 PM' -> '19:15'
+  if(!t) return '';
+  const m=t.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if(!m) return ''; // TBC or unknown
+  let [,h,min,ap]=m; h=parseInt(h);
+  if(ap.toUpperCase()==='PM'&&h!==12) h+=12;
+  if(ap.toUpperCase()==='AM'&&h===12) h=0;
+  return `${String(h).padStart(2,'0')}:${min}`;
+}
 function mk(county,teamA,teamB,date,time,venue,competition,round){
   const d=iso(date);
   return {county,teamA,teamB,date:d,day:dayName(d),time:to12h(time),venue,competition,round:round||'',status:'Proposed'};
@@ -446,6 +466,7 @@ function applyOverrides(){
 
 // ---- Add Fixture Modal ----
 let _ml=null;
+let editingId=null;
 
 function _buildLookups(){
   const teams={}, venues={}, compSeen=new Set(), comps=[];
@@ -504,12 +525,49 @@ function openAddModal(){
     +_ml.comps.map(c=>`<option value="${c}">${c}</option>`).join('')
     +`<option value="__new__">— Add new competition —</option>`;
   g('f_competitionNew').style.display='none'; g('f_competitionNew').value='';
-  g('f_date').value=''; g('f_time').value=''; g('f_round').value='';
+  g('f_date').value=''; g('f_time').value=''; g('f_round').value=''; g('f_code').value='';
   g('f_socials').innerHTML='<option value="">— None —</option>'
     +SOCIALS.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
   g('f_support2').innerHTML='<option value="">— None —</option>'
     +SUPPORT2.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
   document.getElementById('addModal').classList.add('open');
+}
+
+function openEditModal(id){
+  const f=fixtures.find(fx=>fx.id===id);
+  if(!f) return;
+  editingId=id;
+  openAddModal();
+  const g=id=>document.getElementById(id);
+  // Pre-fill county A and cascade teams
+  if([...(g('f_countyA').options)].some(o=>o.value===f.county)) g('f_countyA').value=f.county;
+  g('f_countyA').dispatchEvent(new Event('change'));
+  // Ensure teamA option exists then select it
+  if(![...(g('f_teamA').options)].some(o=>o.value===f.teamA)) g('f_teamA').add(new Option(f.teamA,f.teamA));
+  g('f_teamA').value=f.teamA;
+  // Pre-fill county B and cascade teams
+  if([...(g('f_countyB').options)].some(o=>o.value===f.county)) g('f_countyB').value=f.county;
+  g('f_countyB').dispatchEvent(new Event('change'));
+  if(![...(g('f_teamB').options)].some(o=>o.value===f.teamB)) g('f_teamB').add(new Option(f.teamB,f.teamB));
+  g('f_teamB').value=f.teamB;
+  // Venue
+  if([...(g('f_venueCounty').options)].some(o=>o.value===f.county)) g('f_venueCounty').value=f.county;
+  g('f_venueCounty').dispatchEvent(new Event('change'));
+  if(f.venue&&![...(g('f_venue').options)].some(o=>o.value===f.venue)) g('f_venue').add(new Option(f.venue,f.venue));
+  if(f.venue) g('f_venue').value=f.venue;
+  // Competition
+  if(f.competition&&![...(g('f_competition').options)].some(o=>o.value===f.competition)) g('f_competition').add(new Option(f.competition,f.competition));
+  if(f.competition) g('f_competition').value=f.competition;
+  // Other fields
+  g('f_date').value=f.date;
+  g('f_time').value=from12h(f.time);
+  g('f_round').value=f.round||'';
+  g('f_code').value=f.code||'';
+  g('f_socials').value=f.socials||'';
+  g('f_support2').value=f.support2||'';
+  // Update modal chrome
+  document.querySelector('#addModal h2').textContent='Edit Fixture';
+  document.querySelector('#addModal .btn-modal-add').textContent='Save Changes';
 }
 
 function setupModal(){
@@ -549,8 +607,15 @@ function setupModal(){
   fv.addEventListener('change', ()=>{ fvNew.style.display=fv.value==='__new__'?'block':'none';   if(fv.value!=='__new__')  fvNew.value=''; });
   fc.addEventListener('change', ()=>{ fcNew.style.display=fc.value==='__new__'?'block':'none';   if(fc.value!=='__new__')  fcNew.value=''; });
 
-  g('cancelFixtureBtn').addEventListener('click',()=>g('addModal').classList.remove('open'));
-  g('addModal').addEventListener('click',e=>{ if(e.target===g('addModal')) g('addModal').classList.remove('open'); });
+  function closeModal(){
+    editingId=null;
+    g('addModal').classList.remove('open');
+    document.querySelector('#addModal h2').textContent='Add Fixture';
+    document.querySelector('#addModal .btn-modal-add').textContent='Add Fixture';
+    g('f_code').value='';
+  }
+  g('cancelFixtureBtn').addEventListener('click',closeModal);
+  g('addModal').addEventListener('click',e=>{ if(e.target===g('addModal')) closeModal(); });
 
   g('addFixtureForm').addEventListener('submit',e=>{
     e.preventDefault();
@@ -568,17 +633,45 @@ function setupModal(){
     if(!teamAVal)  return alert('Please select or enter Team A.');
     if(!teamBVal)  return alert('Please select or enter Team B.');
     if(!dateVal)   return alert('Please enter a date.');
+    const codeVal=g('f_code').value;
+    if(editingId!==null){
+      const ex=fixtures.find(f=>f.id===editingId);
+      if(ex){
+        Object.assign(ex,{
+          county:countyVal, teamA:teamAVal, teamB:teamBVal,
+          date:dateVal, day:dayName(dateVal), time:timeVal?to12h(timeVal):'',
+          venue:venueVal||'', competition:compVal||'', round:roundVal,
+          code:codeVal||deriveCode(compVal||'',null),
+          socials:socialsName, socialsEmail, support2:support2Name, support2Email
+        });
+        if(ex.manual){
+          const mf=manualFixtures.find(m=>m.id===editingId);
+          if(mf) Object.assign(mf,ex);
+          saveManualFixtures();
+        } else {
+          fixtureOverrides[keyOf(ex)]=Object.assign(fixtureOverrides[keyOf(ex)]||{},{
+            county:countyVal,teamA:teamAVal,teamB:teamBVal,date:dateVal,day:dayName(dateVal),
+            time:ex.time,venue:ex.venue,competition:ex.competition,round:ex.round,
+            code:ex.code,socials:ex.socials,socialsEmail:ex.socialsEmail,
+            support2:ex.support2,support2Email:ex.support2Email
+          });
+          saveOverrides();
+        }
+        saveCache(); populateFilterOptions(); render();
+      }
+      closeModal(); return;
+    }
     const f={
       id:nextId++, county:countyVal, teamA:teamAVal, teamB:teamBVal,
       date:dateVal, day:dayName(dateVal), time:timeVal?to12h(timeVal):'',
       venue:venueVal||'', competition:compVal||'', round:roundVal,
-      code:deriveCode(compVal||'',null), status:'Proposed', manual:true,
+      code:codeVal||deriveCode(compVal||'',null), status:'Proposed', manual:true,
       socials:socialsName, socialsEmail, support2:support2Name, support2Email
     };
     manualFixtures.push(f); fixtures.push(f);
     saveManualFixtures(); saveCache();
     populateFilterOptions(); render();
-    g('addModal').classList.remove('open');
+    closeModal();
   });
 
   g('addFixtureBtn').addEventListener('click',openAddModal);
@@ -669,7 +762,7 @@ function render(){
     tr.classList.add(countyClass);
     if(f.status==='Rejected') tr.classList.add('row-rejected');
     tr.innerHTML=`
-      <td><input type="checkbox" data-id="${f.id}" ${selected.has(f.id)?'checked':''}></td>
+      <td style="white-space:nowrap;"><input type="checkbox" data-id="${f.id}" ${selected.has(f.id)?'checked':''}><button class="edit-btn" data-edit-id="${f.id}" title="Edit fixture" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:0 4px;vertical-align:middle;opacity:.6;">✎</button></td>
       <td>${f.county}</td>
       <td>${f.code||''}</td>
       <td>${f.teamA}</td>
@@ -691,6 +784,12 @@ function render(){
       const id=Number(e.target.dataset.id);
       if(e.target.checked) selected.add(id); else selected.delete(id);
       updateActionButtons();
+    });
+  });
+  tbody.querySelectorAll('.edit-btn').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      e.stopPropagation();
+      openEditModal(Number(btn.dataset.editId));
     });
   });
   updateActionButtons();
