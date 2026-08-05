@@ -403,6 +403,18 @@ function applyManualFixtures(){
   manualFixtures.filter(f=>f.date>=today).forEach(f=>fixtures.push(f));
 }
 
+// ---- Socials overrides (persist socials assignments for worker-fetched fixtures) ----
+const OVERRIDES_KEY='gaaFixtureOverrides';
+let fixtureOverrides={};
+function loadOverrides(){try{const r=localStorage.getItem(OVERRIDES_KEY);if(r)fixtureOverrides=JSON.parse(r)||{};}catch(e){}}
+function saveOverrides(){try{localStorage.setItem(OVERRIDES_KEY,JSON.stringify(fixtureOverrides));}catch(e){}}
+function applyOverrides(){
+  fixtures.forEach(f=>{
+    const k=keyOf(f), ov=fixtureOverrides[k];
+    if(ov){f.socials=ov.socials;f.socialsEmail=ov.socialsEmail;}
+  });
+}
+
 // ---- Add Fixture Modal ----
 let _ml=null;
 
@@ -636,7 +648,7 @@ function render(){
       <td>${f.competition}</td>
       <td>${f.round}</td>
       <td><span class="status status-${f.status.toLowerCase()}">${f.status}</span></td>
-      <td>${f.socials||''}</td>
+      <td class="socials-cell" data-socials-id="${f.id}" title="Click to assign socials" style="cursor:pointer;color:${f.socials?'inherit':'var(--muted)'};">${f.socials||'—'}</td>
     `;
     tbody.appendChild(tr);
   });
@@ -769,6 +781,7 @@ function mergeFixtures(incoming){
   selected.clear();
   saveCache();
   applyManualFixtures();
+  applyOverrides();
 }
 
 async function loadFixtures(isRefresh){
@@ -799,17 +812,53 @@ refreshBtn.addEventListener('click',()=>loadFixtures(true));
 // from the Worker in the background and merge it in once it arrives.
 const cached=loadCache();
 loadManualFixtures();
+loadOverrides();
 if(cached){
   const today=new Date().toISOString().slice(0,10);
   fixtures=cached.fixtures.filter(f=>f.date>=today);
   nextId=cached.nextId||1;
   applyManualFixtures();
+  applyOverrides();
   populateFilterOptions();
   render();
   loadStatus.textContent=`Showing cached fixtures from ${new Date(cached.savedAt).toLocaleString()} · refreshing…`;
 }
 loadFixtures(false);
 setupModal();
+
+// ---- Inline socials editing ----
+document.getElementById('tbody').addEventListener('click',e=>{
+  const td=e.target.closest('td[data-socials-id]');
+  if(!td) return;
+  if(td.querySelector('select')) return; // already editing
+  const id=+td.dataset.socialsId;
+  const f=fixtures.find(fx=>fx.id===id);
+  if(!f) return;
+  const sel=document.createElement('select');
+  sel.className='qa-sel';
+  sel.style.minWidth='90px';
+  sel.innerHTML='<option value="">—</option>'
+    +SOCIALS.map(s=>`<option value="${s.name}"${f.socials===s.name?' selected':''}>${s.name}</option>`).join('');
+  td.innerHTML='';
+  td.appendChild(sel);
+  sel.focus();
+  const commit=()=>{
+    const name=sel.value;
+    const email=(SOCIALS.find(s=>s.name===name)||{}).email||'';
+    f.socials=name; f.socialsEmail=email;
+    fixtureOverrides[keyOf(f)]={socials:name,socialsEmail:email};
+    saveOverrides();
+    if(f.manual){
+      const mf=manualFixtures.find(m=>m.id===id);
+      if(mf){mf.socials=name;mf.socialsEmail=email;}
+      saveManualFixtures();
+    }
+    saveCache();
+    render();
+  };
+  sel.addEventListener('change',commit);
+  sel.addEventListener('blur',()=>render());
+});
 
 // ---- Quick Add global functions (called via inline onclick/onchange) ----
 let _qaLk=null;
