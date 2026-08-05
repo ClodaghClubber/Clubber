@@ -159,7 +159,6 @@
     <button class="btn-approve" id="approveBtn" disabled>Approve</button>
     <button class="btn-reject" id="rejectBtn" disabled>Reject</button>
     <button class="btn-remove" id="removeBtn" disabled>Remove</button>
-    <button class="btn-remove" id="exportBtn" style="background:#1f7a4d;" disabled>Export to Excel</button>
     <button class="btn-remove" id="refreshBtn" style="background:#2d6cdf;">Refresh</button>
     <button class="btn-modal-add" id="addFixtureBtn">+ Add Fixture</button>
     <div class="col-picker-wrap">
@@ -177,7 +176,18 @@
   </div>
 </div>
 
-<div class="count" id="rowCount"></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 24px 0;">
+  <div class="count" id="rowCount" style="padding:0;"></div>
+  <button id="exportBtn" disabled title="Export to Excel" style="background:none;border:none;cursor:pointer;padding:4px;opacity:.9;display:flex;align-items:center;gap:6px;color:#217346;font-size:12px;font-weight:600;">
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="28" height="28" rx="4" fill="#217346"/>
+      <path d="M7 7h8v2H9v10h6v2H7V7z" fill="white"/>
+      <path d="M15 7h6v2h-4v3h3v2h-3v3h4v2h-6V7z" fill="white"/>
+      <path d="M9 11l2.5 3L9 17h2l1.5-2 1.5 2h2l-2.5-3 2.5-3h-2L13 13l-1.5-2H9z" fill="white"/>
+    </svg>
+    Export
+  </button>
+</div>
 <div class="count" id="loadStatus"></div>
 
 <div class="container">
