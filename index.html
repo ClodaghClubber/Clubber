@@ -87,7 +87,7 @@
   .picker-icon:hover{color:var(--text);background:var(--border);}
   /* ---- Column Picker ---- */
   .col-picker-wrap{position:relative;}
-  #colPickerPanel{display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px 14px;z-index:500;min-width:160px;box-shadow:0 4px 16px rgba(0,0,0,.15);}
+  #colPickerPanel,#assignSocialsPanel{display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px 14px;z-index:500;min-width:160px;box-shadow:0 4px 16px rgba(0,0,0,.15);}
   #colPickerPanel label{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:13px;cursor:pointer;white-space:nowrap;color:var(--text);}
   #colPickerPanel input[type=checkbox]{width:14px;height:14px;accent-color:var(--accent);}
   /* Column hide classes — applied to <table id="fixtureTable"> */
@@ -988,7 +988,7 @@ function applyColPrefs(){
 function setupAssignSocials(){
   const btn=document.getElementById('assignSocialsBtn');
   const panel=document.getElementById('assignSocialsPanel');
-  panel.innerHTML='<option value="">— None —</option>'
+  panel.innerHTML=`<div class="col-pick-item" data-name="" data-email="" style="cursor:pointer;color:var(--muted);">— None —</div>`
     +SOCIALS.map(s=>`<div class="col-pick-item" data-name="${s.name}" data-email="${s.email}" style="cursor:pointer;">${s.name}</div>`).join('');
   panel.querySelectorAll('[data-name]').forEach(item=>{
     item.addEventListener('click',()=>{
