@@ -148,15 +148,15 @@
         <button type="button" class="qa-cancel" onclick="qaCancel()" title="Cancel">✗</button>
       </td>
       <td><select id="qa_county" class="qa-sel" onchange="qaCountyChange()"></select><input type="text" id="qa_countyNew" class="qa-inp qa-new" placeholder="County name"></td>
-      <td id="qa_code_cell" class="qa-day"></td>
+      <td><select id="qa_code" class="qa-sel"><option value="">Code…</option><option value="Football">Football</option><option value="Hurling">Hurling</option></select></td>
       <td><select id="qa_teamA" class="qa-sel" onchange="qaToggle('qa_teamA','qa_teamANew')"></select><input type="text" id="qa_teamANew" class="qa-inp qa-new" placeholder="Team name"></td>
       <td><select id="qa_teamB" class="qa-sel" onchange="qaToggle('qa_teamB','qa_teamBNew')"></select><input type="text" id="qa_teamBNew" class="qa-inp qa-new" placeholder="Team name"></td>
-      <td><input type="date" id="qa_date" class="qa-inp" onchange="document.getElementById('qa_day_cell').textContent=this.value?dayName(this.value):''"></td>
+      <td><div class="picker-wrap"><input type="date" id="qa_date" class="qa-inp" onchange="document.getElementById('qa_day_cell').textContent=this.value?dayName(this.value):''"><button type="button" class="picker-icon" onclick="document.getElementById('qa_date').showPicker()"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1.5" y="2.5" width="13" height="12" rx="1.5"/><path d="M1.5 6.5h13"/><path d="M5 1v3"/><path d="M11 1v3"/><path d="M4.5 9.5h1.5v1.5H4.5z" stroke="none" fill="currentColor"/><path d="M7.25 9.5h1.5v1.5h-1.5z" stroke="none" fill="currentColor"/><path d="M10 9.5h1.5v1.5H10z" stroke="none" fill="currentColor"/></svg></button></div></td>
       <td id="qa_day_cell" class="qa-day"></td>
-      <td><input type="time" id="qa_time" class="qa-inp"></td>
+      <td><input type="time" id="qa_time" class="qa-inp" onchange="this.blur()"></td>
       <td><select id="qa_venue" class="qa-sel" onchange="qaToggle('qa_venue','qa_venueNew')"></select><input type="text" id="qa_venueNew" class="qa-inp qa-new" placeholder="Venue name"></td>
       <td><select id="qa_comp" class="qa-sel" onchange="qaCompChange()"></select><input type="text" id="qa_compNew" class="qa-inp qa-new" placeholder="Competition"></td>
-      <td><input type="text" id="qa_round" class="qa-inp" placeholder="Round"></td>
+      <td><select id="qa_round_sel" class="qa-sel" onchange="qaToggle('qa_round_sel','qa_roundNew')"></select><input type="text" id="qa_roundNew" class="qa-inp qa-new" placeholder="e.g. Round 1"></td>
       <td><span class="status status-proposed">Proposed</span></td>
     </tr>
   </tbody>
@@ -743,15 +743,20 @@ function openQuickAdd(){
     +_qaLk.counties.map(c=>`<option value="${c}">${c}</option>`).join('')
     +'<option value="__new__">+ New county</option>';
   g('qa_county').innerHTML=countyOpts;
-  ['qa_countyNew','qa_teamANew','qa_teamBNew','qa_venueNew','qa_compNew'].forEach(id=>{ g(id).style.display='none'; g(id).value=''; });
+  ['qa_countyNew','qa_teamANew','qa_teamBNew','qa_venueNew','qa_compNew','qa_roundNew'].forEach(id=>{ g(id).style.display='none'; g(id).value=''; });
   g('qa_teamA').innerHTML='<option value="">Select county first…</option>';
   g('qa_teamB').innerHTML='<option value="">Select county first…</option>';
   g('qa_venue').innerHTML='<option value="">Venue…</option><option value="__new__">+ New venue</option>';
   g('qa_comp').innerHTML='<option value="">Competition…</option>'
     +_qaLk.comps.map(c=>`<option value="${c}">${c}</option>`).join('')
     +'<option value="__new__">+ New competition</option>';
-  g('qa_date').value=''; g('qa_time').value=''; g('qa_round').value='';
-  g('qa_day_cell').textContent=''; g('qa_code_cell').textContent='';
+  const rounds=[...new Set(fixtures.map(f=>f.round).filter(Boolean))].sort();
+  g('qa_round_sel').innerHTML='<option value="">Round…</option>'
+    +rounds.map(r=>`<option value="${r}">${r}</option>`).join('')
+    +'<option value="__new__">+ New round</option>';
+  g('qa_code').value='';
+  g('qa_date').value=''; g('qa_time').value='';
+  g('qa_day_cell').textContent='';
   const row=g('quickAddRow');
   row.style.display='';
   tbody.prepend(row);
@@ -779,10 +784,11 @@ function qaCountyChange(){
 }
 
 function qaCompChange(){
-  const g=id=>document.getElementById(id);
   qaToggle('qa_comp','qa_compNew');
+  const g=id=>document.getElementById(id);
   const comp=g('qa_comp').value==='__new__'?'':g('qa_comp').value;
-  g('qa_code_cell').textContent=deriveCode(comp,null)||'';
+  const derived=deriveCode(comp,null);
+  if(derived) g('qa_code').value=derived;
 }
 
 function qaSave(){
@@ -793,7 +799,9 @@ function qaSave(){
   const teamBVal =resolve('qa_teamB','qa_teamBNew');
   const venueVal =resolve('qa_venue','qa_venueNew');
   const compVal  =resolve('qa_comp','qa_compNew');
-  const dateVal=g('qa_date').value, timeVal=g('qa_time').value, roundVal=g('qa_round').value.trim();
+  const roundVal=resolve('qa_round_sel','qa_roundNew');
+  const dateVal=g('qa_date').value, timeVal=g('qa_time').value;
+  const codeVal=g('qa_code').value;
   if(!countyVal) return alert('County is required.');
   if(!teamAVal)  return alert('Team A is required.');
   if(!teamBVal)  return alert('Team B is required.');
@@ -802,7 +810,7 @@ function qaSave(){
     id:nextId++, county:countyVal, teamA:teamAVal, teamB:teamBVal,
     date:dateVal, day:dayName(dateVal), time:timeVal?to12h(timeVal):'',
     venue:venueVal||'', competition:compVal||'', round:roundVal,
-    code:deriveCode(compVal||'',null), status:'Proposed', manual:true
+    code:codeVal||deriveCode(compVal||'',null), status:'Proposed', manual:true
   };
   manualFixtures.push(f); fixtures.push(f);
   saveManualFixtures(); saveCache();
