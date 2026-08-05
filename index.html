@@ -539,9 +539,8 @@ function getFiltered(){
 function render(){
   const list=getFiltered();
   const qaRow=document.getElementById('quickAddRow');
-  const qaShowing=qaRow&&qaRow.style.display!=='none';
   tbody.innerHTML='';
-  if(qaShowing) tbody.prepend(qaRow);
+  if(qaRow) tbody.prepend(qaRow);
   emptyMsg.style.display=list.length?'none':'block';
   rowCount.textContent=`${list.length} fixture${list.length!==1?'s':''} shown`;
   list.forEach(f=>{
