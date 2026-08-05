@@ -170,7 +170,22 @@
       <div id="assignSupport2Panel" style="display:none;"></div>
     </div>
     <div class="col-picker-wrap">
-      <button class="btn-remove" id="colsBtn" style="background:#4a5568;">Columns ▾</button>
+      <button id="colsBtn" title="Choose columns" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 7px;cursor:pointer;display:flex;align-items:center;gap:5px;color:var(--muted);font-size:12px;font-weight:600;">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Table outline -->
+          <rect x="1.5" y="3" width="19" height="16" rx="2" stroke="currentColor" stroke-width="1.4"/>
+          <!-- Header row -->
+          <line x1="1.5" y1="7.5" x2="20.5" y2="7.5" stroke="currentColor" stroke-width="1.4"/>
+          <!-- Column dividers -->
+          <line x1="8" y1="3" x2="8" y2="19" stroke="currentColor" stroke-width="1.4"/>
+          <line x1="14.5" y1="3" x2="14.5" y2="19" stroke="currentColor" stroke-width="1.4"/>
+          <!-- Highlighted middle column header -->
+          <rect x="8" y="3" width="6.5" height="4.5" rx="0" fill="currentColor" opacity="0.18"/>
+          <!-- Tick on middle column -->
+          <path d="M10 13.2l1.4 1.6 2.6-3.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Columns
+      </button>
       <div id="colPickerPanel"></div>
     </div>
   </div>
