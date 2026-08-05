@@ -181,10 +181,7 @@
   </thead>
   <tbody id="tbody">
     <tr id="quickAddRow" class="quick-add-row" style="display:none;">
-      <td style="white-space:nowrap;">
-        <button type="button" class="qa-save" onclick="qaSave()" title="Save">✓</button>
-        <button type="button" class="qa-cancel" onclick="qaCancel()" title="Cancel">✗</button>
-      </td>
+      <td></td>
       <td><select id="qa_county" class="qa-sel" onchange="qaCountyChange()"></select><input type="text" id="qa_countyNew" class="qa-inp qa-new" placeholder="County name"></td>
       <td><select id="qa_code" class="qa-sel"><option value="">Code…</option><option value="Football">Football</option><option value="Hurling">Hurling</option><option value="Camogie">Camogie</option></select></td>
       <td><select id="qa_teamA" class="qa-sel" onchange="qaToggle('qa_teamA','qa_teamANew')"></select><input type="text" id="qa_teamANew" class="qa-inp qa-new" placeholder="Team name"></td>
@@ -195,7 +192,11 @@
       <td><select id="qa_venue" class="qa-sel" onchange="qaToggle('qa_venue','qa_venueNew')"></select><input type="text" id="qa_venueNew" class="qa-inp qa-new" placeholder="Venue name"></td>
       <td><select id="qa_comp" class="qa-sel" onchange="qaCompChange()"></select><input type="text" id="qa_compNew" class="qa-inp qa-new" placeholder="Competition"></td>
       <td><select id="qa_round_sel" class="qa-sel" onchange="qaToggle('qa_round_sel','qa_roundNew')"></select><input type="text" id="qa_roundNew" class="qa-inp qa-new" placeholder="e.g. Round 1"></td>
-      <td><span class="status status-proposed">Proposed</span></td>
+      <td style="white-space:nowrap;">
+        <span class="status status-proposed">Proposed</span>
+        <button type="button" class="qa-save" onclick="qaSave()" title="Save">✓</button>
+        <button type="button" class="qa-cancel" onclick="qaCancel()" title="Cancel">✗</button>
+      </td>
     </tr>
   </tbody>
 </table>
