@@ -110,6 +110,9 @@
   #fixtureTable.hide-status      th:nth-child(12),#fixtureTable.hide-status      td:nth-child(12){display:none;}
   #fixtureTable.hide-socials     th:nth-child(13),#fixtureTable.hide-socials     td:nth-child(13){display:none;}
   #fixtureTable.hide-support2    th:nth-child(14),#fixtureTable.hide-support2    td:nth-child(14){display:none;}
+  #fixtureTable.hide-replay      th:nth-child(15),#fixtureTable.hide-replay      td:nth-child(15){display:none;}
+  .replay-cell{text-align:center;cursor:pointer;font-size:16px;user-select:none;}
+  .replay-cell:hover{opacity:.7;}
 </style>
 </head>
 <body>
@@ -195,6 +198,7 @@
       <th data-key="status">Status</th>
       <th data-key="socials">Socials</th>
       <th data-key="support2">2nd Support</th>
+      <th data-key="replay">Replay</th>
     </tr>
   </thead>
   <tbody id="tbody">
@@ -217,6 +221,7 @@
       </td>
       <td><select id="qa_socials" class="qa-sel"><option value="">—</option></select></td>
       <td><select id="qa_support2" class="qa-sel"><option value="">—</option></select></td>
+      <td style="text-align:center;"><input type="checkbox" id="qa_replay"></td>
     </tr>
   </tbody>
 </table>
@@ -328,6 +333,15 @@
               <option value="Hurling">Hurling</option>
               <option value="Camogie">Camogie</option>
             </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">Replay</div>
+        <div class="form-row">
+          <div class="form-group" style="flex-direction:row;align-items:center;gap:10px;">
+            <input type="checkbox" id="f_replay" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
+            <label for="f_replay" style="text-transform:none;font-size:13px;cursor:pointer;">Replay required</label>
           </div>
         </div>
       </div>
@@ -462,6 +476,7 @@ function applyOverrides(){
     if(!ov) return;
     if(ov.socials!==undefined){f.socials=ov.socials;f.socialsEmail=ov.socialsEmail;}
     if(ov.support2!==undefined){f.support2=ov.support2;f.support2Email=ov.support2Email;}
+    if(ov.replay!==undefined){f.replay=ov.replay;}
   });
 }
 
@@ -526,7 +541,7 @@ function openAddModal(){
     +_ml.comps.map(c=>`<option value="${c}">${c}</option>`).join('')
     +`<option value="__new__">— Add new competition —</option>`;
   g('f_competitionNew').style.display='none'; g('f_competitionNew').value='';
-  g('f_date').value=''; g('f_time').value=''; g('f_round').value=''; g('f_code').value='';
+  g('f_date').value=''; g('f_time').value=''; g('f_round').value=''; g('f_code').value=''; g('f_replay').checked=false;
   g('f_socials').innerHTML='<option value="">— None —</option>'
     +SOCIALS.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
   g('f_support2').innerHTML='<option value="">— None —</option>'
@@ -566,6 +581,7 @@ function openEditModal(id){
   g('f_code').value=f.code||'';
   g('f_socials').value=f.socials||'';
   g('f_support2').value=f.support2||'';
+  g('f_replay').checked=!!f.replay;
   // Update modal chrome
   document.querySelector('#addModal h2').textContent='Edit Fixture';
   document.querySelector('#addModal .btn-modal-add').textContent='Save Changes';
@@ -635,6 +651,7 @@ function setupModal(){
     if(!teamBVal)  return alert('Please select or enter Team B.');
     if(!dateVal)   return alert('Please enter a date.');
     const codeVal=g('f_code').value;
+    const replayVal=g('f_replay').checked;
     if(editingId!==null){
       const ex=fixtures.find(f=>f.id===editingId);
       if(ex){
@@ -643,7 +660,7 @@ function setupModal(){
           date:dateVal, day:dayName(dateVal), time:timeVal?to12h(timeVal):'',
           venue:venueVal||'', competition:compVal||'', round:roundVal,
           code:codeVal||deriveCode(compVal||'',null),
-          socials:socialsName, socialsEmail, support2:support2Name, support2Email
+          socials:socialsName, socialsEmail, support2:support2Name, support2Email, replay:replayVal
         });
         if(ex.manual){
           const mf=manualFixtures.find(m=>m.id===editingId);
@@ -654,7 +671,7 @@ function setupModal(){
             county:countyVal,teamA:teamAVal,teamB:teamBVal,date:dateVal,day:dayName(dateVal),
             time:ex.time,venue:ex.venue,competition:ex.competition,round:ex.round,
             code:ex.code,socials:ex.socials,socialsEmail:ex.socialsEmail,
-            support2:ex.support2,support2Email:ex.support2Email
+            support2:ex.support2,support2Email:ex.support2Email,replay:replayVal
           });
           saveOverrides();
         }
@@ -667,7 +684,7 @@ function setupModal(){
       date:dateVal, day:dayName(dateVal), time:timeVal?to12h(timeVal):'',
       venue:venueVal||'', competition:compVal||'', round:roundVal,
       code:codeVal||deriveCode(compVal||'',null), status:'Proposed', manual:true,
-      socials:socialsName, socialsEmail, support2:support2Name, support2Email
+      socials:socialsName, socialsEmail, support2:support2Name, support2Email, replay:replayVal
     };
     manualFixtures.push(f); fixtures.push(f);
     saveManualFixtures(); saveCache();
@@ -790,6 +807,7 @@ function render(){
       <td><span class="status status-${f.status.toLowerCase()}">${f.status}</span></td>
       <td class="socials-cell" data-socials-id="${f.id}" title="Click to assign socials" style="cursor:pointer;color:${f.socials?'inherit':'var(--muted)'};">${f.socials||'—'}</td>
       <td class="socials-cell" data-support2-id="${f.id}" title="Click to assign 2nd support" style="cursor:pointer;color:${f.support2?'inherit':'var(--muted)'};">${f.support2||'—'}</td>
+      <td class="replay-cell" data-replay-id="${f.id}" title="Click to toggle replay">${f.replay?'✔':'—'}</td>
     `;
     tbody.appendChild(tr);
   });
@@ -977,6 +995,20 @@ setupModal();
 
 // ---- Inline socials editing ----
 document.getElementById('tbody').addEventListener('click',e=>{
+  const replayTd=e.target.closest('td[data-replay-id]');
+  if(replayTd){
+    const id=+replayTd.dataset.replayId;
+    const f=fixtures.find(fx=>fx.id===id);
+    if(f){
+      f.replay=!f.replay;
+      const ov=fixtureOverrides[keyOf(f)]||{};
+      ov.replay=f.replay; fixtureOverrides[keyOf(f)]=ov;
+      saveOverrides();
+      if(f.manual){const mf=manualFixtures.find(m=>m.id===id);if(mf)mf.replay=f.replay;saveManualFixtures();}
+      saveCache(); render();
+    }
+    return;
+  }
   const td=e.target.closest('td[data-socials-id],td[data-support2-id]');
   if(!td) return;
   if(td.querySelector('select')) return;
@@ -1091,6 +1123,7 @@ function qaSave(){
   const socialsEmail=(SOCIALS.find(s=>s.name===socialsName)||{}).email||'';
   const support2Name=g('qa_support2').value;
   const support2Email=(SUPPORT2.find(s=>s.name===support2Name)||{}).email||'';
+  const replayVal=g('qa_replay').checked;
   if(!countyVal) return alert('County is required.');
   if(!teamAVal)  return alert('Team A is required.');
   if(!teamBVal)  return alert('Team B is required.');
@@ -1100,7 +1133,7 @@ function qaSave(){
     date:dateVal, day:dayName(dateVal), time:timeVal?to12h(timeVal):'',
     venue:venueVal||'', competition:compVal||'', round:roundVal,
     code:codeVal||deriveCode(compVal||'',null), status:'Proposed', manual:true,
-    socials:socialsName, socialsEmail, support2:support2Name, support2Email
+    socials:socialsName, socialsEmail, support2:support2Name, support2Email, replay:replayVal
   };
   manualFixtures.push(f); fixtures.push(f);
   saveManualFixtures(); saveCache();
@@ -1130,6 +1163,7 @@ const COLS=[
   {key:'status',label:'Status'},
   {key:'socials',label:'Socials'},
   {key:'support2',label:'2nd Support'},
+  {key:'replay',label:'Replay'},
 ];
 let hiddenCols=new Set();
 function loadColPrefs(){try{const r=localStorage.getItem(COL_PREFS_KEY);if(r){const a=JSON.parse(r);if(Array.isArray(a))hiddenCols=new Set(a);}}catch(e){}}
