@@ -148,12 +148,12 @@
         <button type="button" class="qa-cancel" onclick="qaCancel()" title="Cancel">✗</button>
       </td>
       <td><select id="qa_county" class="qa-sel" onchange="qaCountyChange()"></select><input type="text" id="qa_countyNew" class="qa-inp qa-new" placeholder="County name"></td>
-      <td><select id="qa_code" class="qa-sel"><option value="">Code…</option><option value="Football">Football</option><option value="Hurling">Hurling</option></select></td>
+      <td><select id="qa_code" class="qa-sel"><option value="">Code…</option><option value="Football">Football</option><option value="Hurling">Hurling</option><option value="Camogie">Camogie</option></select></td>
       <td><select id="qa_teamA" class="qa-sel" onchange="qaToggle('qa_teamA','qa_teamANew')"></select><input type="text" id="qa_teamANew" class="qa-inp qa-new" placeholder="Team name"></td>
       <td><select id="qa_teamB" class="qa-sel" onchange="qaToggle('qa_teamB','qa_teamBNew')"></select><input type="text" id="qa_teamBNew" class="qa-inp qa-new" placeholder="Team name"></td>
       <td><div class="picker-wrap"><input type="date" id="qa_date" class="qa-inp" onchange="document.getElementById('qa_day_cell').textContent=this.value?dayName(this.value):''"><button type="button" class="picker-icon" onclick="document.getElementById('qa_date').showPicker()"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1.5" y="2.5" width="13" height="12" rx="1.5"/><path d="M1.5 6.5h13"/><path d="M5 1v3"/><path d="M11 1v3"/><path d="M4.5 9.5h1.5v1.5H4.5z" stroke="none" fill="currentColor"/><path d="M7.25 9.5h1.5v1.5h-1.5z" stroke="none" fill="currentColor"/><path d="M10 9.5h1.5v1.5H10z" stroke="none" fill="currentColor"/></svg></button></div></td>
       <td id="qa_day_cell" class="qa-day"></td>
-      <td><input type="time" id="qa_time" class="qa-inp" onchange="this.blur()"></td>
+      <td><input type="time" id="qa_time" class="qa-inp" oninput="if(/^\d{2}:\d{2}$/.test(this.value))setTimeout(()=>this.blur(),50)"></td>
       <td><select id="qa_venue" class="qa-sel" onchange="qaToggle('qa_venue','qa_venueNew')"></select><input type="text" id="qa_venueNew" class="qa-inp qa-new" placeholder="Venue name"></td>
       <td><select id="qa_comp" class="qa-sel" onchange="qaCompChange()"></select><input type="text" id="qa_compNew" class="qa-inp qa-new" placeholder="Competition"></td>
       <td><select id="qa_round_sel" class="qa-sel" onchange="qaToggle('qa_round_sel','qa_roundNew')"></select><input type="text" id="qa_roundNew" class="qa-inp qa-new" placeholder="e.g. Round 1"></td>
