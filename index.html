@@ -90,6 +90,11 @@
   #colPickerPanel,#assignSocialsPanel{display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px 14px;z-index:500;min-width:160px;box-shadow:0 4px 16px rgba(0,0,0,.15);}
   #colPickerPanel label{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:13px;cursor:pointer;white-space:nowrap;color:var(--text);}
   #colPickerPanel input[type=checkbox]{width:14px;height:14px;accent-color:var(--accent);}
+  .col-pick-item{border-radius:4px;padding:5px 8px;font-size:13px;white-space:nowrap;}
+  .col-pick-item:hover{background:var(--border);}
+  #assignSocialsPanel .add-new-row{display:flex;gap:6px;margin-top:6px;padding-top:6px;border-top:1px solid var(--border);}
+  #assignSocialsPanel .add-new-row input{flex:1;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:4px 7px;font-size:12px;}
+  #assignSocialsPanel .add-new-row button{background:var(--accent);color:#fff;border:none;border-radius:4px;padding:4px 10px;font-size:12px;cursor:pointer;}
   /* Column hide classes — applied to <table id="fixtureTable"> */
   #fixtureTable.hide-county      th:nth-child(2),#fixtureTable.hide-county      td:nth-child(2){display:none;}
   #fixtureTable.hide-code        th:nth-child(3),#fixtureTable.hide-code        td:nth-child(3){display:none;}
@@ -990,24 +995,43 @@ function setupAssignSocials(){
   const panel=document.getElementById('assignSocialsPanel');
   panel.innerHTML=`<div class="col-pick-item" data-name="" data-email="" style="cursor:pointer;color:var(--muted);">— None —</div>`
     +SOCIALS.map(s=>`<div class="col-pick-item" data-name="${s.name}" data-email="${s.email}" style="cursor:pointer;">${s.name}</div>`).join('');
+  function assignToSelected(name,email){
+    fixtures.forEach(f=>{
+      if(!selected.has(f.id)) return;
+      f.socials=name; f.socialsEmail=email;
+      fixtureOverrides[keyOf(f)]={socials:name,socialsEmail:email};
+      if(f.manual){
+        const mf=manualFixtures.find(m=>m.id===f.id);
+        if(mf){mf.socials=name;mf.socialsEmail=email;}
+      }
+    });
+    saveOverrides(); saveManualFixtures(); saveCache(); render();
+  }
   panel.querySelectorAll('[data-name]').forEach(item=>{
     item.addEventListener('click',()=>{
-      const name=item.dataset.name, email=item.dataset.email;
-      fixtures.forEach(f=>{
-        if(!selected.has(f.id)) return;
-        f.socials=name; f.socialsEmail=email;
-        fixtureOverrides[keyOf(f)]={socials:name,socialsEmail:email};
-        if(f.manual){
-          const mf=manualFixtures.find(m=>m.id===f.id);
-          if(mf){mf.socials=name;mf.socialsEmail=email;}
-        }
-      });
-      saveOverrides(); saveManualFixtures(); saveCache();
+      assignToSelected(item.dataset.name,item.dataset.email);
       panel.style.display='none';
-      render();
     });
   });
-  btn.addEventListener('click',e=>{e.stopPropagation();panel.style.display=panel.style.display==='block'?'none':'block';});
+  // Add new person row
+  const addRow=document.createElement('div');
+  addRow.className='add-new-row';
+  addRow.innerHTML='<input type="text" placeholder="New name…"><button type="button">Add</button>';
+  panel.appendChild(addRow);
+  const nameInput=addRow.querySelector('input');
+  const addBtn=addRow.querySelector('button');
+  const assignCustom=()=>{
+    const name=nameInput.value.trim();
+    if(!name) return;
+    assignToSelected(name,'');
+    nameInput.value='';
+    panel.style.display='none';
+  };
+  addBtn.addEventListener('click',e=>{e.stopPropagation();assignCustom();});
+  nameInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.stopPropagation();assignCustom();}});
+  nameInput.addEventListener('click',e=>e.stopPropagation());
+
+  btn.addEventListener('click',e=>{e.stopPropagation();panel.style.display=panel.style.display==='block'?'none':'block';if(panel.style.display==='block')nameInput.value='';});
   document.addEventListener('click',()=>{panel.style.display='none';});
 }
 setupAssignSocials();
