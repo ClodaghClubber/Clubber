@@ -108,6 +108,7 @@
   #fixtureTable.hide-round       th:nth-child(11),#fixtureTable.hide-round       td:nth-child(11){display:none;}
   #fixtureTable.hide-status      th:nth-child(12),#fixtureTable.hide-status      td:nth-child(12){display:none;}
   #fixtureTable.hide-socials     th:nth-child(13),#fixtureTable.hide-socials     td:nth-child(13){display:none;}
+  #fixtureTable.hide-support2    th:nth-child(14),#fixtureTable.hide-support2    td:nth-child(14){display:none;}
 </style>
 </head>
 <body>
@@ -162,6 +163,10 @@
       <div id="assignSocialsPanel" style="display:none;"></div>
     </div>
     <div class="col-picker-wrap">
+      <button class="btn-remove" id="assignSupport2Btn" style="background:#0369a1;" disabled>2nd Support ▾</button>
+      <div id="assignSupport2Panel" style="display:none;"></div>
+    </div>
+    <div class="col-picker-wrap">
       <button class="btn-remove" id="colsBtn" style="background:#4a5568;">Columns ▾</button>
       <div id="colPickerPanel"></div>
     </div>
@@ -188,6 +193,7 @@
       <th data-key="round">Round</th>
       <th data-key="status">Status</th>
       <th data-key="socials">Socials</th>
+      <th data-key="support2">2nd Support</th>
     </tr>
   </thead>
   <tbody id="tbody">
@@ -209,6 +215,7 @@
         <button type="button" class="qa-cancel" onclick="qaCancel()" title="Cancel">✗</button>
       </td>
       <td><select id="qa_socials" class="qa-sel"><option value="">—</option></select></td>
+      <td><select id="qa_support2" class="qa-sel"><option value="">—</option></select></td>
     </tr>
   </tbody>
 </table>
@@ -313,13 +320,15 @@
         </div>
       </div>
       <div class="modal-section">
-        <div class="modal-section-title">Socials</div>
+        <div class="modal-section-title">Roles</div>
         <div class="form-row">
           <div class="form-group">
-            <label>Socials Person</label>
-            <select id="f_socials">
-              <option value="">— None —</option>
-            </select>
+            <label>Socials</label>
+            <select id="f_socials"><option value="">— None —</option></select>
+          </div>
+          <div class="form-group">
+            <label>2nd Support</label>
+            <select id="f_support2"><option value="">— None —</option></select>
           </div>
         </div>
       </div>
@@ -348,6 +357,15 @@ const SOCIALS=[
   {name:'Aidan',  email:'aidanoconnell242@gmail.com'},
   {name:'Jack',   email:'creminjoe99@gmail.com'},
   {name:'Gile',   email:'gilefmartin@gmail.com'},
+];
+const SUPPORT2=[
+  {name:'Cathal',  email:'cathal@clubbertv.com'},
+  {name:'Ciarán',  email:'ciaran@clubbertv.com'},
+  {name:'Clodagh', email:'clodagh@clubbertv.com'},
+  {name:'Jimmy',   email:'jimmy@clubbertv.com'},
+  {name:'Lar',     email:'lar@clubbertv.com'},
+  {name:'Mark',    email:'mark@clubbertv.com'},
+  {name:'Paul',    email:'paul@clubbertv.com'},
 ];
 // Derives Football/Hurling from competition name. Most counties embed the
 // sport in the competition string ("Hurling Championship", "HC", "FC", etc.).
@@ -420,7 +438,9 @@ function saveOverrides(){try{localStorage.setItem(OVERRIDES_KEY,JSON.stringify(f
 function applyOverrides(){
   fixtures.forEach(f=>{
     const k=keyOf(f), ov=fixtureOverrides[k];
-    if(ov){f.socials=ov.socials;f.socialsEmail=ov.socialsEmail;}
+    if(!ov) return;
+    if(ov.socials!==undefined){f.socials=ov.socials;f.socialsEmail=ov.socialsEmail;}
+    if(ov.support2!==undefined){f.support2=ov.support2;f.support2Email=ov.support2Email;}
   });
 }
 
@@ -487,6 +507,8 @@ function openAddModal(){
   g('f_date').value=''; g('f_time').value=''; g('f_round').value='';
   g('f_socials').innerHTML='<option value="">— None —</option>'
     +SOCIALS.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
+  g('f_support2').innerHTML='<option value="">— None —</option>'
+    +SUPPORT2.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
   document.getElementById('addModal').classList.add('open');
 }
 
@@ -540,6 +562,8 @@ function setupModal(){
     const dateVal=g('f_date').value, timeVal=g('f_time').value, roundVal=g('f_round').value.trim();
     const socialsName=g('f_socials').value;
     const socialsEmail=(SOCIALS.find(s=>s.name===socialsName)||{}).email||'';
+    const support2Name=g('f_support2').value;
+    const support2Email=(SUPPORT2.find(s=>s.name===support2Name)||{}).email||'';
     if(!countyVal) return alert('Please select or enter a county for Team A.');
     if(!teamAVal)  return alert('Please select or enter Team A.');
     if(!teamBVal)  return alert('Please select or enter Team B.');
@@ -549,7 +573,7 @@ function setupModal(){
       date:dateVal, day:dayName(dateVal), time:timeVal?to12h(timeVal):'',
       venue:venueVal||'', competition:compVal||'', round:roundVal,
       code:deriveCode(compVal||'',null), status:'Proposed', manual:true,
-      socials:socialsName, socialsEmail
+      socials:socialsName, socialsEmail, support2:support2Name, support2Email
     };
     manualFixtures.push(f); fixtures.push(f);
     saveManualFixtures(); saveCache();
@@ -658,6 +682,7 @@ function render(){
       <td>${f.round}</td>
       <td><span class="status status-${f.status.toLowerCase()}">${f.status}</span></td>
       <td class="socials-cell" data-socials-id="${f.id}" title="Click to assign socials" style="cursor:pointer;color:${f.socials?'inherit':'var(--muted)'};">${f.socials||'—'}</td>
+      <td class="socials-cell" data-support2-id="${f.id}" title="Click to assign 2nd support" style="cursor:pointer;color:${f.support2?'inherit':'var(--muted)'};">${f.support2||'—'}</td>
     `;
     tbody.appendChild(tr);
   });
@@ -678,6 +703,7 @@ function updateActionButtons(){
   removeBtn.disabled = selFixtures.length===0 || !selFixtures.every(f=>f.status==='Rejected');
   exportBtn.disabled = selFixtures.length===0;
   assignSocialsBtn.disabled = selFixtures.length===0;
+  assignSupport2Btn.disabled = selFixtures.length===0;
 }
 
 function csvEscape(val){
@@ -838,29 +864,34 @@ setupModal();
 
 // ---- Inline socials editing ----
 document.getElementById('tbody').addEventListener('click',e=>{
-  const td=e.target.closest('td[data-socials-id]');
+  const td=e.target.closest('td[data-socials-id],td[data-support2-id]');
   if(!td) return;
-  if(td.querySelector('select')) return; // already editing
-  const id=+td.dataset.socialsId;
+  if(td.querySelector('select')) return;
+  const isSocials='socialsId' in td.dataset;
+  const id=+(isSocials?td.dataset.socialsId:td.dataset.support2Id);
   const f=fixtures.find(fx=>fx.id===id);
   if(!f) return;
+  const list=isSocials?SOCIALS:SUPPORT2;
+  const cur=isSocials?f.socials:f.support2;
   const sel=document.createElement('select');
   sel.className='qa-sel';
   sel.style.minWidth='90px';
   sel.innerHTML='<option value="">—</option>'
-    +SOCIALS.map(s=>`<option value="${s.name}"${f.socials===s.name?' selected':''}>${s.name}</option>`).join('');
+    +list.map(s=>`<option value="${s.name}"${cur===s.name?' selected':''}>${s.name}</option>`).join('');
   td.innerHTML='';
   td.appendChild(sel);
   sel.focus();
   const commit=()=>{
     const name=sel.value;
-    const email=(SOCIALS.find(s=>s.name===name)||{}).email||'';
-    f.socials=name; f.socialsEmail=email;
-    fixtureOverrides[keyOf(f)]={socials:name,socialsEmail:email};
+    const email=(list.find(s=>s.name===name)||{}).email||'';
+    const ov=fixtureOverrides[keyOf(f)]||{};
+    if(isSocials){f.socials=name;f.socialsEmail=email;ov.socials=name;ov.socialsEmail=email;}
+    else{f.support2=name;f.support2Email=email;ov.support2=name;ov.support2Email=email;}
+    fixtureOverrides[keyOf(f)]=ov;
     saveOverrides();
     if(f.manual){
       const mf=manualFixtures.find(m=>m.id===id);
-      if(mf){mf.socials=name;mf.socialsEmail=email;}
+      if(mf){if(isSocials){mf.socials=name;mf.socialsEmail=email;}else{mf.support2=name;mf.support2Email=email;}}
       saveManualFixtures();
     }
     saveCache();
@@ -893,6 +924,8 @@ function openQuickAdd(){
     +'<option value="__new__">+ New round</option>';
   g('qa_socials').innerHTML='<option value="">—</option>'
     +SOCIALS.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
+  g('qa_support2').innerHTML='<option value="">—</option>'
+    +SUPPORT2.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
   g('qa_code').value='';
   g('qa_date').value=''; g('qa_time').value='';
   g('qa_day_cell').textContent='';
@@ -943,6 +976,8 @@ function qaSave(){
   const codeVal=g('qa_code').value;
   const socialsName=g('qa_socials').value;
   const socialsEmail=(SOCIALS.find(s=>s.name===socialsName)||{}).email||'';
+  const support2Name=g('qa_support2').value;
+  const support2Email=(SUPPORT2.find(s=>s.name===support2Name)||{}).email||'';
   if(!countyVal) return alert('County is required.');
   if(!teamAVal)  return alert('Team A is required.');
   if(!teamBVal)  return alert('Team B is required.');
@@ -952,7 +987,7 @@ function qaSave(){
     date:dateVal, day:dayName(dateVal), time:timeVal?to12h(timeVal):'',
     venue:venueVal||'', competition:compVal||'', round:roundVal,
     code:codeVal||deriveCode(compVal||'',null), status:'Proposed', manual:true,
-    socials:socialsName, socialsEmail
+    socials:socialsName, socialsEmail, support2:support2Name, support2Email
   };
   manualFixtures.push(f); fixtures.push(f);
   saveManualFixtures(); saveCache();
@@ -981,6 +1016,7 @@ const COLS=[
   {key:'round',label:'Round'},
   {key:'status',label:'Status'},
   {key:'socials',label:'Socials'},
+  {key:'support2',label:'2nd Support'},
 ];
 let hiddenCols=new Set();
 function loadColPrefs(){try{const r=localStorage.getItem(COL_PREFS_KEY);if(r){const a=JSON.parse(r);if(Array.isArray(a))hiddenCols=new Set(a);}}catch(e){}}
@@ -999,7 +1035,7 @@ function setupAssignSocials(){
     fixtures.forEach(f=>{
       if(!selected.has(f.id)) return;
       f.socials=name; f.socialsEmail=email;
-      fixtureOverrides[keyOf(f)]={socials:name,socialsEmail:email};
+      fixtureOverrides[keyOf(f)]=Object.assign(fixtureOverrides[keyOf(f)]||{},{socials:name,socialsEmail:email});
       if(f.manual){
         const mf=manualFixtures.find(m=>m.id===f.id);
         if(mf){mf.socials=name;mf.socialsEmail=email;}
@@ -1035,6 +1071,41 @@ function setupAssignSocials(){
   document.addEventListener('click',()=>{panel.style.display='none';});
 }
 setupAssignSocials();
+
+function setupAssignSupport2(){
+  const btn=document.getElementById('assignSupport2Btn');
+  const panel=document.getElementById('assignSupport2Panel');
+  panel.innerHTML=`<div class="col-pick-item" data-name="" data-email="" style="cursor:pointer;color:var(--muted);">— None —</div>`
+    +SUPPORT2.map(s=>`<div class="col-pick-item" data-name="${s.name}" data-email="${s.email}" style="cursor:pointer;">${s.name}</div>`).join('');
+  function assignToSelected(name,email){
+    fixtures.forEach(f=>{
+      if(!selected.has(f.id)) return;
+      f.support2=name; f.support2Email=email;
+      fixtureOverrides[keyOf(f)]=Object.assign(fixtureOverrides[keyOf(f)]||{},{support2:name,support2Email:email});
+      if(f.manual){
+        const mf=manualFixtures.find(m=>m.id===f.id);
+        if(mf){mf.support2=name;mf.support2Email=email;}
+      }
+    });
+    saveOverrides(); saveManualFixtures(); saveCache(); render();
+  }
+  panel.querySelectorAll('[data-name]').forEach(item=>{
+    item.addEventListener('click',()=>{assignToSelected(item.dataset.name,item.dataset.email);panel.style.display='none';});
+  });
+  const addRow=document.createElement('div');
+  addRow.className='add-new-row';
+  addRow.innerHTML='<input type="text" placeholder="New name…"><button type="button">Add</button>';
+  panel.appendChild(addRow);
+  const nameInput=addRow.querySelector('input');
+  const addBtn=addRow.querySelector('button');
+  const assignCustom=()=>{const name=nameInput.value.trim();if(!name)return;assignToSelected(name,'');nameInput.value='';panel.style.display='none';};
+  addBtn.addEventListener('click',e=>{e.stopPropagation();assignCustom();});
+  nameInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.stopPropagation();assignCustom();}});
+  nameInput.addEventListener('click',e=>e.stopPropagation());
+  btn.addEventListener('click',e=>{e.stopPropagation();panel.style.display=panel.style.display==='block'?'none':'block';if(panel.style.display==='block')nameInput.value='';});
+  document.addEventListener('click',()=>{panel.style.display='none';});
+}
+setupAssignSupport2();
 
 function setupColPicker(){
   loadColPrefs();
