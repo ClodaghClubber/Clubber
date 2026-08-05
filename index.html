@@ -135,16 +135,18 @@
 <div id="addModal">
   <div class="modal-box">
     <h2>Add Fixture</h2>
+    <p style="margin:0 0 18px;font-size:12px;color:var(--muted);"><span style="color:#e05050">*</span> required field</p>
     <form id="addFixtureForm">
       <div class="modal-section">
         <div class="modal-section-title">Team A</div>
         <div class="form-row">
           <div class="form-group">
-            <label>County</label>
+            <label>County <span style="color:#e05050">*</span></label>
             <select id="f_countyA"></select>
+            <input type="text" class="new-entry" id="f_countyANew" placeholder="Enter county name">
           </div>
           <div class="form-group">
-            <label>Team</label>
+            <label>Team <span style="color:#e05050">*</span></label>
             <select id="f_teamA"></select>
             <input type="text" class="new-entry" id="f_teamANew" placeholder="Enter team name">
           </div>
@@ -154,11 +156,12 @@
         <div class="modal-section-title">Team B</div>
         <div class="form-row">
           <div class="form-group">
-            <label>County</label>
+            <label>County <span style="color:#e05050">*</span></label>
             <select id="f_countyB"></select>
+            <input type="text" class="new-entry" id="f_countyBNew" placeholder="Enter county name">
           </div>
           <div class="form-group">
-            <label>Team</label>
+            <label>Team <span style="color:#e05050">*</span></label>
             <select id="f_teamB"></select>
             <input type="text" class="new-entry" id="f_teamBNew" placeholder="Enter team name">
           </div>
@@ -168,11 +171,11 @@
         <div class="modal-section-title">Date &amp; Time</div>
         <div class="form-row">
           <div class="form-group">
-            <label>Date</label>
+            <label for="f_date">📅 Date <span style="color:#e05050">*</span></label>
             <input type="date" id="f_date">
           </div>
           <div class="form-group">
-            <label>Time (optional)</label>
+            <label for="f_time">🕐 Time</label>
             <input type="time" id="f_time">
           </div>
         </div>
@@ -183,9 +186,10 @@
           <div class="form-group">
             <label>County</label>
             <select id="f_venueCounty"></select>
+            <input type="text" class="new-entry" id="f_venueCountyNew" placeholder="Enter county name">
           </div>
           <div class="form-group">
-            <label>Venue (optional)</label>
+            <label>Venue</label>
             <select id="f_venue"></select>
             <input type="text" class="new-entry" id="f_venueNew" placeholder="Enter venue name">
           </div>
@@ -200,7 +204,7 @@
             <input type="text" class="new-entry" id="f_competitionNew" placeholder="Enter competition name">
           </div>
           <div class="form-group">
-            <label>Round (optional)</label>
+            <label>Round</label>
             <input type="text" id="f_round" placeholder="e.g. Round 1">
           </div>
         </div>
@@ -294,7 +298,17 @@ function _buildLookups(){
 }
 
 function _countyOpts(counties){
-  return `<option value="">Select county…</option>`+counties.map(c=>`<option value="${c}">${c}</option>`).join('');
+  return `<option value="">Select county…</option>`
+    +counties.map(c=>`<option value="${c}">${c}</option>`).join('')
+    +`<option value="__new__">— Add new county —</option>`;
+}
+function _resolveCounty(sel, inp){
+  return sel.value==='__new__' ? inp.value.trim() : sel.value;
+}
+function _handleNewToggle(sel, inp){
+  const isNew=sel.value==='__new__';
+  inp.style.display=isNew?'block':'none';
+  if(!isNew) inp.value='';
 }
 function _populateTeam(sel, county, inp){
   const list=[...(_ml.teams[county]||new Set())].sort();
@@ -313,81 +327,89 @@ function _populateVenue(sel, county, inp){
 
 function openAddModal(){
   _ml=_buildLookups();
-  const fca=document.getElementById('f_countyA'), fcb=document.getElementById('f_countyB');
-  const fvc=document.getElementById('f_venueCounty');
-  const fta=document.getElementById('f_teamA'), ftb=document.getElementById('f_teamB');
-  const fv=document.getElementById('f_venue');
-  const ftaNew=document.getElementById('f_teamANew'), ftbNew=document.getElementById('f_teamBNew');
-  const fvNew=document.getElementById('f_venueNew');
-  const fc=document.getElementById('f_competition'), fcNew=document.getElementById('f_competitionNew');
+  const ids=['f_countyA','f_countyANew','f_countyB','f_countyBNew','f_venueCounty','f_venueCountyNew',
+             'f_teamA','f_teamANew','f_teamB','f_teamBNew','f_venue','f_venueNew',
+             'f_competition','f_competitionNew','f_date','f_time','f_round'];
+  const g=id=>document.getElementById(id);
   const opts=_countyOpts(_ml.counties);
-  fca.innerHTML=opts; fcb.innerHTML=opts; fvc.innerHTML=opts;
-  _populateTeam(fta,'',ftaNew); _populateTeam(ftb,'',ftbNew);
-  _populateVenue(fv,'',fvNew);
-  fc.innerHTML=`<option value="">Select competition…</option>`
+  g('f_countyA').innerHTML=opts; g('f_countyB').innerHTML=opts; g('f_venueCounty').innerHTML=opts;
+  ['f_countyANew','f_countyBNew','f_venueCountyNew'].forEach(id=>{ g(id).style.display='none'; g(id).value=''; });
+  _populateTeam(g('f_teamA'),'',g('f_teamANew'));
+  _populateTeam(g('f_teamB'),'',g('f_teamBNew'));
+  _populateVenue(g('f_venue'),'',g('f_venueNew'));
+  g('f_competition').innerHTML=`<option value="">Select competition…</option>`
     +_ml.comps.map(c=>`<option value="${c}">${c}</option>`).join('')
     +`<option value="__new__">— Add new competition —</option>`;
-  fcNew.style.display='none'; fcNew.value='';
-  document.getElementById('f_date').value='';
-  document.getElementById('f_time').value='';
-  document.getElementById('f_round').value='';
+  g('f_competitionNew').style.display='none'; g('f_competitionNew').value='';
+  g('f_date').value=''; g('f_time').value=''; g('f_round').value='';
   document.getElementById('addModal').classList.add('open');
 }
 
 function setupModal(){
-  const fca=document.getElementById('f_countyA'), fcb=document.getElementById('f_countyB');
-  const fvc=document.getElementById('f_venueCounty');
-  const fta=document.getElementById('f_teamA'), ftb=document.getElementById('f_teamB');
-  const fv=document.getElementById('f_venue');
-  const ftaNew=document.getElementById('f_teamANew'), ftbNew=document.getElementById('f_teamBNew');
-  const fvNew=document.getElementById('f_venueNew');
-  const fc=document.getElementById('f_competition'), fcNew=document.getElementById('f_competitionNew');
+  const g=id=>document.getElementById(id);
+  const fca=g('f_countyA'), fcaNew=g('f_countyANew');
+  const fcb=g('f_countyB'), fcbNew=g('f_countyBNew');
+  const fvc=g('f_venueCounty'), fvcNew=g('f_venueCountyNew');
+  const fta=g('f_teamA'), ftaNew=g('f_teamANew');
+  const ftb=g('f_teamB'), ftbNew=g('f_teamBNew');
+  const fv=g('f_venue'), fvNew=g('f_venueNew');
+  const fc=g('f_competition'), fcNew=g('f_competitionNew');
 
   fca.addEventListener('change',()=>{
-    _populateTeam(fta,fca.value,ftaNew);
-    if(!fvc.value){ fvc.value=fca.value; _populateVenue(fv,fvc.value,fvNew); }
+    _handleNewToggle(fca, fcaNew);
+    const county=fca.value==='__new__'?'':fca.value;
+    _populateTeam(fta, county, ftaNew);
+    // Default County B and Venue County to County A if not yet set
+    if(!fcb.value || fcb.value===fca.value){ fcb.value=fca.value; fcb.dispatchEvent(new Event('change')); }
+    if(!fvc.value){ fvc.value=fca.value; _populateVenue(fv, county, fvNew); }
   });
-  fcb.addEventListener('change',()=>_populateTeam(ftb,fcb.value,ftbNew));
-  fvc.addEventListener('change',()=>_populateVenue(fv,fvc.value,fvNew));
+  fcaNew.addEventListener('input',()=>_populateTeam(fta,'',ftaNew));
+
+  fcb.addEventListener('change',()=>{
+    _handleNewToggle(fcb, fcbNew);
+    const county=fcb.value==='__new__'?'':fcb.value;
+    _populateTeam(ftb, county, ftbNew);
+  });
+
+  fvc.addEventListener('change',()=>{
+    _handleNewToggle(fvc, fvcNew);
+    const county=fvc.value==='__new__'?'':fvc.value;
+    _populateVenue(fv, county, fvNew);
+  });
 
   fta.addEventListener('change',()=>{ ftaNew.style.display=fta.value==='__new__'?'block':'none'; if(fta.value!=='__new__') ftaNew.value=''; });
   ftb.addEventListener('change',()=>{ ftbNew.style.display=ftb.value==='__new__'?'block':'none'; if(ftb.value!=='__new__') ftbNew.value=''; });
   fv.addEventListener('change', ()=>{ fvNew.style.display=fv.value==='__new__'?'block':'none';   if(fv.value!=='__new__')  fvNew.value=''; });
   fc.addEventListener('change', ()=>{ fcNew.style.display=fc.value==='__new__'?'block':'none';   if(fc.value!=='__new__')  fcNew.value=''; });
 
-  document.getElementById('cancelFixtureBtn').addEventListener('click',()=>
-    document.getElementById('addModal').classList.remove('open'));
-  document.getElementById('addModal').addEventListener('click',e=>{
-    if(e.target===document.getElementById('addModal')) document.getElementById('addModal').classList.remove('open');
-  });
+  g('cancelFixtureBtn').addEventListener('click',()=>g('addModal').classList.remove('open'));
+  g('addModal').addEventListener('click',e=>{ if(e.target===g('addModal')) g('addModal').classList.remove('open'); });
 
-  document.getElementById('addFixtureForm').addEventListener('submit',e=>{
+  g('addFixtureForm').addEventListener('submit',e=>{
     e.preventDefault();
+    const countyVal=_resolveCounty(fca,fcaNew);
     const teamAVal=fta.value==='__new__'?ftaNew.value.trim():fta.value;
     const teamBVal=ftb.value==='__new__'?ftbNew.value.trim():ftb.value;
     const venueVal=fv.value==='__new__'?fvNew.value.trim():fv.value;
     const compVal=fc.value==='__new__'?fcNew.value.trim():fc.value;
-    const countyVal=fca.value, dateVal=document.getElementById('f_date').value;
-    const timeVal=document.getElementById('f_time').value;
-    const roundVal=document.getElementById('f_round').value.trim();
-    if(!countyVal) return alert('Please select a county for Team A.');
+    const dateVal=g('f_date').value, timeVal=g('f_time').value, roundVal=g('f_round').value.trim();
+    if(!countyVal) return alert('Please select or enter a county for Team A.');
     if(!teamAVal)  return alert('Please select or enter Team A.');
     if(!teamBVal)  return alert('Please select or enter Team B.');
     if(!dateVal)   return alert('Please enter a date.');
-    if(!compVal)   return alert('Please select or enter a competition.');
     const f={
       id:nextId++, county:countyVal, teamA:teamAVal, teamB:teamBVal,
       date:dateVal, day:dayName(dateVal), time:timeVal?to12h(timeVal):'',
-      venue:venueVal||'', competition:compVal, round:roundVal,
-      code:deriveCode(compVal,null), status:'Proposed', manual:true
+      venue:venueVal||'', competition:compVal||'', round:roundVal,
+      code:deriveCode(compVal||'',null), status:'Proposed', manual:true
     };
     manualFixtures.push(f); fixtures.push(f);
     saveManualFixtures(); saveCache();
     populateFilterOptions(); render();
-    document.getElementById('addModal').classList.remove('open');
+    g('addModal').classList.remove('open');
   });
 
-  document.getElementById('addFixtureBtn').addEventListener('click',openAddModal);
+  g('addFixtureBtn').addEventListener('click',openAddModal);
 }
 
 function saveCache(){
