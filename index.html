@@ -26,8 +26,24 @@
   thead th{position:sticky;top:0;background:var(--panel);text-align:left;padding:10px 12px;border-bottom:1px solid var(--border);font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;cursor:pointer;}
   th[data-key="round"],td:nth-child(11){white-space:nowrap;}
   tbody td{padding:9px 12px;border-bottom:1px solid var(--border);}
-  tbody tr:hover{background:#1f2733;}
-  tbody tr.row-rejected{opacity:0.55;}
+  tbody tr:hover{filter:brightness(1.4);}
+  tbody tr.row-rejected{opacity:0.5;}
+  /* ---- County row colours (GAA-inspired, each unique) ---- */
+  .cr-cork      {background:rgba(200,16,46,.30);}   /* crimson red */
+  .cr-waterford {background:rgba(0,48,135,.38);}    /* deep navy */
+  .cr-kerry     {background:rgba(0,154,68,.28);}    /* emerald green */
+  .cr-offaly    {background:rgba(230,110,0,.26);}   /* orange (green-white-gold) */
+  .cr-laois     {background:rgba(60,130,210,.28);}  /* royal blue */
+  .cr-wexford   {background:rgba(107,33,168,.30);}  /* purple */
+  .cr-kilkenny  {background:rgba(210,150,0,.28);}   /* amber */
+  .cr-tipperary {background:rgba(25,105,180,.30);}  /* steel blue */
+  .cr-monaghan  {background:rgba(30,170,230,.24);}  /* sky blue */
+  .cr-meath     {background:rgba(25,100,40,.32);}   /* forest green */
+  .cr-longford  {background:rgba(50,40,170,.32);}   /* indigo */
+  .cr-roscommon {background:rgba(225,195,0,.24);}   /* primrose yellow */
+  .cr-kildare   {background:rgba(90,110,125,.28);}  /* slate blue-grey */
+  .cr-carlow    {background:rgba(155,15,70,.30);}   /* deep rose */
+  .cr-louth     {background:rgba(215,55,30,.28);}   /* vermillion */
   .status{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;text-transform:uppercase;}
   .status-proposed{background:rgba(212,160,23,.15);color:var(--propose);}
   .status-approved{background:rgba(39,174,96,.15);color:var(--approve);}
@@ -545,6 +561,8 @@ function render(){
   rowCount.textContent=`${list.length} fixture${list.length!==1?'s':''} shown`;
   list.forEach(f=>{
     const tr=document.createElement('tr');
+    const countyClass='cr-'+f.county.toLowerCase().replace(/\s+/g,'-');
+    tr.classList.add(countyClass);
     if(f.status==='Rejected') tr.classList.add('row-rejected');
     tr.innerHTML=`
       <td><input type="checkbox" data-id="${f.id}" ${selected.has(f.id)?'checked':''}></td>
