@@ -70,6 +70,7 @@
   .btn-modal-cancel{background:var(--border);color:var(--text);}
   .btn-modal-add{background:#5a4fcf;color:#fff;}
   .badge-manual{font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:rgba(90,79,207,.2);color:#9b8fe8;padding:2px 6px;border-radius:8px;margin-left:6px;vertical-align:middle;}
+  .badge-dh{font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:rgba(234,88,12,.18);color:#c2410c;padding:2px 5px;border-radius:8px;margin-left:5px;vertical-align:middle;cursor:default;}
   /* ---- Quick Add Row ---- */
   #quickAddBtn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:4px;width:22px;height:22px;font-size:16px;line-height:1;cursor:pointer;margin-left:6px;padding:0;vertical-align:middle;}
   #quickAddBtn:hover{color:var(--text);border-color:var(--accent);}
@@ -749,8 +750,21 @@ function getFiltered(){
   return list;
 }
 
+function getDoubleHeaderIds(){
+  const groups={};
+  fixtures.forEach(f=>{
+    if(!f.venue) return;
+    const key=`${f.date}|${f.venue.trim().toLowerCase()}`;
+    (groups[key]=groups[key]||[]).push(f.id);
+  });
+  const ids=new Set();
+  Object.values(groups).forEach(g=>{ if(g.length>=2) g.forEach(id=>ids.add(id)); });
+  return ids;
+}
+
 function render(){
   const list=getFiltered();
+  const dhIds=getDoubleHeaderIds();
   const qaRow=document.getElementById('quickAddRow');
   tbody.innerHTML='';
   if(qaRow) tbody.prepend(qaRow);
@@ -770,7 +784,7 @@ function render(){
       <td>${f.date}</td>
       <td>${f.day}</td>
       <td>${f.time}</td>
-      <td>${f.venue}</td>
+      <td>${f.venue}${dhIds.has(f.id)?'<span class="badge-dh" title="Double header — multiple fixtures at this venue on this day">DH</span>':''}</td>
       <td>${f.competition}</td>
       <td>${f.round}</td>
       <td><span class="status status-${f.status.toLowerCase()}">${f.status}</span></td>
