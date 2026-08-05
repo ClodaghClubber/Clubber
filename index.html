@@ -127,7 +127,7 @@
 <table>
   <thead>
     <tr>
-      <th><input type="checkbox" id="selectAll"><button id="quickAddBtn" title="Quick add fixture">+</button></th>
+      <th><input type="checkbox" id="selectAll"><button onclick="openQuickAdd()" title="Quick add fixture" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:4px;width:22px;height:22px;font-size:16px;line-height:1;cursor:pointer;margin-left:6px;padding:0;vertical-align:middle;">+</button></th>
       <th data-key="county">County</th>
       <th data-key="code">Code</th>
       <th data-key="teamA">Team A</th>
@@ -144,18 +144,18 @@
   <tbody id="tbody">
     <tr id="quickAddRow" class="quick-add-row" style="display:none;">
       <td style="white-space:nowrap;">
-        <button type="button" class="qa-save" id="qa_save" title="Save">✓</button>
-        <button type="button" class="qa-cancel" id="qa_cancel" title="Cancel">✗</button>
+        <button type="button" class="qa-save" onclick="qaSave()" title="Save">✓</button>
+        <button type="button" class="qa-cancel" onclick="qaCancel()" title="Cancel">✗</button>
       </td>
-      <td><select id="qa_county" class="qa-sel"></select><input type="text" id="qa_countyNew" class="qa-inp qa-new" placeholder="County name"></td>
+      <td><select id="qa_county" class="qa-sel" onchange="qaCountyChange()"></select><input type="text" id="qa_countyNew" class="qa-inp qa-new" placeholder="County name"></td>
       <td id="qa_code_cell" class="qa-day"></td>
-      <td><select id="qa_teamA" class="qa-sel"></select><input type="text" id="qa_teamANew" class="qa-inp qa-new" placeholder="Team name"></td>
-      <td><select id="qa_teamB" class="qa-sel"></select><input type="text" id="qa_teamBNew" class="qa-inp qa-new" placeholder="Team name"></td>
-      <td><input type="date" id="qa_date" class="qa-inp"></td>
+      <td><select id="qa_teamA" class="qa-sel" onchange="qaToggle('qa_teamA','qa_teamANew')"></select><input type="text" id="qa_teamANew" class="qa-inp qa-new" placeholder="Team name"></td>
+      <td><select id="qa_teamB" class="qa-sel" onchange="qaToggle('qa_teamB','qa_teamBNew')"></select><input type="text" id="qa_teamBNew" class="qa-inp qa-new" placeholder="Team name"></td>
+      <td><input type="date" id="qa_date" class="qa-inp" onchange="document.getElementById('qa_day_cell').textContent=this.value?dayName(this.value):''"></td>
       <td id="qa_day_cell" class="qa-day"></td>
       <td><input type="time" id="qa_time" class="qa-inp"></td>
-      <td><select id="qa_venue" class="qa-sel"></select><input type="text" id="qa_venueNew" class="qa-inp qa-new" placeholder="Venue name"></td>
-      <td><select id="qa_comp" class="qa-sel"></select><input type="text" id="qa_compNew" class="qa-inp qa-new" placeholder="Competition"></td>
+      <td><select id="qa_venue" class="qa-sel" onchange="qaToggle('qa_venue','qa_venueNew')"></select><input type="text" id="qa_venueNew" class="qa-inp qa-new" placeholder="Venue name"></td>
+      <td><select id="qa_comp" class="qa-sel" onchange="qaCompChange()"></select><input type="text" id="qa_compNew" class="qa-inp qa-new" placeholder="Competition"></td>
       <td><input type="text" id="qa_round" class="qa-inp" placeholder="Round"></td>
       <td><span class="status status-proposed">Proposed</span></td>
     </tr>
@@ -732,104 +732,88 @@ if(cached){
 }
 loadFixtures(false);
 setupModal();
-setupQuickAdd();
 
-function setupQuickAdd(){
+// ---- Quick Add global functions (called via inline onclick/onchange) ----
+let _qaLk=null;
+
+function openQuickAdd(){
   const g=id=>document.getElementById(id);
+  _qaLk=_buildLookups();
+  const countyOpts='<option value="">County…</option>'
+    +_qaLk.counties.map(c=>`<option value="${c}">${c}</option>`).join('')
+    +'<option value="__new__">+ New county</option>';
+  g('qa_county').innerHTML=countyOpts;
+  ['qa_countyNew','qa_teamANew','qa_teamBNew','qa_venueNew','qa_compNew'].forEach(id=>{ g(id).style.display='none'; g(id).value=''; });
+  g('qa_teamA').innerHTML='<option value="">Select county first…</option>';
+  g('qa_teamB').innerHTML='<option value="">Select county first…</option>';
+  g('qa_venue').innerHTML='<option value="">Venue…</option><option value="__new__">+ New venue</option>';
+  g('qa_comp').innerHTML='<option value="">Competition…</option>'
+    +_qaLk.comps.map(c=>`<option value="${c}">${c}</option>`).join('')
+    +'<option value="__new__">+ New competition</option>';
+  g('qa_date').value=''; g('qa_time').value=''; g('qa_round').value='';
+  g('qa_day_cell').textContent=''; g('qa_code_cell').textContent='';
+  const row=g('quickAddRow');
+  row.style.display='';
+  tbody.prepend(row);
+  g('qa_county').focus();
+}
 
-  function qaCountyOpts(lk){
-    return '<option value="">County…</option>'
-      +lk.counties.map(c=>`<option value="${c}">${c}</option>`).join('')
-      +'<option value="__new__">+ New county</option>';
-  }
-  function qaTeamOpts(lk,county){
-    const list=[...(lk.teams[county]||new Set())].sort();
-    return '<option value="">Team…</option>'
-      +list.map(t=>`<option value="${t}">${t}</option>`).join('')
-      +'<option value="__new__">+ New team</option>';
-  }
-  function qaVenueOpts(lk,county){
-    const list=[...(lk.venues[county]||new Set())].sort();
-    return '<option value="">Venue…</option>'
-      +list.map(v=>`<option value="${v}">${v}</option>`).join('')
-      +'<option value="__new__">+ New venue</option>';
-  }
-  function qaToggleNew(sel,inp){
-    const isNew=sel.value==='__new__';
-    inp.style.display=isNew?'block':'none';
-    if(!isNew) inp.value='';
-  }
-  function qaResolve(sel,inp){
-    return sel.value==='__new__'?inp.value.trim():sel.value;
-  }
+function qaToggle(selId,newId){
+  const g=id=>document.getElementById(id);
+  const isNew=g(selId).value==='__new__';
+  g(newId).style.display=isNew?'block':'none';
+  if(!isNew) g(newId).value='';
+}
 
-  g('quickAddBtn').addEventListener('click',()=>{
-    const lk=_buildLookups();
-    g('quickAddRow')._lk=lk;
-    g('qa_county').innerHTML=qaCountyOpts(lk); g('qa_countyNew').style.display='none'; g('qa_countyNew').value='';
-    g('qa_teamA').innerHTML='<option value="">Select county first…</option>'; g('qa_teamANew').style.display='none'; g('qa_teamANew').value='';
-    g('qa_teamB').innerHTML='<option value="">Select county first…</option>'; g('qa_teamBNew').style.display='none'; g('qa_teamBNew').value='';
-    g('qa_venue').innerHTML='<option value="">Venue…</option><option value="__new__">+ New venue</option>'; g('qa_venueNew').style.display='none'; g('qa_venueNew').value='';
-    g('qa_comp').innerHTML='<option value="">Competition…</option>'
-      +lk.comps.map(c=>`<option value="${c}">${c}</option>`).join('')
-      +'<option value="__new__">+ New competition</option>';
-    g('qa_compNew').style.display='none'; g('qa_compNew').value='';
-    g('qa_date').value=''; g('qa_time').value=''; g('qa_round').value='';
-    g('qa_day_cell').textContent=''; g('qa_code_cell').textContent='';
-    g('quickAddRow').style.display='';
-    tbody.prepend(g('quickAddRow'));
-    g('qa_county').focus();
-  });
+function qaCountyChange(){
+  const g=id=>document.getElementById(id);
+  qaToggle('qa_county','qa_countyNew');
+  const county=g('qa_county').value==='__new__'?'':g('qa_county').value;
+  const teams=[...(_qaLk&&_qaLk.teams[county]||new Set())].sort();
+  const teamOpts='<option value="">Team…</option>'+teams.map(t=>`<option value="${t}">${t}</option>`).join('')+'<option value="__new__">+ New team</option>';
+  g('qa_teamA').innerHTML=teamOpts; g('qa_teamANew').style.display='none'; g('qa_teamANew').value='';
+  g('qa_teamB').innerHTML=teamOpts; g('qa_teamBNew').style.display='none'; g('qa_teamBNew').value='';
+  const venues=[...(_qaLk&&_qaLk.venues[county]||new Set())].sort();
+  const venueOpts='<option value="">Venue…</option>'+venues.map(v=>`<option value="${v}">${v}</option>`).join('')+'<option value="__new__">+ New venue</option>';
+  g('qa_venue').innerHTML=venueOpts; g('qa_venueNew').style.display='none'; g('qa_venueNew').value='';
+}
 
-  g('qa_county').addEventListener('change',()=>{
-    const lk=g('quickAddRow')._lk;
-    qaToggleNew(g('qa_county'),g('qa_countyNew'));
-    const county=g('qa_county').value==='__new__'?'':g('qa_county').value;
-    g('qa_teamA').innerHTML=qaTeamOpts(lk,county); g('qa_teamANew').style.display='none'; g('qa_teamANew').value='';
-    g('qa_teamB').innerHTML=qaTeamOpts(lk,county); g('qa_teamBNew').style.display='none'; g('qa_teamBNew').value='';
-    g('qa_venue').innerHTML=qaVenueOpts(lk,county); g('qa_venueNew').style.display='none'; g('qa_venueNew').value='';
-  });
+function qaCompChange(){
+  const g=id=>document.getElementById(id);
+  qaToggle('qa_comp','qa_compNew');
+  const comp=g('qa_comp').value==='__new__'?'':g('qa_comp').value;
+  g('qa_code_cell').textContent=deriveCode(comp,null)||'';
+}
 
-  g('qa_teamA').addEventListener('change',()=>qaToggleNew(g('qa_teamA'),g('qa_teamANew')));
-  g('qa_teamB').addEventListener('change',()=>qaToggleNew(g('qa_teamB'),g('qa_teamBNew')));
-  g('qa_venue').addEventListener('change', ()=>qaToggleNew(g('qa_venue'),g('qa_venueNew')));
-  g('qa_comp').addEventListener('change', ()=>{
-    qaToggleNew(g('qa_comp'),g('qa_compNew'));
-    const comp=g('qa_comp').value==='__new__'?'':g('qa_comp').value;
-    g('qa_code_cell').textContent=deriveCode(comp,null)||'';
-  });
-  g('qa_date').addEventListener('change',()=>{
-    const d=g('qa_date').value;
-    g('qa_day_cell').textContent=d?dayName(d):'';
-  });
+function qaSave(){
+  const g=id=>document.getElementById(id);
+  const resolve=(selId,newId)=>g(selId).value==='__new__'?g(newId).value.trim():g(selId).value;
+  const countyVal=resolve('qa_county','qa_countyNew');
+  const teamAVal =resolve('qa_teamA','qa_teamANew');
+  const teamBVal =resolve('qa_teamB','qa_teamBNew');
+  const venueVal =resolve('qa_venue','qa_venueNew');
+  const compVal  =resolve('qa_comp','qa_compNew');
+  const dateVal=g('qa_date').value, timeVal=g('qa_time').value, roundVal=g('qa_round').value.trim();
+  if(!countyVal) return alert('County is required.');
+  if(!teamAVal)  return alert('Team A is required.');
+  if(!teamBVal)  return alert('Team B is required.');
+  if(!dateVal)   return alert('Date is required.');
+  const f={
+    id:nextId++, county:countyVal, teamA:teamAVal, teamB:teamBVal,
+    date:dateVal, day:dayName(dateVal), time:timeVal?to12h(timeVal):'',
+    venue:venueVal||'', competition:compVal||'', round:roundVal,
+    code:deriveCode(compVal||'',null), status:'Proposed', manual:true
+  };
+  manualFixtures.push(f); fixtures.push(f);
+  saveManualFixtures(); saveCache();
+  g('quickAddRow').style.display='none';
+  populateFilterOptions(); render();
+}
 
-  g('qa_save').addEventListener('click',()=>{
-    const countyVal=qaResolve(g('qa_county'),g('qa_countyNew'));
-    const teamAVal=qaResolve(g('qa_teamA'),g('qa_teamANew'));
-    const teamBVal=qaResolve(g('qa_teamB'),g('qa_teamBNew'));
-    const venueVal=qaResolve(g('qa_venue'),g('qa_venueNew'));
-    const compVal =qaResolve(g('qa_comp'), g('qa_compNew'));
-    const dateVal=g('qa_date').value, timeVal=g('qa_time').value, roundVal=g('qa_round').value.trim();
-    if(!countyVal) return alert('County is required.');
-    if(!teamAVal)  return alert('Team A is required.');
-    if(!teamBVal)  return alert('Team B is required.');
-    if(!dateVal)   return alert('Date is required.');
-    const f={
-      id:nextId++, county:countyVal, teamA:teamAVal, teamB:teamBVal,
-      date:dateVal, day:dayName(dateVal), time:timeVal?to12h(timeVal):'',
-      venue:venueVal||'', competition:compVal||'', round:roundVal,
-      code:deriveCode(compVal||'',null), status:'Proposed', manual:true
-    };
-    manualFixtures.push(f); fixtures.push(f);
-    saveManualFixtures(); saveCache();
-    g('quickAddRow').style.display='none';
-    populateFilterOptions(); render();
-  });
-
-  g('qa_cancel').addEventListener('click',()=>{
-    g('quickAddRow').style.display='none';
-    render();
-  });
+function qaCancel(){
+  const row=document.getElementById('quickAddRow');
+  row.style.display='none';
+  render();
 }
 </script>
 </body>
