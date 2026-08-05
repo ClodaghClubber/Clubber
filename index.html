@@ -196,8 +196,10 @@ let selected=new Set();
 let sortKey='date', sortDir=1;
 
 function populateFilterOptions(){
+  const prev=countyFilter.value;
   const counties=[...new Set(fixtures.map(f=>f.county))].sort((a,b)=>a.localeCompare(b));
   countyFilter.innerHTML='<option value="">All</option>'+counties.map(c=>`<option value="${c}">${c}</option>`).join('');
+  if(counties.includes(prev)) countyFilter.value=prev;
   populateCompOptions();
 }
 
