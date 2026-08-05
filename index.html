@@ -753,7 +753,7 @@ function getFiltered(){
 function getDoubleHeaderIds(){
   const groups={};
   fixtures.forEach(f=>{
-    if(!f.venue) return;
+    if(!f.venue||f.venue.trim().toLowerCase()==='tbc') return;
     const key=`${f.date}|${f.venue.trim().toLowerCase()}`;
     (groups[key]=groups[key]||[]).push(f.id);
   });
