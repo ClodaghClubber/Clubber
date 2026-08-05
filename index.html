@@ -85,6 +85,23 @@
   .picker-wrap input{padding-right:38px;width:100%;}
   .picker-icon{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;padding:4px;cursor:pointer;color:var(--muted);display:flex;align-items:center;border-radius:4px;}
   .picker-icon:hover{color:var(--text);background:var(--border);}
+  /* ---- Column Picker ---- */
+  .col-picker-wrap{position:relative;}
+  #colPickerPanel{display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px 14px;z-index:500;min-width:160px;box-shadow:0 4px 16px rgba(0,0,0,.15);}
+  #colPickerPanel label{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:13px;cursor:pointer;white-space:nowrap;color:var(--text);}
+  #colPickerPanel input[type=checkbox]{width:14px;height:14px;accent-color:var(--accent);}
+  /* Column hide classes — applied to <table id="fixtureTable"> */
+  #fixtureTable.hide-county      th:nth-child(2),#fixtureTable.hide-county      td:nth-child(2){display:none;}
+  #fixtureTable.hide-code        th:nth-child(3),#fixtureTable.hide-code        td:nth-child(3){display:none;}
+  #fixtureTable.hide-teamA       th:nth-child(4),#fixtureTable.hide-teamA       td:nth-child(4){display:none;}
+  #fixtureTable.hide-teamB       th:nth-child(5),#fixtureTable.hide-teamB       td:nth-child(5){display:none;}
+  #fixtureTable.hide-date        th:nth-child(6),#fixtureTable.hide-date        td:nth-child(6){display:none;}
+  #fixtureTable.hide-day         th:nth-child(7),#fixtureTable.hide-day         td:nth-child(7){display:none;}
+  #fixtureTable.hide-time        th:nth-child(8),#fixtureTable.hide-time        td:nth-child(8){display:none;}
+  #fixtureTable.hide-venue       th:nth-child(9),#fixtureTable.hide-venue       td:nth-child(9){display:none;}
+  #fixtureTable.hide-competition th:nth-child(10),#fixtureTable.hide-competition td:nth-child(10){display:none;}
+  #fixtureTable.hide-round       th:nth-child(11),#fixtureTable.hide-round       td:nth-child(11){display:none;}
+  #fixtureTable.hide-status      th:nth-child(12),#fixtureTable.hide-status      td:nth-child(12){display:none;}
 </style>
 </head>
 <body>
@@ -134,6 +151,10 @@
     <button class="btn-remove" id="exportBtn" style="background:#1f7a4d;" disabled>Export to Excel</button>
     <button class="btn-remove" id="refreshBtn" style="background:#2d6cdf;">Refresh</button>
     <button class="btn-modal-add" id="addFixtureBtn">+ Add Fixture</button>
+    <div class="col-picker-wrap">
+      <button class="btn-remove" id="colsBtn" style="background:#4a5568;">Columns ▾</button>
+      <div id="colPickerPanel"></div>
+    </div>
   </div>
 </div>
 
@@ -141,7 +162,7 @@
 <div class="count" id="loadStatus"></div>
 
 <div class="container">
-<table>
+<table id="fixtureTable">
   <thead>
     <tr>
       <th><input type="checkbox" id="selectAll"><button onclick="openQuickAdd()" title="Quick add fixture" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:4px;width:22px;height:22px;font-size:16px;line-height:1;cursor:pointer;margin-left:6px;padding:0;vertical-align:middle;">+</button></th>
@@ -842,6 +863,46 @@ function qaCancel(){
   row.style.display='none';
   render();
 }
+
+// ---- Column Visibility ----
+const COL_PREFS_KEY='gaaHiddenCols';
+const COLS=[
+  {key:'county',label:'County'},
+  {key:'code',label:'Code'},
+  {key:'teamA',label:'Team A'},
+  {key:'teamB',label:'Team B'},
+  {key:'date',label:'Date'},
+  {key:'day',label:'Day'},
+  {key:'time',label:'Time'},
+  {key:'venue',label:'Venue'},
+  {key:'competition',label:'Competition'},
+  {key:'round',label:'Round'},
+  {key:'status',label:'Status'},
+];
+let hiddenCols=new Set();
+function loadColPrefs(){try{const r=localStorage.getItem(COL_PREFS_KEY);if(r){const a=JSON.parse(r);if(Array.isArray(a))hiddenCols=new Set(a);}}catch(e){}}
+function saveColPrefs(){try{localStorage.setItem(COL_PREFS_KEY,JSON.stringify([...hiddenCols]));}catch(e){}}
+function applyColPrefs(){
+  const tbl=document.getElementById('fixtureTable');
+  if(!tbl)return;
+  COLS.forEach(c=>tbl.classList.toggle('hide-'+c.key,hiddenCols.has(c.key)));
+}
+function setupColPicker(){
+  loadColPrefs();
+  applyColPrefs();
+  const btn=document.getElementById('colsBtn');
+  const panel=document.getElementById('colPickerPanel');
+  panel.innerHTML=COLS.map(c=>`<label><input type="checkbox" data-col="${c.key}"${hiddenCols.has(c.key)?'':' checked'}>${c.label}</label>`).join('');
+  panel.querySelectorAll('input[type=checkbox]').forEach(cb=>{
+    cb.addEventListener('change',()=>{
+      if(cb.checked)hiddenCols.delete(cb.dataset.col);else hiddenCols.add(cb.dataset.col);
+      saveColPrefs();applyColPrefs();
+    });
+  });
+  btn.addEventListener('click',e=>{e.stopPropagation();panel.style.display=panel.style.display==='block'?'none':'block';});
+  document.addEventListener('click',()=>{panel.style.display='none';});
+}
+setupColPicker();
 </script>
 </body>
 </html>
