@@ -153,6 +153,10 @@
     <button class="btn-remove" id="refreshBtn" style="background:#2d6cdf;">Refresh</button>
     <button class="btn-modal-add" id="addFixtureBtn">+ Add Fixture</button>
     <div class="col-picker-wrap">
+      <button class="btn-remove" id="assignSocialsBtn" style="background:#7c3aed;" disabled>Socials ▾</button>
+      <div id="assignSocialsPanel" style="display:none;"></div>
+    </div>
+    <div class="col-picker-wrap">
       <button class="btn-remove" id="colsBtn" style="background:#4a5568;">Columns ▾</button>
       <div id="colPickerPanel"></div>
     </div>
@@ -668,6 +672,7 @@ function updateActionButtons(){
   rejectBtn.disabled = selFixtures.length===0;
   removeBtn.disabled = selFixtures.length===0 || !selFixtures.every(f=>f.status==='Rejected');
   exportBtn.disabled = selFixtures.length===0;
+  assignSocialsBtn.disabled = selFixtures.length===0;
 }
 
 function csvEscape(val){
@@ -980,6 +985,33 @@ function applyColPrefs(){
   if(!tbl)return;
   COLS.forEach(c=>tbl.classList.toggle('hide-'+c.key,hiddenCols.has(c.key)));
 }
+function setupAssignSocials(){
+  const btn=document.getElementById('assignSocialsBtn');
+  const panel=document.getElementById('assignSocialsPanel');
+  panel.innerHTML='<option value="">— None —</option>'
+    +SOCIALS.map(s=>`<div class="col-pick-item" data-name="${s.name}" data-email="${s.email}" style="cursor:pointer;">${s.name}</div>`).join('');
+  panel.querySelectorAll('[data-name]').forEach(item=>{
+    item.addEventListener('click',()=>{
+      const name=item.dataset.name, email=item.dataset.email;
+      fixtures.forEach(f=>{
+        if(!selected.has(f.id)) return;
+        f.socials=name; f.socialsEmail=email;
+        fixtureOverrides[keyOf(f)]={socials:name,socialsEmail:email};
+        if(f.manual){
+          const mf=manualFixtures.find(m=>m.id===f.id);
+          if(mf){mf.socials=name;mf.socialsEmail=email;}
+        }
+      });
+      saveOverrides(); saveManualFixtures(); saveCache();
+      panel.style.display='none';
+      render();
+    });
+  });
+  btn.addEventListener('click',e=>{e.stopPropagation();panel.style.display=panel.style.display==='block'?'none':'block';});
+  document.addEventListener('click',()=>{panel.style.display='none';});
+}
+setupAssignSocials();
+
 function setupColPicker(){
   loadColPrefs();
   applyColPrefs();
