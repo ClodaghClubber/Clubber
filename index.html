@@ -113,6 +113,12 @@
   #fixtureTable.hide-replay      th:nth-child(15),#fixtureTable.hide-replay      td:nth-child(15){display:none;}
   .replay-cell{text-align:center;cursor:pointer;font-size:16px;user-select:none;}
   .replay-cell:hover{opacity:.7;}
+  #fixtureTable.hide-videographer th:nth-child(16),#fixtureTable.hide-videographer td:nth-child(16){display:none;}
+  #fixtureTable.hide-unit          th:nth-child(17),#fixtureTable.hide-unit          td:nth-child(17){display:none;}
+  .vid-cell,.unit-cell{cursor:pointer;white-space:nowrap;}
+  .vid-cell:hover,.unit-cell:hover{opacity:.7;}
+  #unitConflictToast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#c2410c;color:#fff;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;}
+  #unitConflictToast.show{opacity:1;}
 </style>
 </head>
 <body>
@@ -221,6 +227,8 @@
       <th data-key="socials">Socials</th>
       <th data-key="support2">2nd Support</th>
       <th data-key="replay">Replay</th>
+      <th data-key="videographer">Videographer</th>
+      <th data-key="unit">Unit</th>
     </tr>
   </thead>
   <tbody id="tbody">
@@ -244,11 +252,17 @@
       <td><select id="qa_socials" class="qa-sel"><option value="">—</option></select></td>
       <td><select id="qa_support2" class="qa-sel"><option value="">—</option></select></td>
       <td style="text-align:center;"><input type="checkbox" id="qa_replay"></td>
+      <td><select id="qa_videographer" class="qa-sel" onchange="qaVideographerChange()"><option value="">—</option></select></td>
+      <td>
+        <select id="qa_unitSys" class="qa-sel" onchange="qaUnitSysChange()" style="margin-bottom:2px;"><option value="">System…</option><option value="Videon">Videon</option><option value="LiveU">Live U</option></select>
+        <select id="qa_unit" class="qa-sel"><option value="">Unit…</option></select>
+      </td>
     </tr>
   </tbody>
 </table>
 <div class="empty" id="emptyMsg" style="display:none;">No fixtures match the current filters.</div>
 </div>
+<div id="unitConflictToast"></div>
 
 <!-- Add Fixture Modal -->
 <div id="addModal">
@@ -380,6 +394,32 @@
           </div>
         </div>
       </div>
+      <div class="modal-section">
+        <div class="modal-section-title">Videographer</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Videographer</label>
+            <select id="f_videographer"><option value="">— None —</option></select>
+          </div>
+          <div class="form-group">
+            <label>Unit System</label>
+            <select id="f_unitSystem">
+              <option value="">— None —</option>
+              <option value="Videon">Videon</option>
+              <option value="LiveU">Live U</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row" style="margin-top:12px;">
+          <div class="form-group">
+            <label>Unit</label>
+            <select id="f_unit"><option value="">— None —</option></select>
+          </div>
+          <div class="form-group" id="f_unitConflictWrap" style="display:none;">
+            <div style="color:#c2410c;font-size:12px;padding:10px 0;">⚠ This unit is already assigned to another fixture at the same date and time.</div>
+          </div>
+        </div>
+      </div>
       <div class="modal-actions">
         <button type="button" id="cancelFixtureBtn" class="btn-modal-cancel">Cancel</button>
         <button type="submit" class="btn-modal-add">Add Fixture</button>
@@ -415,6 +455,78 @@ const SUPPORT2=[
   {name:'Mark',    email:'mark@clubbertv.com'},
   {name:'Paul',    email:'paul@clubbertv.com'},
 ];
+const VIDEOGRAPHERS=[
+  {name:'Abbie Nolan',        email:'',                                prefLiveU:'S',        prefVideon:''},
+  {name:"Aidan O'Boyle",      email:'aidanoboyle16@gmail.com',         prefLiveU:'H',        prefVideon:''},
+  {name:'Alex Hanratty',      email:'alexhanratty966@gmail.com',       prefLiveU:'V',        prefVideon:''},
+  {name:'Brandon Cassidy',    email:'',                                prefLiveU:'',         prefVideon:''},
+  {name:'Callum Nolan',       email:'calumsnolan@yahoo.com',           prefLiveU:'',         prefVideon:''},
+  {name:'Catriona Nolan',     email:'triona.keating@yahoo.com',        prefLiveU:'S',        prefVideon:''},
+  {name:"Cian O'Halloran",    email:'cianohalloran1@gmail.com',        prefLiveU:'Z',        prefVideon:'M4'},
+  {name:'Ciara Fitzgerald',   email:'ciarafitzgerald899@gmail.com',    prefLiveU:'T',        prefVideon:''},
+  {name:'Darragh Ryan',       email:'Darraghr2810@gmail.com',          prefLiveU:'A2',       prefVideon:''},
+  {name:"David O'Shea",       email:'david.oshea@nTrai.com',           prefLiveU:'',         prefVideon:'M2'},
+  {name:'Declan Cahill',      email:'cahilldec@gmail.com',             prefLiveU:'K',        prefVideon:'G1'},
+  {name:'Denis Fitzpatrick',  email:'denisfitzpatrick1@gmail.com',     prefLiveU:'P',        prefVideon:''},
+  {name:'Fausto Lavery',      email:'faustolavery@gmail.com',          prefLiveU:'V',        prefVideon:''},
+  {name:'Gary Browne',        email:'',                                prefLiveU:'Q',        prefVideon:''},
+  {name:'Ger Gavin',          email:'gavin5ger@yahoo.ie',              prefLiveU:'G',        prefVideon:''},
+  {name:'James Fitzgerald',   email:'jamesf@clubbertv.com',            prefLiveU:'E',        prefVideon:'M1'},
+  {name:'James Leahy',        email:'jamesleahym12@gmail.com',         prefLiveU:'A3',       prefVideon:''},
+  {name:"JC O'Shea",          email:'jcoshea@gmail.com',               prefLiveU:'',         prefVideon:'M2'},
+  {name:'Jimmy Hyland',       email:'jimmyhyland123@hotmail.com',      prefLiveU:'O',        prefVideon:''},
+  {name:'John Hennessy',      email:'john@jhvisual.ie',                prefLiveU:'JHN-CORK', prefVideon:''},
+  {name:'John Nolan',         email:'johnznolan@yahoo.com',            prefLiveU:'',         prefVideon:'G3'},
+  {name:'Keenan Fitzpatrick', email:'keenanfitz2005@gmail.com',        prefLiveU:'A4',       prefVideon:''},
+  {name:'Kevin Kelleher',     email:'fulltimeproductions1@gmail.com',  prefLiveU:'R',        prefVideon:''},
+  {name:'Maurice Walsh',      email:'mauricewalsh609@gmail.com',       prefLiveU:'',         prefVideon:''},
+  {name:'Michael Fitzgerald', email:'michaelfitzy20@gmail.com',        prefLiveU:'W',        prefVideon:''},
+  {name:'Mick Conlon',        email:'mmcvideoproductions@gmail.com',   prefLiveU:'H',        prefVideon:''},
+  {name:'Molly Hyland',       email:'hylandc1@tcd.ie',                 prefLiveU:'O',        prefVideon:''},
+  {name:'Niall Creery',       email:'niallcreery@gmail.com',           prefLiveU:'O',        prefVideon:''},
+  {name:'Paidí Kelly',        email:'paidikelly@gmail.com',            prefLiveU:'A1',       prefVideon:''},
+  {name:'Paraic Sullivan',    email:'',                                prefLiveU:'',         prefVideon:''},
+  {name:"Peter O'Keefe",      email:'petertokeeffe@gmail.com',         prefLiveU:'Z',        prefVideon:''},
+  {name:'Rian McKenna',       email:'rianmckenna16@gmail.com',         prefLiveU:'S',        prefVideon:''},
+  {name:'Richard Hayden',     email:'haydenr8@gmail.com',              prefLiveU:'',         prefVideon:'M5'},
+  {name:'Ricky Nolan',        email:'ricky-nolan@hotmail.com',         prefLiveU:'J',        prefVideon:'G2'},
+  {name:'Ronan Creery',       email:'ronancreery@gmail.com',           prefLiveU:'O',        prefVideon:''},
+  {name:'Sarah McCoy',        email:'smccoy380@gmail.com',             prefLiveU:'D',        prefVideon:'M4'},
+  {name:"Sean O'Dea",         email:'seanodea1991@hotmail.com',        prefLiveU:'N',        prefVideon:''},
+  {name:'Shane Birdy',        email:'',                                prefLiveU:'',         prefVideon:''},
+  {name:'Shane Feeney',       email:'s.feeney121@gmail.com',           prefLiveU:'Z',        prefVideon:''},
+  {name:'Tina Brady',         email:'bradytina097@gmail.com',          prefLiveU:'M',        prefVideon:''},
+  {name:'Tom Fitzpatrick',    email:'tommyfitzpatrick@hotmail.com',    prefLiveU:'U',        prefVideon:''},
+  {name:'Tom Hanafin',        email:'kvptralee@gmail.com',             prefLiveU:'Y',        prefVideon:''},
+  {name:"Willie O'Mahony",    email:'omahonydigital@gmail.com',        prefLiveU:'L',        prefVideon:''},
+];
+const LIVE_U_UNITS=['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','A1','A2','A3','A4','A5','JHN-CORK'];
+const VIDEON_UNITS=['M1','M2','M3','M4','M5','G1','G2','G3','G4','G5'];
+
+function defaultVidUnit(name){
+  const v=VIDEOGRAPHERS.find(x=>x.name===name);
+  if(!v) return {sys:'',unit:''};
+  if(v.prefVideon) return {sys:'Videon',unit:v.prefVideon};
+  if(v.prefLiveU)  return {sys:'LiveU', unit:v.prefLiveU};
+  return {sys:'',unit:''};
+}
+function checkUnitConflict(fId,sys,unit,date,time){
+  if(!unit||!sys||!time||time===''||time.toLowerCase()==='tbc') return null;
+  return fixtures.find(f=>f.id!==fId&&f.unitSystem===sys&&f.unit===unit&&f.date===date&&f.time===time&&f.time.toLowerCase()!=='tbc')||null;
+}
+function showConflictToast(msg){
+  const t=document.getElementById('unitConflictToast');
+  if(!t) return;
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+function unitBadge(f){
+  if(!f.unit) return '<span style="color:var(--muted)">—</span>';
+  const icon=f.unitSystem==='Videon'
+    ?'<svg width="18" height="13" viewBox="0 0 18 13" style="vertical-align:middle;margin-right:3px;"><rect width="18" height="13" rx="2" fill="#0C2340"/><text x="9" y="9.5" text-anchor="middle" font-size="9" font-weight="bold" fill="#fff" font-family="Arial">V</text></svg>'
+    :'<svg width="26" height="13" viewBox="0 0 26 13" style="vertical-align:middle;margin-right:3px;"><rect width="26" height="13" rx="2" fill="#fff" stroke="#0052CC" stroke-width="1.2"/><text x="2" y="9.5" font-size="7" font-weight="bold" fill="#0052CC" font-family="Arial">Live</text><text x="18" y="10" font-size="9" font-weight="bold" fill="#E8520A" font-family="Arial">U</text></svg>';
+  return icon+f.unit;
+}
 // Derives Football/Hurling from competition name. Most counties embed the
 // sport in the competition string ("Hurling Championship", "HC", "FC", etc.).
 // Roscommon leagues don't, so the worker explicitly sets f.sport for those.
@@ -499,6 +611,9 @@ function applyOverrides(){
     if(ov.socials!==undefined){f.socials=ov.socials;f.socialsEmail=ov.socialsEmail;}
     if(ov.support2!==undefined){f.support2=ov.support2;f.support2Email=ov.support2Email;}
     if(ov.replay!==undefined){f.replay=ov.replay;}
+    if(ov.videographer!==undefined){f.videographer=ov.videographer;f.videographerEmail=ov.videographerEmail;}
+    if(ov.unitSystem!==undefined){f.unitSystem=ov.unitSystem;}
+    if(ov.unit!==undefined){f.unit=ov.unit;}
   });
 }
 
@@ -568,6 +683,11 @@ function openAddModal(){
     +SOCIALS.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
   g('f_support2').innerHTML='<option value="">— None —</option>'
     +SUPPORT2.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
+  g('f_videographer').innerHTML='<option value="">— None —</option>'
+    +VIDEOGRAPHERS.map(v=>`<option value="${v.name}">${v.name}</option>`).join('');
+  g('f_unitSystem').value='';
+  g('f_unit').innerHTML='<option value="">— None —</option>';
+  g('f_unitConflictWrap').style.display='none';
   document.getElementById('addModal').classList.add('open');
 }
 
@@ -604,6 +724,15 @@ function openEditModal(id){
   g('f_socials').value=f.socials||'';
   g('f_support2').value=f.support2||'';
   g('f_replay').checked=!!f.replay;
+  // Videographer / Unit
+  g('f_videographer').value=f.videographer||'';
+  const _sys=f.unitSystem||'';
+  g('f_unitSystem').value=_sys;
+  if(_sys){
+    const _units=_sys==='Videon'?VIDEON_UNITS:LIVE_U_UNITS;
+    g('f_unit').innerHTML='<option value="">— None —</option>'+_units.map(u=>`<option value="${u}">${u}</option>`).join('');
+  }
+  g('f_unit').value=f.unit||'';
   // Update modal chrome
   document.querySelector('#addModal h2').textContent='Edit Fixture';
   document.querySelector('#addModal .btn-modal-add').textContent='Save Changes';
@@ -646,6 +775,21 @@ function setupModal(){
   fv.addEventListener('change', ()=>{ fvNew.style.display=fv.value==='__new__'?'block':'none';   if(fv.value!=='__new__')  fvNew.value=''; });
   fc.addEventListener('change', ()=>{ fcNew.style.display=fc.value==='__new__'?'block':'none';   if(fc.value!=='__new__')  fcNew.value=''; });
 
+  // Videographer / Unit cascade
+  const fvid=g('f_videographer'), fsys=g('f_unitSystem'), funit=g('f_unit'), funitWrap=g('f_unitConflictWrap');
+  function populateModalUnits(sys){
+    const units=sys==='Videon'?VIDEON_UNITS:sys==='LiveU'?LIVE_U_UNITS:[];
+    funit.innerHTML='<option value="">— None —</option>'+units.map(u=>`<option value="${u}">${u}</option>`).join('');
+    funitWrap.style.display='none';
+  }
+  fsys.addEventListener('change',()=>populateModalUnits(fsys.value));
+  fvid.addEventListener('change',()=>{
+    if(!fsys.value){
+      const def=defaultVidUnit(fvid.value);
+      if(def.sys){ fsys.value=def.sys; populateModalUnits(def.sys); setTimeout(()=>{funit.value=def.unit;},0); }
+    }
+  });
+
   function closeModal(){
     editingId=null;
     g('addModal').classList.remove('open');
@@ -668,6 +812,10 @@ function setupModal(){
     const socialsEmail=(SOCIALS.find(s=>s.name===socialsName)||{}).email||'';
     const support2Name=g('f_support2').value;
     const support2Email=(SUPPORT2.find(s=>s.name===support2Name)||{}).email||'';
+    const videographerName=g('f_videographer').value;
+    const videographerEmail=(VIDEOGRAPHERS.find(v=>v.name===videographerName)||{}).email||'';
+    const unitSystemVal=g('f_unitSystem').value;
+    const unitVal=g('f_unit').value;
     if(!countyVal) return alert('Please select or enter a county for Team A.');
     if(!teamAVal)  return alert('Please select or enter Team A.');
     if(!teamBVal)  return alert('Please select or enter Team B.');
@@ -677,12 +825,15 @@ function setupModal(){
     if(editingId!==null){
       const ex=fixtures.find(f=>f.id===editingId);
       if(ex){
+        const conflictEd=checkUnitConflict(editingId,unitSystemVal,unitVal,dateVal,timeVal?to12h(timeVal):'');
+        if(conflictEd) showConflictToast(`⚠ ${unitVal} is already assigned to another fixture at this time`);
         Object.assign(ex,{
           county:countyVal, teamA:teamAVal, teamB:teamBVal,
           date:dateVal, day:dayName(dateVal), time:timeVal?to12h(timeVal):'',
           venue:venueVal||'', competition:compVal||'', round:roundVal,
           code:codeVal||deriveCode(compVal||'',null),
-          socials:socialsName, socialsEmail, support2:support2Name, support2Email, replay:replayVal
+          socials:socialsName, socialsEmail, support2:support2Name, support2Email, replay:replayVal,
+          videographer:videographerName, videographerEmail, unitSystem:unitSystemVal, unit:unitVal
         });
         if(ex.manual){
           const mf=manualFixtures.find(m=>m.id===editingId);
@@ -693,7 +844,8 @@ function setupModal(){
             county:countyVal,teamA:teamAVal,teamB:teamBVal,date:dateVal,day:dayName(dateVal),
             time:ex.time,venue:ex.venue,competition:ex.competition,round:ex.round,
             code:ex.code,socials:ex.socials,socialsEmail:ex.socialsEmail,
-            support2:ex.support2,support2Email:ex.support2Email,replay:replayVal
+            support2:ex.support2,support2Email:ex.support2Email,replay:replayVal,
+            videographer:videographerName,videographerEmail,unitSystem:unitSystemVal,unit:unitVal
           });
           saveOverrides();
         }
@@ -701,12 +853,15 @@ function setupModal(){
       }
       closeModal(); return;
     }
+    const conflictAdd=checkUnitConflict(-1,unitSystemVal,unitVal,dateVal,timeVal?to12h(timeVal):'');
+    if(conflictAdd) showConflictToast(`⚠ ${unitVal} is already assigned to another fixture at this time`);
     const f={
       id:nextId++, county:countyVal, teamA:teamAVal, teamB:teamBVal,
       date:dateVal, day:dayName(dateVal), time:timeVal?to12h(timeVal):'',
       venue:venueVal||'', competition:compVal||'', round:roundVal,
       code:codeVal||deriveCode(compVal||'',null), status:'Proposed', manual:true,
-      socials:socialsName, socialsEmail, support2:support2Name, support2Email, replay:replayVal
+      socials:socialsName, socialsEmail, support2:support2Name, support2Email, replay:replayVal,
+      videographer:videographerName, videographerEmail, unitSystem:unitSystemVal, unit:unitVal
     };
     manualFixtures.push(f); fixtures.push(f);
     saveManualFixtures(); saveCache();
@@ -830,6 +985,8 @@ function render(){
       <td class="socials-cell" data-socials-id="${f.id}" title="Click to assign socials" style="cursor:pointer;color:${f.socials?'inherit':'var(--muted)'};">${f.socials||'—'}</td>
       <td class="socials-cell" data-support2-id="${f.id}" title="Click to assign 2nd support" style="cursor:pointer;color:${f.support2?'inherit':'var(--muted)'};">${f.support2||'—'}</td>
       <td class="replay-cell" data-replay-id="${f.id}" title="Click to toggle replay">${f.replay?'✔':'—'}</td>
+      <td class="vid-cell" data-vid-id="${f.id}" title="Click to assign videographer" style="color:${f.videographer?'inherit':'var(--muted)'};">${f.videographer||'—'}</td>
+      <td class="unit-cell" data-unit-id="${f.id}" title="Click to assign unit">${unitBadge(f)}</td>
     `;
     tbody.appendChild(tr);
   });
@@ -1031,6 +1188,83 @@ document.getElementById('tbody').addEventListener('click',e=>{
     }
     return;
   }
+  // Videographer cell
+  const vidTd=e.target.closest('td[data-vid-id]');
+  if(vidTd){
+    if(vidTd.querySelector('select')) return;
+    const id=+vidTd.dataset.vidId;
+    const f=fixtures.find(fx=>fx.id===id);
+    if(!f) return;
+    const sel=document.createElement('select');
+    sel.className='qa-sel'; sel.style.minWidth='130px';
+    sel.innerHTML='<option value="">—</option>'
+      +VIDEOGRAPHERS.map(v=>`<option value="${v.name}"${f.videographer===v.name?' selected':''}>${v.name}</option>`).join('');
+    vidTd.innerHTML=''; vidTd.appendChild(sel); sel.focus();
+    const commit=()=>{
+      const name=sel.value;
+      const email=(VIDEOGRAPHERS.find(v=>v.name===name)||{}).email||'';
+      f.videographer=name; f.videographerEmail=email;
+      const ov=fixtureOverrides[keyOf(f)]||{};
+      ov.videographer=name; ov.videographerEmail=email;
+      if(!f.unit && name){
+        const def=defaultVidUnit(name);
+        if(def.sys){f.unitSystem=def.sys;f.unit=def.unit;ov.unitSystem=def.sys;ov.unit=def.unit;}
+      }
+      fixtureOverrides[keyOf(f)]=ov; saveOverrides();
+      if(f.manual){const mf=manualFixtures.find(m=>m.id===id);if(mf)Object.assign(mf,{videographer:f.videographer,videographerEmail:f.videographerEmail,unitSystem:f.unitSystem,unit:f.unit});saveManualFixtures();}
+      saveCache(); render();
+    };
+    sel.addEventListener('change',commit);
+    sel.addEventListener('blur',()=>render());
+    return;
+  }
+
+  // Unit cell
+  const unitTd=e.target.closest('td[data-unit-id]');
+  if(unitTd){
+    if(unitTd.querySelector('select')) return;
+    const id=+unitTd.dataset.unitId;
+    const f=fixtures.find(fx=>fx.id===id);
+    if(!f) return;
+    const wrap=document.createElement('div');
+    wrap.style.cssText='display:flex;flex-direction:column;gap:3px;';
+    const sysSel=document.createElement('select');
+    sysSel.className='qa-sel';
+    sysSel.innerHTML='<option value="">System…</option><option value="Videon"'+(f.unitSystem==='Videon'?' selected':'')+'>Videon</option><option value="LiveU"'+(f.unitSystem==='LiveU'?' selected':'')+'>Live U</option>';
+    const unitSel=document.createElement('select');
+    unitSel.className='qa-sel';
+    const warnDiv=document.createElement('div');
+    warnDiv.style.cssText='display:none;color:#c2410c;font-size:10px;';
+    warnDiv.textContent='⚠ Unit conflict';
+    function populateUs(){
+      const sys=sysSel.value;
+      const units=sys==='Videon'?VIDEON_UNITS:sys==='LiveU'?LIVE_U_UNITS:[];
+      unitSel.innerHTML='<option value="">Unit…</option>'+units.map(u=>`<option value="${u}"${f.unit===u?' selected':''}>${u}</option>`).join('');
+    }
+    populateUs();
+    sysSel.addEventListener('change',()=>{populateUs();warnDiv.style.display='none';});
+    const saveUnit=()=>{
+      const sys=sysSel.value; const unit=unitSel.value;
+      if(!sys||!unit) return;
+      const conflict=checkUnitConflict(f.id,sys,unit,f.date,f.time);
+      if(conflict){warnDiv.style.display='block';showConflictToast(`⚠ ${unit} is already assigned to another fixture at this time`);}
+      else warnDiv.style.display='none';
+      f.unitSystem=sys; f.unit=unit;
+      const ov=fixtureOverrides[keyOf(f)]||{};
+      ov.unitSystem=sys; ov.unit=unit; fixtureOverrides[keyOf(f)]=ov; saveOverrides();
+      if(f.manual){const mf=manualFixtures.find(m=>m.id===id);if(mf){mf.unitSystem=sys;mf.unit=unit;}saveManualFixtures();}
+      saveCache();
+    };
+    unitSel.addEventListener('change',saveUnit);
+    const blurHandler=()=>setTimeout(()=>{if(!wrap.contains(document.activeElement))render();},150);
+    sysSel.addEventListener('blur',blurHandler);
+    unitSel.addEventListener('blur',blurHandler);
+    wrap.append(sysSel,unitSel,warnDiv);
+    unitTd.innerHTML=''; unitTd.appendChild(wrap);
+    sysSel.focus();
+    return;
+  }
+
   const td=e.target.closest('td[data-socials-id],td[data-support2-id]');
   if(!td) return;
   if(td.querySelector('select')) return;
@@ -1093,6 +1327,10 @@ function openQuickAdd(){
     +SOCIALS.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
   g('qa_support2').innerHTML='<option value="">—</option>'
     +SUPPORT2.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
+  g('qa_videographer').innerHTML='<option value="">—</option>'
+    +VIDEOGRAPHERS.map(v=>`<option value="${v.name}">${v.name}</option>`).join('');
+  g('qa_unitSys').value='';
+  g('qa_unit').innerHTML='<option value="">Unit…</option>';
   g('qa_code').value='';
   g('qa_date').value=''; g('qa_time').value='';
   g('qa_day_cell').textContent='';
@@ -1146,16 +1384,23 @@ function qaSave(){
   const support2Name=g('qa_support2').value;
   const support2Email=(SUPPORT2.find(s=>s.name===support2Name)||{}).email||'';
   const replayVal=g('qa_replay').checked;
+  const videographerName=g('qa_videographer').value;
+  const videographerEmail=(VIDEOGRAPHERS.find(v=>v.name===videographerName)||{}).email||'';
+  const unitSystemVal=g('qa_unitSys').value;
+  const unitVal=g('qa_unit').value;
   if(!countyVal) return alert('County is required.');
   if(!teamAVal)  return alert('Team A is required.');
   if(!teamBVal)  return alert('Team B is required.');
   if(!dateVal)   return alert('Date is required.');
+  const qaConflict=checkUnitConflict(-1,unitSystemVal,unitVal,dateVal,timeVal?to12h(timeVal):'');
+  if(qaConflict) showConflictToast(`⚠ ${unitVal} is already assigned to another fixture at this time`);
   const f={
     id:nextId++, county:countyVal, teamA:teamAVal, teamB:teamBVal,
     date:dateVal, day:dayName(dateVal), time:timeVal?to12h(timeVal):'',
     venue:venueVal||'', competition:compVal||'', round:roundVal,
     code:codeVal||deriveCode(compVal||'',null), status:'Proposed', manual:true,
-    socials:socialsName, socialsEmail, support2:support2Name, support2Email, replay:replayVal
+    socials:socialsName, socialsEmail, support2:support2Name, support2Email, replay:replayVal,
+    videographer:videographerName, videographerEmail, unitSystem:unitSystemVal, unit:unitVal
   };
   manualFixtures.push(f); fixtures.push(f);
   saveManualFixtures(); saveCache();
@@ -1167,6 +1412,27 @@ function qaCancel(){
   const row=document.getElementById('quickAddRow');
   row.style.display='none';
   render();
+}
+
+function qaVideographerChange(){
+  const g=id=>document.getElementById(id);
+  const name=g('qa_videographer').value;
+  const def=defaultVidUnit(name);
+  if(def.sys){
+    g('qa_unitSys').value=def.sys;
+    qaUnitSysChange();
+    setTimeout(()=>{g('qa_unit').value=def.unit;},0);
+  } else {
+    g('qa_unitSys').value='';
+    g('qa_unit').innerHTML='<option value="">Unit…</option>';
+  }
+}
+
+function qaUnitSysChange(){
+  const g=id=>document.getElementById(id);
+  const sys=g('qa_unitSys').value;
+  const units=sys==='Videon'?VIDEON_UNITS:sys==='LiveU'?LIVE_U_UNITS:[];
+  g('qa_unit').innerHTML='<option value="">Unit…</option>'+units.map(u=>`<option value="${u}">${u}</option>`).join('');
 }
 
 // ---- Column Visibility ----
@@ -1186,6 +1452,8 @@ const COLS=[
   {key:'socials',label:'Socials'},
   {key:'support2',label:'2nd Support'},
   {key:'replay',label:'Replay'},
+  {key:'videographer',label:'Videographer'},
+  {key:'unit',label:'Unit'},
 ];
 let hiddenCols=new Set();
 function loadColPrefs(){try{const r=localStorage.getItem(COL_PREFS_KEY);if(r){const a=JSON.parse(r);if(Array.isArray(a))hiddenCols=new Set(a);}}catch(e){}}
