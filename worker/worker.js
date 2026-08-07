@@ -822,6 +822,100 @@ const ROSCOMMON_FOOTBALL_STATIC = [
   mkStatic('Roscommon','Boyle','St. Dominic\'s G.A.A. Club','30 August 2026','13:00','Abbey Park','Junior A Football Championship','Round 3'),
 ];
 
+async function fetchKildare(cacDebug) {
+  const out = [];
+  const seen = new Set();
+  const competitions = [
+    { sport: 'football', grade: 'senior',       name: 'Kildare Senior Football Championship' },
+    { sport: 'football', grade: 'intermediate', name: 'Kildare Intermediate Football Championship' },
+    { sport: 'football', grade: 'junior',       name: 'Kildare Junior Football Championship' },
+    { sport: 'hurling',  grade: 'senior',       name: 'Kildare Senior Hurling Championship' },
+    { sport: 'hurling',  grade: 'intermediate', name: 'Kildare Intermediate Hurling Championship' },
+    { sport: 'hurling',  grade: 'junior',       name: 'Kildare Junior Hurling Championship' },
+  ];
+  for (const { sport, grade, name } of competitions) {
+    const baseUrl = `https://kildaregaa.ie/fixtures-results/${sport}/club/${grade}/`;
+    let page = 0, hasMore = true;
+    while (hasMore && page < 4) {
+      const url = `${baseUrl}?ajax=1&feed_type=fixtures&page=${page}&size=100`;
+      try {
+        const res = await fetch(url, {
+          headers: { 'User-Agent': UA, Accept: 'application/json', Referer: baseUrl },
+        });
+        if (!res.ok) {
+          cacDebug.push({ county: 'Kildare', sport, grade, page, stage: 'http-error', status: res.status });
+          break;
+        }
+        const bodyText = await res.text();
+        const json = JSON.parse(stripBom(bodyText));
+        if (!json.ok) {
+          cacDebug.push({ county: 'Kildare', sport, grade, page, stage: 'json-not-ok' });
+          break;
+        }
+        const before = out.length;
+        parseCacHtmlDirect(json.html, out, 'Kildare', name);
+        cacDebug.push({ county: 'Kildare', sport, grade, page, stage: 'ok', newRows: out.length - before, hasMore: json.hasMore });
+        hasMore = !!json.hasMore;
+        page++;
+      } catch (err) {
+        cacDebug.push({ county: 'Kildare', sport, grade, page, stage: 'fetch-threw', error: String(err) });
+        break;
+      }
+    }
+  }
+  const deduped = [];
+  for (const f of out) {
+    const key = `${f.competition}|${f.teamA}|${f.teamB}|${f.date}|${f.time}`;
+    if (!seen.has(key)) { seen.add(key); deduped.push(f); }
+  }
+  return deduped;
+}
+
+async function fetchTipperaryFootball(cacDebug) {
+  const out = [];
+  const seen = new Set();
+  const grades = [
+    { grade: 'senior',       name: 'Tipperary Senior Football Championship' },
+    { grade: 'intermediate', name: 'Tipperary Intermediate Football Championship' },
+  ];
+  for (const { grade, name } of grades) {
+    const baseUrl = `https://tipperary.gaa.ie/fixtures-results/football/club/${grade}/`;
+    let page = 0, hasMore = true;
+    while (hasMore && page < 4) {
+      const url = `${baseUrl}?ajax=1&feed_type=fixtures&page=${page}&size=100`;
+      try {
+        const res = await fetch(url, {
+          headers: { 'User-Agent': UA, Accept: 'application/json', Referer: baseUrl },
+        });
+        if (!res.ok) {
+          cacDebug.push({ county: 'Tipperary', grade, page, stage: 'http-error', status: res.status });
+          break;
+        }
+        const bodyText = await res.text();
+        const json = JSON.parse(stripBom(bodyText));
+        if (!json.ok) {
+          cacDebug.push({ county: 'Tipperary', grade, page, stage: 'json-not-ok' });
+          break;
+        }
+        const before = out.length;
+        parseCacHtmlDirect(json.html, out, 'Tipperary', name);
+        cacDebug.push({ county: 'Tipperary', grade, page, stage: 'ok', newRows: out.length - before, hasMore: json.hasMore });
+        hasMore = !!json.hasMore;
+        page++;
+      } catch (err) {
+        cacDebug.push({ county: 'Tipperary', grade, page, stage: 'fetch-threw', error: String(err) });
+        break;
+      }
+    }
+  }
+  const deduped = [];
+  for (const f of out) {
+    const key = `${f.competition}|${f.teamA}|${f.teamB}|${f.date}|${f.time}`;
+    if (!seen.has(key)) { seen.add(key); deduped.push(f); }
+  }
+  return deduped;
+}
+
 async function fetchRoscommonFootball() {
   let webFixtures = [];
   try {
@@ -1422,7 +1516,7 @@ export default {
 
     try {
       const cacDebug = [];
-      const [corkResults, waterfordResults, laoisResults, wexfordResults, kerryResults, offalyResults, tipperaryResults, roscommonFootballResults, roscommonHurlingResults, kilkennyResults, monaghanResults, meathResults, longfordResults] = await Promise.all([
+      const [corkResults, waterfordResults, laoisResults, wexfordResults, kerryResults, offalyResults, tipperaryResults, tipperaryFootballResults, kildareResults, roscommonFootballResults, roscommonHurlingResults, kilkennyResults, monaghanResults, meathResults, longfordResults] = await Promise.all([
         Promise.all(CORK_COMPETITIONS.map(fetchCorkCompetition)),
         Promise.all(WATERFORD_COMPETITIONS.map(fetchWaterfordCompetition)),
         Promise.all(LAOIS_COMPETITIONS.map((c) => fetchCacDirectCompetition('Laois', 'laoisgaa.ie', c, cacDebug))),
@@ -1430,6 +1524,8 @@ export default {
         Promise.all(KERRY_COMPETITIONS.map((c) => fetchCacDirectCompetition('Kerry', 'www.kerrygaa.ie', c, cacDebug))),
         Promise.all(OFFALY_COMPETITIONS.map((c) => fetchCacDirectCompetition('Offaly', 'offaly.gaa.ie', c, cacDebug))),
         Promise.all(TIPPERARY_COMPETITIONS.map((c) => fetchCacDirectCompetition('Tipperary', 'tipperary.gaa.ie', c, cacDebug))),
+        fetchTipperaryFootball(cacDebug),
+        fetchKildare(cacDebug),
         fetchRoscommonFootball(),
         fetchRoscommonSport('hurling'),
         Promise.all(KILKENNY_COMPETITIONS.map((c) => fetchCacDirectCompetition('Kilkenny', 'kilkennygaa.ie', c, cacDebug))),
@@ -1451,6 +1547,8 @@ export default {
         ...kerryResults.flat().map(f => { const g = fixNames({ ...f, teamA: fixKerryName(f.teamA), teamB: fixKerryName(f.teamB), venue: fixKerryName(f.venue) }); return { ...g, teamA: fixKerryName(g.teamA), teamB: fixKerryName(g.teamB), venue: fixKerryName(g.venue) }; }),
         ...offalyResults.flat().map(fixNames),
         ...tipperaryResults.flat().map(fixNames),
+        ...tipperaryFootballResults.map(fixNames),
+        ...kildareResults.map(fixNames),
         ...roscommonFootballResults.map(fixNames),
         ...roscommonHurlingResults.map(fixNames),
         ...kilkennyResults.flat().map(fixNames),
