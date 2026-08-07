@@ -837,7 +837,7 @@ async function fetchKildare(cacDebug) {
     const baseUrl = `https://kildaregaa.ie/fixtures-results/${sport}/club/${grade}/`;
     let page = 0, hasMore = true;
     while (hasMore && page < 4) {
-      const url = `${baseUrl}?ajax=1&feed_type=fixtures&page=${page}&size=100`;
+      const url = `${baseUrl}?ajax=1&feed_type=fixtures&page=${page}&size=100&sport=${sport}&level=club&grade=${grade}`;
       try {
         const res = await fetch(url, {
           headers: { 'User-Agent': UA, Accept: 'application/json', Referer: baseUrl },
@@ -882,7 +882,7 @@ async function fetchTipperaryFootball(cacDebug) {
     const baseUrl = `https://tipperary.gaa.ie/fixtures-results/football/club/${grade}/`;
     let page = 0, hasMore = true;
     while (hasMore && page < 4) {
-      const url = `${baseUrl}?ajax=1&feed_type=fixtures&page=${page}&size=100`;
+      const url = `${baseUrl}?ajax=1&feed_type=fixtures&page=${page}&size=100&sport=football&level=club&grade=${grade}`;
       try {
         const res = await fetch(url, {
           headers: { 'User-Agent': UA, Accept: 'application/json', Referer: baseUrl },
@@ -1261,6 +1261,41 @@ const CARLOW_FIXTURES = [];
  ['Naomh Eoin','Carlow Town Hurling Club','12 July 2026','18:00','Myshall','Round 4'],
  ['Naomh Moling','Bagenalstown Gaels GAA','12 July 2026','18:00','Naomh Moling','Round 4'],
 ].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Intermediate Hurling Championship',r[5])));
+
+// Carlow - Senior Hurling Championship Rounds 4-5 (source: carlowgaa.ie/fixtures/ Aug 2026)
+[
+ ['Naomh Eoin','Ballinkillen','8 August 2026','17:30','Netwatch Cullen Park, Carlow','Round 4'],
+ ['Naomh Moling','Mt Leinster Rangers','8 August 2026','19:00','Netwatch Cullen Park, Carlow','Round 4'],
+ ['Naomh Brid GAA','Bagenalstown Gaels GAA','9 August 2026','18:00','Netwatch Cullen Park, Carlow','Round 4'],
+ ['Naomh Moling','Bagenalstown Gaels GAA','14 August 2026','19:30','Netwatch Cullen Park, Carlow','Round 5'],
+ ['Naomh Brid GAA','Naomh Eoin','15 August 2026','17:30','Netwatch Cullen Park, Carlow','Round 5'],
+ ['Mt Leinster Rangers','Ballinkillen','15 August 2026','19:00','Mount Leinster Rangers','Round 5'],
+].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Senior Hurling Championship',r[5])));
+
+// Carlow - Intermediate Hurling Championship Rounds 5-6 (source: carlowgaa.ie/fixtures/ Aug 2026)
+// Fixtures with TBA opponents omitted
+[
+ ['Mt Leinster Rangers','Kildavin / Clonegal','7 August 2026','20:00','Mount Leinster Rangers','Round 5'],
+ ['Burren Rangers Hurling and Camogie Club','Mt Leinster Rangers','10 August 2026','19:30','Kilbride G.F.C.','Round 5'],
+ ['Kildavin / Clonegal','Bagenalstown Gaels GAA','15 August 2026','19:30','Spellman Park','Round 6'],
+ ['Naomh Eoin','Mt Leinster Rangers','16 August 2026','18:00','Myshall','Round 6'],
+ ['Carlow Town Hurling Club','Burren Rangers Hurling and Camogie Club','16 August 2026','18:00','Carlow Town HC','Round 6'],
+].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Intermediate Hurling Championship',r[5])));
+
+// Carlow - Junior Hurling Championship (source: carlowgaa.ie/fixtures/ Aug 2026)
+[
+ ['Carlow Town Hurling Club','Ballinkillen','8 August 2026','19:30','Carlow Town HC','Round 1'],
+ ['Mt Leinster Rangers','Naomh Brid GAA','9 August 2026','12:30','Mount Leinster Rangers','Round 1'],
+ ['Naomh Moling','Burren Rangers Hurling and Camogie Club','9 August 2026','12:30','Pairc Naomh Moling','Round 1'],
+ ['Naomh Eoin','Carlow Town Hurling Club','12 August 2026','19:30','Myshall','Round 2'],
+ ['Setanta Ceatharlach','Burren Rangers Hurling and Camogie Club','12 August 2026','19:30','Pres College','Round 2'],
+ ['Mt Leinster Rangers','Ballinkillen','12 August 2026','19:30','Mount Leinster Rangers','Round 2'],
+ ['Naomh Brid GAA','Naomh Moling','13 August 2026','19:30','Naomh Brid - Superbowl','Round 2'],
+ ['Burren Rangers Hurling and Camogie Club','Carlow Town Hurling Club','16 August 2026','12:30','Kilbride GAA','Round 3'],
+ ['Mt Leinster Rangers','Naomh Moling','16 August 2026','12:30','Mount Leinster Rangers','Round 3'],
+ ['Setanta Ceatharlach','Naomh Brid GAA','16 August 2026','12:30','Pres College','Round 3'],
+ ['Ballinkillen','Naomh Eoin','16 August 2026','12:30','Ballinkillen','Round 3'],
+].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Junior Hurling Championship',r[5])));
 
 // Carlow Football Championship - Rounds 1-3
 // Senior Football Championship
