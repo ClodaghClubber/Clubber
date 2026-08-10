@@ -339,6 +339,7 @@ function parseCacHtmlDirect(html, out, county, competitionName) {
           venue: buf.venue,
           competition,
           round,
+          _rawComp: curComp || '',
         });
       }
       buf = emptyBuf();
@@ -865,7 +866,7 @@ async function fetchKildare(cacDebug) {
   }
   const deduped = [];
   for (const f of out) {
-    if (f.competition && f.competition.includes('Reserve')) continue;
+    if (f._rawComp && f._rawComp.includes('Reserve')) continue;
     const key = `${f.competition}|${f.teamA}|${f.teamB}|${f.date}|${f.time}`;
     if (!seen.has(key)) { seen.add(key); deduped.push(f); }
   }
