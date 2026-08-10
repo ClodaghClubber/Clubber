@@ -865,6 +865,7 @@ async function fetchKildare(cacDebug) {
   }
   const deduped = [];
   for (const f of out) {
+    if (f.competition && f.competition.includes('Reserve')) continue;
     const key = `${f.competition}|${f.teamA}|${f.teamB}|${f.date}|${f.time}`;
     if (!seen.has(key)) { seen.add(key); deduped.push(f); }
   }
