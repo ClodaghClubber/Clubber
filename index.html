@@ -1043,7 +1043,7 @@ function updateActionButtons(){
   exportBtn.disabled = selFixtures.length===0;
   assignSocialsBtn.disabled = selFixtures.length===0;
   assignSupport2Btn.disabled = selFixtures.length===0;
-  clubberBtn.disabled = selFixtures.length===0;
+  clubberBtn.disabled = !selFixtures.some(f=>f.status==='Approved');
 }
 
 function csvEscape(val){
@@ -1686,15 +1686,18 @@ clubberBtn.addEventListener('click', () => {
   if (!selFixtures.length) return;
 
   const results = selFixtures.map(f => {
+    if (f.status !== 'Approved')
+      return { fixture: f, payload: null, errors: ['Not Approved — only Approved fixtures can be created in Clubber'], ok: false, skipped: true };
     const { payload, errors } = buildGamePayload(f);
-    return { fixture: f, payload, errors, ok: errors.length === 0 };
+    return { fixture: f, payload, errors, ok: errors.length === 0, skipped: false };
   });
 
-  // Split into batches of 10 and download each
+  // Split approved+mapped results into batches of 10 and download each
   const BATCH_SIZE = 10;
+  const eligible = results.filter(r => !r.skipped);
   const batches = [];
-  for (let i = 0; i < results.length; i += BATCH_SIZE)
-    batches.push(results.slice(i, i + BATCH_SIZE));
+  for (let i = 0; i < eligible.length; i += BATCH_SIZE)
+    batches.push(eligible.slice(i, i + BATCH_SIZE));
 
   const stamp = new Date().toISOString().slice(0, 10);
   batches.forEach((batch, idx) => {
