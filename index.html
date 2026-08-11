@@ -1608,11 +1608,39 @@ let competitionLookup = {};
   }
 })();
 
-function deriveGrade(competition) {
+function deriveGrade(county, competition) {
   if (!competition) return '';
-  if (/senior/i.test(competition)) return 'Senior 1';
-  if (/intermediate/i.test(competition)) return 'Intermediate 1';
-  if (/junior/i.test(competition)) return 'Junior 1';
+  const c = competition;
+
+  // Senior
+  if (/Premier\s+Senior/i.test(c)) return 'Senior 1';
+  if (/Senior\s+[AB]\b/i.test(c)) return 'Senior 2';
+  if (/Senior/i.test(c)) return 'Senior 1';
+
+  // Intermediate
+  if (/Premier\s+Intermediate/i.test(c)) return 'Intermediate 1';
+  if (/Intermediate\s+[AB]\b/i.test(c)) return 'Intermediate 2';
+  if (/Intermediate/i.test(c)) {
+    // Laois/Tipperary/Waterford hurling: plain "Intermediate" = I2 (Premier Intermediate = I1)
+    if (['Laois', 'Tipperary', 'Waterford'].includes(county) && /Hurling/i.test(c)) return 'Intermediate 2';
+    return 'Intermediate 1';
+  }
+
+  // Junior
+  if (/Premier\s+Junior/i.test(c)) return 'Junior 1';
+  if (/Junior\s+B\b/i.test(c)) return 'Junior 2';
+  if (/Junior\s+A\b/i.test(c)) {
+    // Counties where Premier Junior = J1 → Junior A is below that = J2
+    // Also Meath where plain "Junior" = J1 → Junior A = J2
+    if (['Cork', 'Kilkenny', 'Tipperary', 'Meath'].includes(county)) return 'Junior 2';
+    return 'Junior 1';
+  }
+  if (/Junior/i.test(c)) {
+    // Kerry: plain "Junior" = J2 (Premier Junior = J1)
+    if (county === 'Kerry') return 'Junior 2';
+    return 'Junior 1';
+  }
+
   return '';
 }
 
@@ -1642,10 +1670,10 @@ function buildGamePayload(f) {
   const teamBResult = lookupTeam(f.teamB, f.county);
   if (!teamBResult) errors.push(`competitorClubId not found for "${f.teamB}"`);
 
-  const grade = deriveGrade(f.competition);
+  const grade = deriveGrade(f.county, f.competition);
   if (!grade) errors.push(`grade could not be derived from competition "${f.competition}"`);
 
-  const competition = lookupClubberCompetition(
+  const championsType = lookupClubberCompetition(
     teamAResult?.county || f.county,
     teamBResult?.county || f.county
   );
@@ -1659,13 +1687,13 @@ function buildGamePayload(f) {
     clubId: teamAResult?.clubId || '',
     code: f.code || '',
     grade,
+    championsType,
     season: 'Season 26',
     round: f.round || '',
     title: '',
     competitorClubName: f.teamB,
     competitorClubId: teamBResult?.clubId || '',
     competitorClubCounty: teamBResult?.county || '',
-    competition,
   };
 
   return { payload, errors };
