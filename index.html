@@ -183,11 +183,11 @@
     <button class="btn-remove" id="refreshBtn" style="background:#2d6cdf;">Refresh</button>
     <button class="btn-clubber" id="clubberBtn" disabled>Create in Clubber</button>
     <button class="btn-modal-add" id="addFixtureBtn">+ Add Fixture</button>
-    <div class="col-picker-wrap">
+    <div class="col-picker-wrap" style="display:none;">
       <button class="btn-remove" id="assignSocialsBtn" style="background:#7c3aed;" disabled>Socials ▾</button>
       <div id="assignSocialsPanel" style="display:none;"></div>
     </div>
-    <div class="col-picker-wrap">
+    <div class="col-picker-wrap" style="display:none;">
       <button class="btn-remove" id="assignSupport2Btn" style="background:#0369a1;" disabled>2nd Support ▾</button>
       <div id="assignSupport2Panel" style="display:none;"></div>
     </div>
@@ -1485,8 +1485,9 @@ const COLS=[
   {key:'videographer',label:'Videographer'},
   {key:'unit',label:'Unit'},
 ];
-let hiddenCols=new Set();
-function loadColPrefs(){try{const r=localStorage.getItem(COL_PREFS_KEY);if(r){const a=JSON.parse(r);if(Array.isArray(a))hiddenCols=new Set(a);}}catch(e){}}
+const HIDDEN_BY_DEFAULT=['socials','support2','replay','videographer','unit'];
+let hiddenCols=new Set(HIDDEN_BY_DEFAULT);
+function loadColPrefs(){try{const r=localStorage.getItem(COL_PREFS_KEY);if(r){const a=JSON.parse(r);if(Array.isArray(a))hiddenCols=new Set(a);}}catch(e){}HIDDEN_BY_DEFAULT.forEach(k=>hiddenCols.add(k));}
 function saveColPrefs(){try{localStorage.setItem(COL_PREFS_KEY,JSON.stringify([...hiddenCols]));}catch(e){}}
 function applyColPrefs(){
   const tbl=document.getElementById('fixtureTable');
