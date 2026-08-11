@@ -1682,7 +1682,7 @@ function buildGamePayload(f) {
   const payload = {
     gameScope: 'Club',
     date: f.date,
-    time: f.time,
+    time: from12h(f.time),
     county: f.county,
     club: f.teamA,
     clubId: teamAResult?.clubId || '',
