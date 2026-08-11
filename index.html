@@ -1488,6 +1488,7 @@ function applyColPrefs(){
   const tbl=document.getElementById('fixtureTable');
   if(!tbl)return;
   COLS.forEach(c=>tbl.classList.toggle('hide-'+c.key,hiddenCols.has(c.key)));
+  HIDDEN_BY_DEFAULT.forEach(k=>tbl.classList.add('hide-'+k));
 }
 function setupAssignSocials(){
   const btn=document.getElementById('assignSocialsBtn');
