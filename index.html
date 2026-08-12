@@ -249,7 +249,6 @@
     <button class="btn-remove" id="refreshBtn" style="background:#2d6cdf;">Refresh</button>
     <button class="btn-remove" id="clearChangesBtn" style="background:#6b7280;display:none;" title="Clear all change markers">Clear changes</button>
     <button id="simChangesBtn" title="Simulate fixture changes for testing" style="background:none;border:1px dashed #6b7280;color:#6b7280;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;">⚙ Test</button>
-    <button class="btn-clubber" id="clubberBtn" disabled>Create in Clubber</button>
     <button class="btn-compare" id="compareBtn">⇄ Compare Clubber</button>
     <input type="file" id="compareFileInput" accept=".json" style="display:none;">
     <button class="btn-modal-add" id="addFixtureBtn">+ Add Fixture</button>
@@ -740,13 +739,14 @@ const WORKER_URL = 'https://gaa-fixtures-proxy-v2.clodagh-b01.workers.dev/';
 // ---- App state ----
 const CACHE_KEY = 'gaaFixturesCache';
 const MANUAL_KEY = 'gaaManualFixtures';
-const SNAPSHOT_KEY = 'gaaFixtureSnapshot';
+const BASELINE_KEY = 'gaaFixtureBaseline';
 const CHANGELOG_KEY = 'gaaFixtureChangelog';
 let fixtures = [];
 let manualFixtures = [];
 let nextId = 1;
 let lastLoadInfo = "";
-let fixtureChangelog = {}; // stableKey -> { type:'new'|'changed'|'removed', history:[{at,diffs}], removedData? }
+let fixtureBaseline = {}; // stableKey -> { original:{date,time,venue,round}, lastKnown:{...} }
+let fixtureChangelog = {}; // stableKey -> { type:'unchanged'|'changed'|'removed', data:{county,teamA,teamB,competition}, history:[{at,note?,diffs}] }
 let changesOnlyFilter = false;
 
 function saveManualFixtures(){
@@ -776,11 +776,11 @@ function loadChangelog(){
 function saveChangelog(){
   try{localStorage.setItem(CHANGELOG_KEY,JSON.stringify(fixtureChangelog));}catch(e){}
 }
-function loadSnapshot(){
-  try{const r=localStorage.getItem(SNAPSHOT_KEY);return r?JSON.parse(r):null;}catch(e){return null;}
+function loadBaseline(){
+  try{const r=localStorage.getItem(BASELINE_KEY);if(r)fixtureBaseline=JSON.parse(r)||{};}catch(e){}
 }
-function saveSnapshot(snap){
-  try{localStorage.setItem(SNAPSHOT_KEY,JSON.stringify(snap));}catch(e){}
+function saveBaseline(){
+  try{localStorage.setItem(BASELINE_KEY,JSON.stringify(fixtureBaseline));}catch(e){}
 }
 function takeSnapshot(){
   const snap={};
@@ -792,65 +792,80 @@ function takeSnapshot(){
   });
   return snap;
 }
-function detectChanges(prevSnap,nextSnap){
+function detectChanges(newSnap){
   const TRACKED=['date','time','venue','round'];
   const FIELD_LABELS={date:'Date',time:'Time',venue:'Venue',round:'Round'};
   const now=new Date().toLocaleString('en-IE');
-  const nextKeys=new Set(Object.keys(nextSnap));
-  Object.entries(nextSnap).forEach(([sk,nf])=>{
-    const prev=prevSnap[sk];
-    if(!prev){
-      if(!fixtureChangelog[sk])
-        fixtureChangelog[sk]={type:'new',history:[{at:now,diffs:[]}],currentData:nf};
+  const newKeys=new Set(Object.keys(newSnap));
+
+  Object.entries(newSnap).forEach(([sk,nf])=>{
+    const bl=fixtureBaseline[sk];
+    if(!bl){
+      // First time seen — record baseline and first history entry
+      fixtureBaseline[sk]={
+        original:{date:nf.date,time:nf.time,venue:nf.venue,round:nf.round},
+        lastKnown:{date:nf.date,time:nf.time,venue:nf.venue,round:nf.round}
+      };
+      fixtureChangelog[sk]={
+        type:'unchanged',
+        data:{county:nf.county,teamA:nf.teamA,teamB:nf.teamB,competition:nf.competition},
+        history:[{at:now,note:'Loaded from source',diffs:[]}]
+      };
     } else {
+      // Compare against last known state (incremental diffs per refresh)
+      const prev=bl.lastKnown;
       const diffs=TRACKED.filter(field=>prev[field]!==nf[field])
-        .map(field=>({field:FIELD_LABELS[field]||field,from:prev[field],to:nf[field]}));
+        .map(field=>({field:FIELD_LABELS[field],from:prev[field],to:nf[field]}));
       if(diffs.length){
-        if(!fixtureChangelog[sk]) fixtureChangelog[sk]={type:'changed',history:[],currentData:nf};
-        fixtureChangelog[sk].type='changed';
-        fixtureChangelog[sk].currentData=nf;
+        if(!fixtureChangelog[sk]) fixtureChangelog[sk]={type:'changed',data:{county:nf.county,teamA:nf.teamA,teamB:nf.teamB,competition:nf.competition},history:[]};
         fixtureChangelog[sk].history.push({at:now,diffs});
+        bl.lastKnown={date:nf.date,time:nf.time,venue:nf.venue,round:nf.round};
+      }
+      // Badge type: changed if current differs from the original baseline values
+      if(fixtureChangelog[sk]){
+        const orig=bl.original;
+        fixtureChangelog[sk].type=TRACKED.some(field=>orig[field]!==nf[field])?'changed':'unchanged';
       }
     }
   });
-  Object.keys(prevSnap).forEach(sk=>{
-    if(!nextKeys.has(sk)){
-      if(!fixtureChangelog[sk]||fixtureChangelog[sk].type!=='removed'){
-        const prev=prevSnap[sk];
-        if(!fixtureChangelog[sk]) fixtureChangelog[sk]={type:'removed',history:[],removedData:prev};
-        else{fixtureChangelog[sk].type='removed';fixtureChangelog[sk].removedData=prev;}
-        fixtureChangelog[sk].history.push({at:now,diffs:[{field:'Status',from:'Active',to:'Removed from source'}]});
-      }
+
+  // Mark fixtures removed if they were in the baseline but no longer in live data
+  Object.keys(fixtureBaseline).forEach(sk=>{
+    if(!newKeys.has(sk)&&fixtureChangelog[sk]&&fixtureChangelog[sk].type!=='removed'){
+      fixtureChangelog[sk].type='removed';
+      fixtureChangelog[sk].history.push({at:now,note:'Removed from source',diffs:[]});
     }
   });
+
+  saveBaseline();
   saveChangelog();
 }
 function updateClearChangesBtn(){
   const btn=document.getElementById('clearChangesBtn');
   if(!btn) return;
-  const hasChanges=Object.keys(fixtureChangelog).length>0;
+  const hasChanges=Object.values(fixtureChangelog).some(c=>c.type==='changed'||c.type==='removed');
   btn.style.display=hasChanges?'':'none';
 }
 function openChangeHistoryModal(sk){
   const chg=fixtureChangelog[sk];
   if(!chg) return;
-  const data=chg.currentData||chg.removedData||{};
-  document.getElementById('changeHistoryTitle').textContent=`${data.teamA||''} v ${data.teamB||''}`;
-  document.getElementById('changeHistorySubtitle').textContent=`${data.county||''} · ${data.competition||''}`;
+  const d=chg.data||{};
+  document.getElementById('changeHistoryTitle').textContent=`${d.teamA||''} v ${d.teamB||''}`;
+  document.getElementById('changeHistorySubtitle').textContent=`${d.county||''} · ${d.competition||''}`;
   const entries=chg.history;
   const html=entries.length===0
-    ?'<p style="color:var(--muted);font-size:13px;">No details recorded.</p>'
+    ?'<p style="color:var(--muted);font-size:13px;">No history recorded.</p>'
     :entries.slice().reverse().map((entry,i,arr)=>`
       <div class="chg-timeline-entry">
         <div class="chg-timeline-time">${entry.at}</div>
-        ${entry.diffs.length===0
-          ?`<div style="font-size:13px;color:var(--muted);">${chg.type==='new'?'Fixture appeared in data':chg.type==='removed'?'Fixture removed from data':'Change recorded'}</div>`
-          :entry.diffs.map(d=>`
+        ${entry.note
+          ?`<div style="font-size:13px;color:var(--muted);">${entry.note}</div>`
+          :entry.diffs.map(dd=>`
             <div class="chg-diff-row">
-              <span class="chg-diff-field">${d.field}</span>
-              <span class="chg-diff-from">${d.from||'—'}</span>
+              <span class="chg-diff-field">${dd.field}</span>
+              <span class="chg-diff-from">${dd.from||'—'}</span>
               <span style="color:var(--muted);">→</span>
-              <span class="chg-diff-to">${d.to||'—'}</span>
+              <span class="chg-diff-to">${dd.to||'—'}</span>
             </div>`).join('')}
       </div>${i<arr.length-1?'<hr style="border:none;border-top:1px solid var(--border);margin:12px 0;">':''}`
     ).join('');
@@ -1167,7 +1182,6 @@ const selectAll=document.getElementById('selectAll');
 const approveBtn=document.getElementById('approveBtn');
 const rejectBtn=document.getElementById('rejectBtn');
 const removeBtn=document.getElementById('removeBtn');
-const clubberBtn=document.getElementById('clubberBtn');
 const emptyMsg=document.getElementById('emptyMsg');
 const rowCount=document.getElementById('rowCount');
 const refreshBtn=document.getElementById('refreshBtn');
@@ -1266,8 +1280,8 @@ function render(){
   // Render removed fixtures (from changelog, no longer in live data)
   const countyF=document.getElementById('countyFilter').value;
   Object.entries(fixtureChangelog).forEach(([sk,chg])=>{
-    if(chg.type!=='removed'||!chg.removedData) return;
-    const f=chg.removedData;
+    if(chg.type!=='removed'||!chg.data) return;
+    const f=chg.data;
     if(countyF && f.county!==countyF) return;
     const tr=document.createElement('tr');
     tr.classList.add('chg-removed');
@@ -1312,7 +1326,6 @@ function updateActionButtons(){
   exportBtn.disabled = selFixtures.length===0;
   assignSocialsBtn.disabled = selFixtures.length===0;
   assignSupport2Btn.disabled = selFixtures.length===0;
-  clubberBtn.disabled = !selFixtures.some(f=>f.status==='Approved');
 }
 
 function csvEscape(val){
@@ -1400,52 +1413,42 @@ dateFrom.addEventListener('change',()=>{ dateTo.value=dateFrom.value; render(); 
 [codeFilter,compFilter,statusFilter,dateTo].forEach(el=>el.addEventListener('change',render));
 document.getElementById('changesFilter').addEventListener('change',e=>{changesOnlyFilter=e.target.value==='changes';render();});
 document.getElementById('simChangesBtn').addEventListener('click',()=>{
-  const snap=loadSnapshot();
-  if(!snap){alert('No snapshot yet — wait for fixtures to load first.');return;}
+  const blKeys=Object.keys(fixtureBaseline);
+  if(blKeys.length<3){alert('No baseline yet — load fixtures first.');return;}
   const today=new Date().toISOString().slice(0,10);
-  // Prefer today's fixtures so changes are easy to spot; fall back to all fixtures
-  let keys=Object.keys(snap).filter(sk=>snap[sk].date===today);
-  if(keys.length<3) keys=Object.keys(snap);
-  if(keys.length<3){alert('Not enough fixtures in snapshot to simulate.');return;}
+  // Prefer today's fixtures so changes are easy to spot; fall back to all
+  let keys=blKeys.filter(sk=>fixtureBaseline[sk].lastKnown.date===today);
+  if(keys.length<3) keys=blKeys;
   const stride=Math.max(1,Math.floor(keys.length/3));
   const pick=(i)=>keys[(i*stride+Math.floor(Math.random()*stride))%keys.length];
   const k0=pick(0),k1=pick(1),k2=pick(2);
   const TIMES=['12:00 PM','1:30 PM','2:00 PM','3:00 PM','4:00 PM','5:30 PM','7:00 PM','7:30 PM','8:00 PM'];
   const rndTime=(cur)=>{let t;do{t=TIMES[Math.floor(Math.random()*TIMES.length)];}while(t===cur);return t;};
   const rndDateOffset=(base,days)=>{const d=new Date(base+'T00:00:00');d.setDate(d.getDate()+days);return d.toISOString().slice(0,10);};
-  // Changed: date + time shift
-  snap[k0]={...snap[k0],date:rndDateOffset(snap[k0].date,7),time:rndTime(snap[k0].time)};
-  // Changed: time only
-  snap[k1]={...snap[k1],time:rndTime(snap[k1].time)};
-  // Changed: venue
-  snap[k2]={...snap[k2],venue:'Test Venue GAA Grounds'};
-  // Removed: add fake fixtures to the OLD snapshot that don't exist in live data
-  // → they were "seen before" but are now gone
-  const county0=snap[k0].county, county1=snap[k1].county;
-  snap[`${county0}|__SimA__|__SimB__|Simulated Championship`]={
-    county:county0,teamA:'Sim Team A',teamB:'Sim Team B',
-    competition:'Simulated Championship',round:'Round 1',
-    code:'Football',date:today,time:'3:00 PM',venue:'Old Ground'
-  };
-  snap[`${county1}|__SimC__|__SimD__|Simulated Hurling Championship`]={
-    county:county1,teamA:'Sim Team C',teamB:'Sim Team D',
-    competition:'Simulated Hurling Championship',round:'Round 2',
-    code:'Hurling',date:today,time:'7:30 PM',venue:'Old Hurling Ground'
-  };
-  localStorage.setItem(SNAPSHOT_KEY,JSON.stringify(snap));
-  loadFixtures(true).then(()=>{
-    const log=fixtureChangelog;
-    const changed=Object.entries(log).filter(([,v])=>v.type==='changed').map(([k])=>k.slice(0,40));
-    const removed=Object.entries(log).filter(([,v])=>v.type==='removed').map(([k])=>k.slice(0,40));
-    const newf=Object.entries(log).filter(([,v])=>v.type==='new').map(([k])=>k.slice(0,40));
-    console.log('[Test] fixtureChangelog after refresh:',{changed,removed,new:newf});
-    const msg=`Test result:\n• Changed: ${changed.length}\n• Removed: ${removed.length}\n• New: ${newf.length}\n\nChanged keys:\n${changed.join('\n')||'none'}\n\nRemoved keys:\n${removed.join('\n')||'none'}`;
-    alert(msg);
-  });
+  // Simulate changes by winding back lastKnown so current data looks different
+  const bl0=fixtureBaseline[k0].lastKnown;
+  fixtureBaseline[k0].lastKnown={...bl0,date:rndDateOffset(bl0.date,-7),time:rndTime(bl0.time)};
+  const bl1=fixtureBaseline[k1].lastKnown;
+  fixtureBaseline[k1].lastKnown={...bl1,time:rndTime(bl1.time)};
+  const bl2=fixtureBaseline[k2].lastKnown;
+  fixtureBaseline[k2].lastKnown={...bl2,venue:'Old GAA Grounds (Simulated)'};
+  // Simulate removed: inject fake baseline entries that won't match any live fixture
+  const county0=fixtureChangelog[k0]?.data?.county||'';
+  const county1=fixtureChangelog[k1]?.data?.county||'';
+  const fakeK1=`${county0}|__SimA__|__SimB__|Simulated Championship`;
+  const fakeK2=`${county1}|__SimC__|__SimD__|Simulated Hurling Championship`;
+  const now=new Date().toLocaleString('en-IE');
+  fixtureBaseline[fakeK1]={original:{date:today,time:'3:00 PM',venue:'Old Ground',round:'Round 1'},lastKnown:{date:today,time:'3:00 PM',venue:'Old Ground',round:'Round 1'}};
+  fixtureChangelog[fakeK1]={type:'unchanged',data:{county:county0,teamA:'Sim Team A',teamB:'Sim Team B',competition:'Simulated Championship'},history:[{at:now,note:'Loaded from source',diffs:[]}]};
+  fixtureBaseline[fakeK2]={original:{date:today,time:'7:30 PM',venue:'Old Hurling Ground',round:'Round 2'},lastKnown:{date:today,time:'7:30 PM',venue:'Old Hurling Ground',round:'Round 2'}};
+  fixtureChangelog[fakeK2]={type:'unchanged',data:{county:county1,teamA:'Sim Team C',teamB:'Sim Team D',competition:'Simulated Hurling Championship'},history:[{at:now,note:'Loaded from source',diffs:[]}]};
+  saveBaseline();
+  saveChangelog();
+  loadFixtures(true);
 });
 document.getElementById('clearChangesBtn').addEventListener('click',()=>{
   fixtureChangelog={};saveChangelog();
-  localStorage.removeItem(SNAPSHOT_KEY);
+  fixtureBaseline={};saveBaseline();
   updateClearChangesBtn();
   render();
 });
@@ -1490,11 +1493,8 @@ async function loadFixtures(isRefresh){
     const json=await res.json();
     if(json.error) throw new Error(json.error);
     const incoming=(json.fixtures||[]).map(f=>({...mk(f.county,f.teamA,f.teamB,f.date,f.time,f.venue,f.competition,f.round), code:deriveCode(f.competition,f.sport), status:f.status||'Proposed'}));
-    const prevSnapshot=loadSnapshot();
     mergeFixtures(incoming);
-    const newSnapshot=takeSnapshot();
-    if(prevSnapshot!==null) detectChanges(prevSnapshot,newSnapshot);
-    saveSnapshot(newSnapshot);
+    detectChanges(takeSnapshot());
     updateClearChangesBtn();
     const fetchedAt=json.fetchedAt?new Date(json.fetchedAt).toLocaleString():new Date().toLocaleString();
     loadStatus.textContent=`Loaded ${incoming.length} fixtures · last updated ${fetchedAt}`;
@@ -1515,6 +1515,7 @@ const cached=loadCache();
 loadManualFixtures();
 loadOverrides();
 loadChangelog();
+loadBaseline();
 updateClearChangesBtn();
 if(cached){
   const today=new Date().toISOString().slice(0,10);
@@ -2035,54 +2036,6 @@ function downloadJson(data, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-clubberBtn.addEventListener('click', () => {
-  const selFixtures = fixtures.filter(f => selected.has(f.id));
-  if (!selFixtures.length) return;
-
-  const results = selFixtures.map(f => {
-    if (f.status !== 'Approved')
-      return { fixture: f, payload: null, errors: ['Not Approved — only Approved fixtures can be created in Clubber'], ok: false, skipped: true };
-    const { payload, errors } = buildGamePayload(f);
-    return { fixture: f, payload, errors, ok: errors.length === 0, skipped: false };
-  });
-
-  // Split approved+mapped results into batches of 10 and download each
-  const BATCH_SIZE = 10;
-  const eligible = results.filter(r => !r.skipped);
-  const batches = [];
-  for (let i = 0; i < eligible.length; i += BATCH_SIZE)
-    batches.push(eligible.slice(i, i + BATCH_SIZE));
-
-  const stamp = new Date().toISOString().slice(0, 10);
-  batches.forEach((batch, idx) => {
-    const payloads = batch.map(r => r.payload);
-    const suffix = batches.length > 1 ? `-batch-${idx + 1}-of-${batches.length}` : '';
-    setTimeout(() => downloadJson(payloads, `clubber-fixtures${suffix}-${stamp}.json`), idx * 300);
-  });
-
-  // Show feedback modal
-  const okCount = results.filter(r => r.ok).length;
-  const summary = document.getElementById('clubberSummary');
-  summary.innerHTML = `
-    <strong>${okCount} of ${results.length} fixture${results.length !== 1 ? 's' : ''} mapped successfully.</strong>
-    ${batches.length} JSON file${batches.length !== 1 ? 's' : ''} downloaded (${BATCH_SIZE} fixtures per file).
-    ${okCount < results.length ? `<br><span style="color:var(--reject)">${results.length - okCount} fixture${results.length - okCount !== 1 ? 's' : ''} had mapping errors — check below.</span>` : ''}
-  `;
-
-  const list = document.getElementById('clubberResultList');
-  list.innerHTML = results.map(r => `
-    <div class="clubber-result-item ${r.ok ? 'ok' : 'fail'}">
-      <span class="clubber-icon">${r.ok ? '✓' : '✗'}</span>
-      <div class="clubber-label">
-        <strong>${r.fixture.teamA} v ${r.fixture.teamB}</strong>
-        ${r.fixture.county} · ${r.fixture.date} · ${r.fixture.competition || ''}
-        ${r.errors.map(e => `<div class="clubber-err">⚠ ${e}</div>`).join('')}
-      </div>
-    </div>
-  `).join('');
-
-  document.getElementById('clubberModal').classList.add('open');
-});
 
 /* ============================================================
    COMPARE CLUBBER FEATURE
