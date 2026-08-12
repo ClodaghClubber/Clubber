@@ -1417,9 +1417,11 @@ document.getElementById('simChangesBtn').addEventListener('click',()=>{
   const blKeys=Object.keys(fixtureBaseline);
   if(blKeys.length<3){alert('No baseline yet — load fixtures first.');return;}
   const today=new Date().toISOString().slice(0,10);
-  // Prefer today's fixtures so changes are easy to spot; fall back to all
-  let keys=blKeys.filter(sk=>fixtureBaseline[sk].lastKnown.date===today);
-  if(keys.length<3) keys=blKeys;
+  // Find the nearest date (today or soonest upcoming) that has at least 3 fixtures
+  const byDate={};
+  blKeys.forEach(sk=>{const d=fixtureBaseline[sk].lastKnown.date;if(d>='')(byDate[d]=byDate[d]||[]).push(sk);});
+  const nearestDate=Object.keys(byDate).sort().find(d=>d>=today&&byDate[d].length>=3)||Object.keys(byDate).sort().reverse().find(d=>byDate[d].length>=3);
+  let keys=nearestDate?byDate[nearestDate]:blKeys;
   const stride=Math.max(1,Math.floor(keys.length/3));
   const pick=(i)=>keys[(i*stride+Math.floor(Math.random()*stride))%keys.length];
   const k0=pick(0),k1=pick(1),k2=pick(2);
