@@ -178,13 +178,10 @@
   .chg-removed td:first-child{border-left:4px solid #ef4444 !important;}
   .chg-removed{opacity:0.6;}
   .chg-removed td{text-decoration:line-through;color:var(--muted);}
+  .badge-chg{font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:2px 6px;border-radius:8px;margin-left:6px;vertical-align:middle;cursor:pointer;user-select:none;}
   .badge-chg-new{background:#22c55e;color:#fff;}
   .badge-chg-changed{background:#f59e0b;color:#fff;}
   .badge-chg-removed{background:#ef4444;color:#fff;}
-  .badge-chg{font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:2px 6px;border-radius:8px;margin-left:6px;vertical-align:middle;cursor:pointer;user-select:none;}
-  .badge-chg-new{background:rgba(34,197,94,.2);color:#15803d;}
-  .badge-chg-changed{background:rgba(245,158,11,.2);color:#92400e;}
-  .badge-chg-removed{background:rgba(239,68,68,.15);color:#991b1b;}
   #changeHistoryModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;align-items:flex-start;justify-content:center;padding-top:60px;}
   #changeHistoryModal.open{display:flex;}
   .chg-timeline-entry{margin-bottom:16px;}
@@ -797,6 +794,7 @@ function detectChanges(newSnap){
   const FIELD_LABELS={date:'Date',time:'Time',venue:'Venue',round:'Round'};
   const now=new Date().toLocaleString('en-IE');
   const newKeys=new Set(Object.keys(newSnap));
+  const isFirstLoad=Object.keys(fixtureBaseline).length===0;
 
   Object.entries(newSnap).forEach(([sk,nf])=>{
     const bl=fixtureBaseline[sk];
@@ -807,7 +805,7 @@ function detectChanges(newSnap){
         lastKnown:{date:nf.date,time:nf.time,venue:nf.venue,round:nf.round}
       };
       fixtureChangelog[sk]={
-        type:'unchanged',
+        type:isFirstLoad?'unchanged':'new',
         data:{county:nf.county,teamA:nf.teamA,teamB:nf.teamB,competition:nf.competition,date:nf.date,time:nf.time,venue:nf.venue,round:nf.round,code:nf.code},
         history:[{at:now,note:'Loaded from source',diffs:[]}]
       };
@@ -844,7 +842,7 @@ function detectChanges(newSnap){
 function updateClearChangesBtn(){
   const btn=document.getElementById('clearChangesBtn');
   if(!btn) return;
-  const hasChanges=Object.values(fixtureChangelog).some(c=>c.type==='changed'||c.type==='removed');
+  const hasChanges=Object.values(fixtureChangelog).some(c=>c.type==='changed'||c.type==='removed'||c.type==='new');
   btn.style.display=hasChanges?'':'none';
 }
 function openChangeHistoryModal(sk){
@@ -1216,7 +1214,7 @@ function getFiltered(){
     if(statusFilter.value && f.status!==statusFilter.value) return false;
     if(dateFrom.value && f.date<dateFrom.value) return false;
     if(dateTo.value && f.date>dateTo.value) return false;
-    if(changesOnlyFilter){const _c=fixtureChangelog[stableKeyOf(f)];if(!_c||(_c.type!=='changed'&&_c.type!=='removed')) return false;}
+    if(changesOnlyFilter){const _c=fixtureChangelog[stableKeyOf(f)];if(!_c||(_c.type!=='changed'&&_c.type!=='removed'&&_c.type!=='new')) return false;}
     return true;
   });
   list.sort((a,b)=>{
@@ -1256,7 +1254,7 @@ function render(){
     const _sk=stableKeyOf(f);
     const _chg=fixtureChangelog[_sk];
     if(_chg) tr.classList.add('chg-'+_chg.type);
-    const _chgBadge=_chg?`<span class="badge-chg badge-chg-${_chg.type}" data-chg-key="${_sk.replace(/"/g,'&quot;')}" title="Click to see change history">${_chg.type==='new'?'NEW':'~'}</span>`:'';
+    const _chgBadge=(_chg&&_chg.type!=='unchanged')?`<span class="badge-chg badge-chg-${_chg.type}" data-chg-key="${_sk.replace(/"/g,'&quot;')}" title="Click to see change history">${_chg.type==='new'?'NEW':_chg.type==='changed'?'~':'REMOVED'}</span>`:'';
     tr.innerHTML=`
       <td style="white-space:nowrap;"><input type="checkbox" data-id="${f.id}" ${selected.has(f.id)?'checked':''}><button class="edit-btn" data-edit-id="${f.id}" title="Edit fixture" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:0 4px;vertical-align:middle;opacity:.6;">✎</button></td>
       <td>${f.county}</td>
