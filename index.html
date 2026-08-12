@@ -244,6 +244,7 @@
     <button class="btn-remove" id="removeBtn" disabled>Remove</button>
     <button class="btn-remove" id="refreshBtn" style="background:#2d6cdf;">Refresh</button>
     <button class="btn-remove" id="clearChangesBtn" style="background:#6b7280;display:none;" title="Clear all change markers">Clear changes</button>
+    <button id="simChangesBtn" title="Simulate fixture changes for testing" style="background:none;border:1px dashed #6b7280;color:#6b7280;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;">⚙ Test</button>
     <button class="btn-clubber" id="clubberBtn" disabled>Create in Clubber</button>
     <button class="btn-compare" id="compareBtn">⇄ Compare Clubber</button>
     <input type="file" id="compareFileInput" accept=".json" style="display:none;">
@@ -1394,6 +1395,33 @@ countyFilter.addEventListener('change',()=>{ populateCompOptions(); render(); })
 dateFrom.addEventListener('change',()=>{ dateTo.value=dateFrom.value; render(); });
 [codeFilter,compFilter,statusFilter,dateTo].forEach(el=>el.addEventListener('change',render));
 document.getElementById('changesFilter').addEventListener('change',e=>{changesOnlyFilter=e.target.value==='changes';render();});
+document.getElementById('simChangesBtn').addEventListener('click',()=>{
+  const snap=loadSnapshot();
+  if(!snap){alert('No snapshot yet — wait for fixtures to load first.');return;}
+  const keys=Object.keys(snap);
+  if(keys.length<4){alert('Not enough fixtures in snapshot to simulate.');return;}
+  // Pick 4 fixtures at random positions spread across the list
+  const stride=Math.floor(keys.length/4);
+  const pick=(i)=>keys[(i*stride+Math.floor(Math.random()*stride))%keys.length];
+  const k0=pick(0),k1=pick(1),k2=pick(2),k3=pick(3);
+  const TIMES=['12:00 PM','1:30 PM','2:00 PM','3:00 PM','4:00 PM','5:30 PM','7:00 PM','7:30 PM','8:00 PM'];
+  const rndTime=()=>TIMES[Math.floor(Math.random()*TIMES.length)];
+  const rndDateOffset=(base,days)=>{
+    const d=new Date(base+'T00:00:00');
+    d.setDate(d.getDate()+days);
+    return d.toISOString().slice(0,10);
+  };
+  // Change 1: date + time shift
+  snap[k0]={...snap[k0],date:rndDateOffset(snap[k0].date,7),time:rndTime()};
+  // Change 2: time only
+  snap[k1]={...snap[k1],time:rndTime()};
+  // Change 3: venue change
+  snap[k2]={...snap[k2],venue:'Simulated Venue GAA Grounds'};
+  // Change 4: remove (simulates fixture dropping off the source)
+  delete snap[k3];
+  localStorage.setItem(SNAPSHOT_KEY,JSON.stringify(snap));
+  loadFixtures(true);
+});
 document.getElementById('clearChangesBtn').addEventListener('click',()=>{
   fixtureChangelog={};saveChangelog();
   localStorage.removeItem(SNAPSHOT_KEY);
