@@ -1458,7 +1458,6 @@ document.getElementById('simChangesBtn').addEventListener('click',async()=>{
   fixtures.push(simNewFixture);
   const nowStr=new Date().toLocaleString('en-IE');
   const newKey=stableKeyOf(simNewFixture);
-  console.log('[Test NEW] newKey=',newKey,'fixtureChangelog keys (new type)=',Object.entries(fixtureChangelog).filter(([,v])=>v.type==='new').map(([k])=>k));
   fixtureBaseline[newKey]={original:{date:today,time:'2:00 PM',venue:'New Venue GAA Grounds',round:'Round 1'},lastKnown:{date:today,time:'2:00 PM',venue:'New Venue GAA Grounds',round:'Round 1'}};
   fixtureChangelog[newKey]={type:'new',data:{county:county2,teamA:'Sim New Team A',teamB:'Sim New Team B',competition:'Simulated New Championship',date:today,time:'2:00 PM',venue:'New Venue GAA Grounds',round:'Round 1',code:'Football'},history:[{at:nowStr,note:'Loaded from source',diffs:[]}]};
   saveBaseline();
