@@ -1437,6 +1437,12 @@ document.getElementById('simChangesBtn').addEventListener('click',()=>{
   // Simulate new: remove k3 from baseline so detectChanges sees it as first-time
   delete fixtureBaseline[k3];
   delete fixtureChangelog[k3];
+  // Simulate a brand-new fixture by injecting it after reload
+  const county2=fixtureChangelog[k2]?.data?.county||'Carlow';
+  const fakeNewKey=`${county2}|__SimNew1__|__SimNew2__|Simulated New Championship`;
+  const simNewFixture={id:nextId++,county:county2,teamA:'Sim New Team A',teamB:'Sim New Team B',
+    date:today,day:dayName(today),time:'2:00 PM',venue:'New Venue GAA Grounds',
+    competition:'Simulated New Championship',round:'Round 1',code:'Football',status:'Proposed',manual:false};
   // Simulate removed: inject fake baseline entries that won't match any live fixture
   const county0=fixtureChangelog[k0]?.data?.county||'';
   const county1=fixtureChangelog[k1]?.data?.county||'';
@@ -1449,7 +1455,15 @@ document.getElementById('simChangesBtn').addEventListener('click',()=>{
   fixtureChangelog[fakeK2]={type:'unchanged',data:{county:county1,teamA:'Sim Team C',teamB:'Sim Team D',competition:'Simulated Hurling Championship'},history:[{at:now,note:'Loaded from source',diffs:[]}]};
   saveBaseline();
   saveChangelog();
-  loadFixtures(true);
+  loadFixtures(true).then(()=>{
+    fixtures.push(simNewFixture);
+    const nowStr=new Date().toLocaleString('en-IE');
+    fixtureBaseline[fakeNewKey]={original:{date:today,time:'2:00 PM',venue:'New Venue GAA Grounds',round:'Round 1'},lastKnown:{date:today,time:'2:00 PM',venue:'New Venue GAA Grounds',round:'Round 1'}};
+    fixtureChangelog[fakeNewKey]={type:'new',data:{county:county2,teamA:'Sim New Team A',teamB:'Sim New Team B',competition:'Simulated New Championship',date:today,time:'2:00 PM',venue:'New Venue GAA Grounds',round:'Round 1',code:'Football'},history:[{at:nowStr,note:'Loaded from source',diffs:[]}]};
+    saveBaseline();
+    saveChangelog();
+    render();
+  });
 });
 document.getElementById('clearChangesBtn').addEventListener('click',()=>{
   fixtureChangelog={};saveChangelog();
