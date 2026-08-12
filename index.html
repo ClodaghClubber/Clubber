@@ -1215,7 +1215,7 @@ function getFiltered(){
     if(statusFilter.value && f.status!==statusFilter.value) return false;
     if(dateFrom.value && f.date<dateFrom.value) return false;
     if(dateTo.value && f.date>dateTo.value) return false;
-    if(changesOnlyFilter && !fixtureChangelog[stableKeyOf(f)]) return false;
+    if(changesOnlyFilter){const _c=fixtureChangelog[stableKeyOf(f)];if(!_c||(_c.type!=='changed'&&_c.type!=='removed')) return false;}
     return true;
   });
   list.sort((a,b)=>{
