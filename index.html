@@ -1399,26 +1399,32 @@ document.getElementById('simChangesBtn').addEventListener('click',()=>{
   const snap=loadSnapshot();
   if(!snap){alert('No snapshot yet — wait for fixtures to load first.');return;}
   const keys=Object.keys(snap);
-  if(keys.length<4){alert('Not enough fixtures in snapshot to simulate.');return;}
-  // Pick 4 fixtures at random positions spread across the list
-  const stride=Math.floor(keys.length/4);
+  if(keys.length<3){alert('Not enough fixtures in snapshot to simulate.');return;}
+  const stride=Math.floor(keys.length/3);
   const pick=(i)=>keys[(i*stride+Math.floor(Math.random()*stride))%keys.length];
-  const k0=pick(0),k1=pick(1),k2=pick(2),k3=pick(3);
+  const k0=pick(0),k1=pick(1),k2=pick(2);
   const TIMES=['12:00 PM','1:30 PM','2:00 PM','3:00 PM','4:00 PM','5:30 PM','7:00 PM','7:30 PM','8:00 PM'];
-  const rndTime=()=>TIMES[Math.floor(Math.random()*TIMES.length)];
-  const rndDateOffset=(base,days)=>{
-    const d=new Date(base+'T00:00:00');
-    d.setDate(d.getDate()+days);
-    return d.toISOString().slice(0,10);
+  const rndTime=(cur)=>{let t;do{t=TIMES[Math.floor(Math.random()*TIMES.length)];}while(t===cur);return t;};
+  const rndDateOffset=(base,days)=>{const d=new Date(base+'T00:00:00');d.setDate(d.getDate()+days);return d.toISOString().slice(0,10);};
+  // Changed: date + time shift
+  snap[k0]={...snap[k0],date:rndDateOffset(snap[k0].date,7),time:rndTime(snap[k0].time)};
+  // Changed: time only
+  snap[k1]={...snap[k1],time:rndTime(snap[k1].time)};
+  // Changed: venue
+  snap[k2]={...snap[k2],venue:'Test Venue GAA Grounds'};
+  // Removed: add fake fixtures to the OLD snapshot that don't exist in live data
+  // → they were "seen before" but are now gone
+  const county0=snap[k0].county, county1=snap[k1].county;
+  snap[`${county0}|__SimA__|__SimB__|Simulated Championship`]={
+    county:county0,teamA:'Sim Team A',teamB:'Sim Team B',
+    competition:'Simulated Championship',round:'Round 1',
+    code:'Football',date:'2026-08-20',time:'3:00 PM',venue:'Old Ground'
   };
-  // Change 1: date + time shift
-  snap[k0]={...snap[k0],date:rndDateOffset(snap[k0].date,7),time:rndTime()};
-  // Change 2: time only
-  snap[k1]={...snap[k1],time:rndTime()};
-  // Change 3: venue change
-  snap[k2]={...snap[k2],venue:'Simulated Venue GAA Grounds'};
-  // Change 4: remove (simulates fixture dropping off the source)
-  delete snap[k3];
+  snap[`${county1}|__SimC__|__SimD__|Simulated Hurling Championship`]={
+    county:county1,teamA:'Sim Team C',teamB:'Sim Team D',
+    competition:'Simulated Hurling Championship',round:'Round 2',
+    code:'Hurling',date:'2026-08-21',time:'7:30 PM',venue:'Old Hurling Ground'
+  };
   localStorage.setItem(SNAPSHOT_KEY,JSON.stringify(snap));
   loadFixtures(true);
 });
