@@ -1439,7 +1439,6 @@ document.getElementById('simChangesBtn').addEventListener('click',()=>{
   delete fixtureChangelog[k3];
   // Simulate a brand-new fixture by injecting it after reload
   const county2=fixtureChangelog[k2]?.data?.county||'Carlow';
-  const fakeNewKey=`${county2}|__SimNew1__|__SimNew2__|Simulated New Championship`;
   const simNewFixture={id:nextId++,county:county2,teamA:'Sim New Team A',teamB:'Sim New Team B',
     date:today,day:dayName(today),time:'2:00 PM',venue:'New Venue GAA Grounds',
     competition:'Simulated New Championship',round:'Round 1',code:'Football',status:'Proposed',manual:false};
@@ -1458,8 +1457,9 @@ document.getElementById('simChangesBtn').addEventListener('click',()=>{
   loadFixtures(true).then(()=>{
     fixtures.push(simNewFixture);
     const nowStr=new Date().toLocaleString('en-IE');
-    fixtureBaseline[fakeNewKey]={original:{date:today,time:'2:00 PM',venue:'New Venue GAA Grounds',round:'Round 1'},lastKnown:{date:today,time:'2:00 PM',venue:'New Venue GAA Grounds',round:'Round 1'}};
-    fixtureChangelog[fakeNewKey]={type:'new',data:{county:county2,teamA:'Sim New Team A',teamB:'Sim New Team B',competition:'Simulated New Championship',date:today,time:'2:00 PM',venue:'New Venue GAA Grounds',round:'Round 1',code:'Football'},history:[{at:nowStr,note:'Loaded from source',diffs:[]}]};
+    const newKey=stableKeyOf(simNewFixture);
+    fixtureBaseline[newKey]={original:{date:today,time:'2:00 PM',venue:'New Venue GAA Grounds',round:'Round 1'},lastKnown:{date:today,time:'2:00 PM',venue:'New Venue GAA Grounds',round:'Round 1'}};
+    fixtureChangelog[newKey]={type:'new',data:{county:county2,teamA:'Sim New Team A',teamB:'Sim New Team B',competition:'Simulated New Championship',date:today,time:'2:00 PM',venue:'New Venue GAA Grounds',round:'Round 1',code:'Football'},history:[{at:nowStr,note:'Loaded from source',diffs:[]}]};
     saveBaseline();
     saveChangelog();
     render();
