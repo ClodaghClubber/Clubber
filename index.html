@@ -1410,12 +1410,7 @@ removeBtn.addEventListener('click',()=>{
 countyFilter.addEventListener('change',()=>{ populateCompOptions(); render(); });
 dateFrom.addEventListener('change',()=>{ dateTo.value=dateFrom.value; render(); });
 [codeFilter,compFilter,statusFilter,dateTo].forEach(el=>el.addEventListener('change',render));
-document.getElementById('changesFilter').addEventListener('change',e=>{
-  changesOnlyFilter=e.target.value==='changes';
-  const summary=Object.entries(fixtureChangelog).reduce((acc,[,v])=>{acc[v.type]=(acc[v.type]||0)+1;return acc;},{});
-  console.log('[ChangesFilter] changesOnlyFilter=',changesOnlyFilter,'changelog type counts:',summary);
-  render();
-});
+document.getElementById('changesFilter').addEventListener('change',e=>{changesOnlyFilter=e.target.value==='changes';render();});
 document.getElementById('simChangesBtn').addEventListener('click',()=>{
   const blKeys=Object.keys(fixtureBaseline);
   if(blKeys.length<3){alert('No baseline yet — load fixtures first.');return;}
