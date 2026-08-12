@@ -1398,9 +1398,12 @@ document.getElementById('changesFilter').addEventListener('change',e=>{changesOn
 document.getElementById('simChangesBtn').addEventListener('click',()=>{
   const snap=loadSnapshot();
   if(!snap){alert('No snapshot yet — wait for fixtures to load first.');return;}
-  const keys=Object.keys(snap);
+  const today=new Date().toISOString().slice(0,10);
+  // Prefer today's fixtures so changes are easy to spot; fall back to all fixtures
+  let keys=Object.keys(snap).filter(sk=>snap[sk].date===today);
+  if(keys.length<3) keys=Object.keys(snap);
   if(keys.length<3){alert('Not enough fixtures in snapshot to simulate.');return;}
-  const stride=Math.floor(keys.length/3);
+  const stride=Math.max(1,Math.floor(keys.length/3));
   const pick=(i)=>keys[(i*stride+Math.floor(Math.random()*stride))%keys.length];
   const k0=pick(0),k1=pick(1),k2=pick(2);
   const TIMES=['12:00 PM','1:30 PM','2:00 PM','3:00 PM','4:00 PM','5:30 PM','7:00 PM','7:30 PM','8:00 PM'];
@@ -1418,12 +1421,12 @@ document.getElementById('simChangesBtn').addEventListener('click',()=>{
   snap[`${county0}|__SimA__|__SimB__|Simulated Championship`]={
     county:county0,teamA:'Sim Team A',teamB:'Sim Team B',
     competition:'Simulated Championship',round:'Round 1',
-    code:'Football',date:'2026-08-20',time:'3:00 PM',venue:'Old Ground'
+    code:'Football',date:today,time:'3:00 PM',venue:'Old Ground'
   };
   snap[`${county1}|__SimC__|__SimD__|Simulated Hurling Championship`]={
     county:county1,teamA:'Sim Team C',teamB:'Sim Team D',
     competition:'Simulated Hurling Championship',round:'Round 2',
-    code:'Hurling',date:'2026-08-21',time:'7:30 PM',venue:'Old Hurling Ground'
+    code:'Hurling',date:today,time:'7:30 PM',venue:'Old Hurling Ground'
   };
   localStorage.setItem(SNAPSHOT_KEY,JSON.stringify(snap));
   loadFixtures(true);
