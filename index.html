@@ -1255,7 +1255,7 @@ function render(){
     const _sk=stableKeyOf(f);
     const _chg=fixtureChangelog[_sk];
     if(_chg) tr.classList.add('chg-'+_chg.type);
-    const _chgLabel=_chg?(_chg.type==='new'?'NEW':_chg.type==='changed'?'CHANGED':_chg.type==='removed'?'REMOVED':'History'):'';
+    const _chgLabel=_chg?(_chg.type==='new'?'NEW':_chg.type==='changed'?'CHANGED':_chg.type==='removed'?'REMOVED':'~'):'';
     const _chgBadge=_chg?`<span class="badge-chg badge-chg-${_chg.type}" data-chg-key="${_sk.replace(/"/g,'&quot;')}" title="Click to see change history">${_chgLabel}</span>`:'';
     tr.innerHTML=`
       <td style="white-space:nowrap;"><input type="checkbox" data-id="${f.id}" ${selected.has(f.id)?'checked':''}><button class="edit-btn" data-edit-id="${f.id}" title="Edit fixture" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:0 4px;vertical-align:middle;opacity:.6;">✎</button></td>
