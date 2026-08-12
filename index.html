@@ -182,6 +182,7 @@
   .badge-chg-new{background:#22c55e;color:#fff;}
   .badge-chg-changed{background:#f59e0b;color:#fff;}
   .badge-chg-removed{background:#ef4444;color:#fff;}
+  .badge-chg-unchanged{background:var(--border);color:var(--muted);}
   #changeHistoryModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;align-items:flex-start;justify-content:center;padding-top:60px;}
   #changeHistoryModal.open{display:flex;}
   .chg-timeline-entry{margin-bottom:16px;}
@@ -1254,7 +1255,8 @@ function render(){
     const _sk=stableKeyOf(f);
     const _chg=fixtureChangelog[_sk];
     if(_chg) tr.classList.add('chg-'+_chg.type);
-    const _chgBadge=(_chg&&_chg.type!=='unchanged')?`<span class="badge-chg badge-chg-${_chg.type}" data-chg-key="${_sk.replace(/"/g,'&quot;')}" title="Click to see change history">${_chg.type==='new'?'NEW':_chg.type==='changed'?'~':'REMOVED'}</span>`:'';
+    const _chgLabel=_chg?(_chg.type==='new'?'NEW':_chg.type==='changed'?'CHANGED':_chg.type==='removed'?'REMOVED':'History'):'';
+    const _chgBadge=_chg?`<span class="badge-chg badge-chg-${_chg.type}" data-chg-key="${_sk.replace(/"/g,'&quot;')}" title="Click to see change history">${_chgLabel}</span>`:'';
     tr.innerHTML=`
       <td style="white-space:nowrap;"><input type="checkbox" data-id="${f.id}" ${selected.has(f.id)?'checked':''}><button class="edit-btn" data-edit-id="${f.id}" title="Edit fixture" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:0 4px;vertical-align:middle;opacity:.6;">✎</button></td>
       <td>${f.county}</td>
