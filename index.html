@@ -808,7 +808,7 @@ function detectChanges(newSnap){
       };
       fixtureChangelog[sk]={
         type:'unchanged',
-        data:{county:nf.county,teamA:nf.teamA,teamB:nf.teamB,competition:nf.competition},
+        data:{county:nf.county,teamA:nf.teamA,teamB:nf.teamB,competition:nf.competition,date:nf.date,time:nf.time,venue:nf.venue,round:nf.round,code:nf.code},
         history:[{at:now,note:'Loaded from source',diffs:[]}]
       };
     } else {
@@ -817,8 +817,9 @@ function detectChanges(newSnap){
       const diffs=TRACKED.filter(field=>prev[field]!==nf[field])
         .map(field=>({field:FIELD_LABELS[field],from:prev[field],to:nf[field]}));
       if(diffs.length){
-        if(!fixtureChangelog[sk]) fixtureChangelog[sk]={type:'changed',data:{county:nf.county,teamA:nf.teamA,teamB:nf.teamB,competition:nf.competition},history:[]};
+        if(!fixtureChangelog[sk]) fixtureChangelog[sk]={type:'changed',data:{county:nf.county,teamA:nf.teamA,teamB:nf.teamB,competition:nf.competition,date:nf.date,time:nf.time,venue:nf.venue,round:nf.round,code:nf.code},history:[]};
         fixtureChangelog[sk].history.push({at:now,diffs});
+        fixtureChangelog[sk].data={county:nf.county,teamA:nf.teamA,teamB:nf.teamB,competition:nf.competition,date:nf.date,time:nf.time,venue:nf.venue,round:nf.round,code:nf.code};
         bl.lastKnown={date:nf.date,time:nf.time,venue:nf.venue,round:nf.round};
       }
       // Badge type: changed if current differs from the original baseline values
