@@ -1413,7 +1413,7 @@ countyFilter.addEventListener('change',()=>{ populateCompOptions(); render(); })
 dateFrom.addEventListener('change',()=>{ dateTo.value=dateFrom.value; render(); });
 [codeFilter,compFilter,statusFilter,dateTo].forEach(el=>el.addEventListener('change',render));
 document.getElementById('changesFilter').addEventListener('change',e=>{changesOnlyFilter=e.target.value==='changes';render();});
-document.getElementById('simChangesBtn').addEventListener('click',()=>{
+document.getElementById('simChangesBtn').addEventListener('click',async()=>{
   const blKeys=Object.keys(fixtureBaseline);
   if(blKeys.length<3){alert('No baseline yet — load fixtures first.');return;}
   const today=new Date().toISOString().slice(0,10);
@@ -1454,16 +1454,15 @@ document.getElementById('simChangesBtn').addEventListener('click',()=>{
   fixtureChangelog[fakeK2]={type:'unchanged',data:{county:county1,teamA:'Sim Team C',teamB:'Sim Team D',competition:'Simulated Hurling Championship'},history:[{at:now,note:'Loaded from source',diffs:[]}]};
   saveBaseline();
   saveChangelog();
-  loadFixtures(true).then(()=>{
-    fixtures.push(simNewFixture);
-    const nowStr=new Date().toLocaleString('en-IE');
-    const newKey=stableKeyOf(simNewFixture);
-    fixtureBaseline[newKey]={original:{date:today,time:'2:00 PM',venue:'New Venue GAA Grounds',round:'Round 1'},lastKnown:{date:today,time:'2:00 PM',venue:'New Venue GAA Grounds',round:'Round 1'}};
-    fixtureChangelog[newKey]={type:'new',data:{county:county2,teamA:'Sim New Team A',teamB:'Sim New Team B',competition:'Simulated New Championship',date:today,time:'2:00 PM',venue:'New Venue GAA Grounds',round:'Round 1',code:'Football'},history:[{at:nowStr,note:'Loaded from source',diffs:[]}]};
-    saveBaseline();
-    saveChangelog();
-    render();
-  });
+  await loadFixtures(true);
+  fixtures.push(simNewFixture);
+  const nowStr=new Date().toLocaleString('en-IE');
+  const newKey=stableKeyOf(simNewFixture);
+  fixtureBaseline[newKey]={original:{date:today,time:'2:00 PM',venue:'New Venue GAA Grounds',round:'Round 1'},lastKnown:{date:today,time:'2:00 PM',venue:'New Venue GAA Grounds',round:'Round 1'}};
+  fixtureChangelog[newKey]={type:'new',data:{county:county2,teamA:'Sim New Team A',teamB:'Sim New Team B',competition:'Simulated New Championship',date:today,time:'2:00 PM',venue:'New Venue GAA Grounds',round:'Round 1',code:'Football'},history:[{at:nowStr,note:'Loaded from source',diffs:[]}]};
+  saveBaseline();
+  saveChangelog();
+  render();
 });
 document.getElementById('clearChangesBtn').addEventListener('click',()=>{
   fixtureChangelog={};saveChangelog();
