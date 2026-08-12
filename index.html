@@ -1426,13 +1426,11 @@ document.getElementById('simChangesBtn').addEventListener('click',()=>{
   const TIMES=['12:00 PM','1:30 PM','2:00 PM','3:00 PM','4:00 PM','5:30 PM','7:00 PM','7:30 PM','8:00 PM'];
   const rndTime=(cur)=>{let t;do{t=TIMES[Math.floor(Math.random()*TIMES.length)];}while(t===cur);return t;};
   const rndDateOffset=(base,days)=>{const d=new Date(base+'T00:00:00');d.setDate(d.getDate()+days);return d.toISOString().slice(0,10);};
-  // Simulate changes by winding back lastKnown so current data looks different
-  const bl0=fixtureBaseline[k0].lastKnown;
-  fixtureBaseline[k0].lastKnown={...bl0,date:rndDateOffset(bl0.date,-7),time:rndTime(bl0.time)};
-  const bl1=fixtureBaseline[k1].lastKnown;
-  fixtureBaseline[k1].lastKnown={...bl1,time:rndTime(bl1.time)};
-  const bl2=fixtureBaseline[k2].lastKnown;
-  fixtureBaseline[k2].lastKnown={...bl2,venue:'Old GAA Grounds (Simulated)'};
+  // Simulate time changes on today's fixtures
+  [k0,k1,k2].forEach(k=>{
+    const bl=fixtureBaseline[k].lastKnown;
+    fixtureBaseline[k].lastKnown={...bl,time:rndTime(bl.time)};
+  });
   // Simulate removed: inject fake baseline entries that won't match any live fixture
   const county0=fixtureChangelog[k0]?.data?.county||'';
   const county1=fixtureChangelog[k1]?.data?.county||'';
