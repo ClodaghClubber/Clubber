@@ -1429,7 +1429,15 @@ document.getElementById('simChangesBtn').addEventListener('click',()=>{
     code:'Hurling',date:today,time:'7:30 PM',venue:'Old Hurling Ground'
   };
   localStorage.setItem(SNAPSHOT_KEY,JSON.stringify(snap));
-  loadFixtures(true);
+  loadFixtures(true).then(()=>{
+    const log=fixtureChangelog;
+    const changed=Object.entries(log).filter(([,v])=>v.type==='changed').map(([k])=>k.slice(0,40));
+    const removed=Object.entries(log).filter(([,v])=>v.type==='removed').map(([k])=>k.slice(0,40));
+    const newf=Object.entries(log).filter(([,v])=>v.type==='new').map(([k])=>k.slice(0,40));
+    console.log('[Test] fixtureChangelog after refresh:',{changed,removed,new:newf});
+    const msg=`Test result:\n• Changed: ${changed.length}\n• Removed: ${removed.length}\n• New: ${newf.length}\n\nChanged keys:\n${changed.join('\n')||'none'}\n\nRemoved keys:\n${removed.join('\n')||'none'}`;
+    alert(msg);
+  });
 });
 document.getElementById('clearChangesBtn').addEventListener('click',()=>{
   fixtureChangelog={};saveChangelog();
