@@ -1420,9 +1420,9 @@ document.getElementById('simChangesBtn').addEventListener('click',()=>{
   blKeys.forEach(sk=>{const d=fixtureBaseline[sk].lastKnown.date;if(d>='')(byDate[d]=byDate[d]||[]).push(sk);});
   const nearestDate=Object.keys(byDate).sort().find(d=>d>=today&&byDate[d].length>=3)||Object.keys(byDate).sort().reverse().find(d=>byDate[d].length>=3);
   let keys=nearestDate?byDate[nearestDate]:blKeys;
-  const stride=Math.max(1,Math.floor(keys.length/3));
+  const stride=Math.max(1,Math.floor(keys.length/4));
   const pick=(i)=>keys[(i*stride+Math.floor(Math.random()*stride))%keys.length];
-  const k0=pick(0),k1=pick(1),k2=pick(2);
+  const k0=pick(0),k1=pick(1),k2=pick(2),k3=pick(3);
   const TIMES=['12:00 PM','1:30 PM','2:00 PM','3:00 PM','4:00 PM','5:30 PM','7:00 PM','7:30 PM','8:00 PM'];
   const rndTime=(cur)=>{let t;do{t=TIMES[Math.floor(Math.random()*TIMES.length)];}while(t===cur);return t;};
   const rndDateOffset=(base,days)=>{const d=new Date(base+'T00:00:00');d.setDate(d.getDate()+days);return d.toISOString().slice(0,10);};
@@ -1432,6 +1432,9 @@ document.getElementById('simChangesBtn').addEventListener('click',()=>{
     fixtureBaseline[k].original={...fixtureBaseline[k].original,time:fakeTime};
     fixtureBaseline[k].lastKnown={...fixtureBaseline[k].lastKnown,time:fakeTime};
   });
+  // Simulate new: remove k3 from baseline so detectChanges sees it as first-time
+  delete fixtureBaseline[k3];
+  delete fixtureChangelog[k3];
   // Simulate removed: inject fake baseline entries that won't match any live fixture
   const county0=fixtureChangelog[k0]?.data?.county||'';
   const county1=fixtureChangelog[k1]?.data?.county||'';
