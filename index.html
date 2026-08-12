@@ -121,6 +121,44 @@
   #unitConflictToast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#c2410c;color:#fff;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;}
   #unitConflictToast.show{opacity:1;}
   .btn-clubber{background:#1a3a6b;}
+  .btn-compare{background:#7c3aed;}
+  /* ---- Compare Clubber modal ---- */
+  #compareModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;align-items:flex-start;justify-content:center;padding-top:30px;}
+  #compareModal.open{display:flex;}
+  #compareModal .modal-box{width:900px;max-height:90vh;}
+  .cmp-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px;}
+  .cmp-tab{padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;color:var(--muted);background:none;border-top:none;border-left:none;border-right:none;border-radius:0;}
+  .cmp-tab.active{color:var(--text);border-bottom-color:var(--accent);}
+  .cmp-panel{display:none;} .cmp-panel.active{display:block;}
+  .cmp-summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+  .cmp-stat{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;text-align:center;}
+  .cmp-stat-num{font-size:24px;font-weight:700;line-height:1;}
+  .cmp-stat-lbl{font-size:11px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.04em;}
+  .cmp-stat.changed .cmp-stat-num{color:#f59e0b;}
+  .cmp-stat.dashboard-only .cmp-stat-num{color:#22c55e;}
+  .cmp-stat.clubber-only .cmp-stat-num{color:#6366f1;}
+  .cmp-stat.matched .cmp-stat-num{color:var(--approve);}
+  .cmp-diff-table{width:100%;border-collapse:collapse;font-size:12px;}
+  .cmp-diff-table th{background:var(--panel);padding:7px 10px;text-align:left;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;border-bottom:1px solid var(--border);position:sticky;top:0;}
+  .cmp-diff-table td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:top;}
+  .cmp-diff-table tr.changed{background:rgba(245,158,11,.06);}
+  .cmp-diff-table tr.dash-only{background:rgba(34,197,94,.06);}
+  .cmp-diff-table tr.clubber-only{background:rgba(99,102,241,.06);}
+  .cmp-field-changed{color:#92400e;font-weight:600;}
+  .cmp-field-from{text-decoration:line-through;color:var(--muted);font-size:11px;display:block;}
+  .cmp-field-to{color:#92400e;font-weight:600;}
+  .cmp-scroll{max-height:400px;overflow-y:auto;}
+  .cmp-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:8px;text-transform:uppercase;letter-spacing:.04em;}
+  .cmp-badge-changed{background:rgba(245,158,11,.2);color:#92400e;}
+  .cmp-badge-dash{background:rgba(34,197,94,.2);color:#166534;}
+  .cmp-badge-clubber{background:rgba(99,102,241,.2);color:#4338ca;}
+  .cmp-bookmarklet-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px;}
+  .cmp-bookmarklet-box h3{margin:0 0 10px;font-size:13px;}
+  .cmp-bookmarklet-code{font-family:monospace;font-size:11px;background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:10px;word-break:break-all;max-height:100px;overflow-y:auto;color:var(--muted);}
+  .cmp-bookmarklet-link{display:inline-block;background:#7c3aed;color:#fff;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;margin-top:8px;cursor:pointer;}
+  .cmp-upload-area{border:2px dashed var(--border);border-radius:8px;padding:24px;text-align:center;cursor:pointer;transition:border-color .2s;}
+  .cmp-upload-area:hover{border-color:var(--accent);}
+  .cmp-upload-area p{margin:0;color:var(--muted);font-size:13px;}
   /* ---- Clubber feedback modal ---- */
   #clubberModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;align-items:flex-start;justify-content:center;padding-top:40px;}
   #clubberModal.open{display:flex;}
@@ -207,6 +245,8 @@
     <button class="btn-remove" id="refreshBtn" style="background:#2d6cdf;">Refresh</button>
     <button class="btn-remove" id="clearChangesBtn" style="background:#6b7280;display:none;" title="Clear all change markers">Clear changes</button>
     <button class="btn-clubber" id="clubberBtn" disabled>Create in Clubber</button>
+    <button class="btn-compare" id="compareBtn">⇄ Compare Clubber</button>
+    <input type="file" id="compareFileInput" accept=".json" style="display:none;">
     <button class="btn-modal-add" id="addFixtureBtn">+ Add Fixture</button>
     <div class="col-picker-wrap" style="display:none;">
       <button class="btn-remove" id="assignSocialsBtn" style="background:#7c3aed;" disabled>Socials ▾</button>
@@ -313,6 +353,59 @@
     <div class="clubber-result-list" id="clubberResultList"></div>
     <div class="modal-actions">
       <button class="btn-modal-cancel" onclick="document.getElementById('clubberModal').classList.remove('open')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Compare Clubber Modal -->
+<div id="compareModal">
+  <div class="modal-box">
+    <h2>Compare with Clubber Dashboard</h2>
+
+    <div class="cmp-tabs">
+      <button class="cmp-tab active" data-tab="setup">Setup</button>
+      <button class="cmp-tab" data-tab="results" id="cmpResultsTab" style="display:none;">Results</button>
+    </div>
+
+    <!-- Setup panel -->
+    <div class="cmp-panel active" id="cmpSetupPanel">
+      <div class="cmp-bookmarklet-box">
+        <h3>Step 1 — Extract fixtures from Clubber</h3>
+        <p style="font-size:12px;color:var(--muted);margin:0 0 10px;">Drag this button to your bookmarks bar, then click it while on <strong>clubber.ie/wom/manage-fixtures</strong> while logged in. It will download a JSON file.</p>
+        <a class="cmp-bookmarklet-link" id="clubberBookmarklet" href="#">⬇ Clubber Extractor (drag to bookmarks)</a>
+        <p style="font-size:11px;color:var(--muted);margin:8px 0 0;">Or: copy the code below and create a bookmark manually with this as the URL.</p>
+        <div class="cmp-bookmarklet-code" id="bookmarkletCode">Loading…</div>
+      </div>
+      <div class="cmp-bookmarklet-box">
+        <h3>Step 2 — Upload the downloaded JSON</h3>
+        <div class="cmp-upload-area" id="cmpDropZone">
+          <p>Click to choose file, or drag &amp; drop the JSON downloaded in Step 1</p>
+          <p style="font-size:11px;margin-top:6px;">clubber-fixtures-YYYY-MM-DD.json</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results panel -->
+    <div class="cmp-panel" id="cmpResultsPanel">
+      <div class="cmp-summary-grid" id="cmpSummaryGrid"></div>
+      <div class="cmp-tabs" style="margin-top:0;">
+        <button class="cmp-tab active" data-subtab="changed">Changed</button>
+        <button class="cmp-tab" data-subtab="dashonly">In Dashboard only</button>
+        <button class="cmp-tab" data-subtab="clubberonly">In Clubber only</button>
+        <button class="cmp-tab" data-subtab="matched">Matched (no change)</button>
+      </div>
+      <div class="cmp-scroll">
+        <table class="cmp-diff-table">
+          <thead><tr>
+            <th>Date</th><th>Teams</th><th>County</th><th>Changes</th>
+          </tr></thead>
+          <tbody id="cmpDiffBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="document.getElementById('compareModal').classList.remove('open')">Close</button>
     </div>
   </div>
 </div>
@@ -1941,6 +2034,274 @@ clubberBtn.addEventListener('click', () => {
 
   document.getElementById('clubberModal').classList.add('open');
 });
+
+/* ============================================================
+   COMPARE CLUBBER FEATURE
+   ============================================================ */
+
+(function(){
+  // ---- Bookmarklet source (inline, not minified — we minify it on the fly) ----
+  const BOOKMARKLET_SRC = `(function(){
+  var out={url:location.href,scraped_at:new Date().toISOString(),fixtures:[]};
+  // Strategy 1: scan tables
+  document.querySelectorAll('table').forEach(function(tbl){
+    var hdrs=[];
+    var hrow=tbl.querySelector('thead tr');
+    if(hrow) hrow.querySelectorAll('th,td').forEach(function(c){hdrs.push(c.textContent.trim().toLowerCase().replace(/\\s+/g,'_'));});
+    tbl.querySelectorAll('tbody tr').forEach(function(tr){
+      var cells=tr.querySelectorAll('td');
+      if(!cells.length)return;
+      var obj={};
+      cells.forEach(function(c,i){obj[hdrs[i]||'col'+i]=c.textContent.trim();});
+      if(Object.keys(obj).length)out.fixtures.push(obj);
+    });
+  });
+  // Strategy 2: look for page-level JS state
+  ['__NEXT_DATA__','__NUXT__','__INITIAL_STATE__','__APP_STATE__'].forEach(function(k){
+    try{if(window[k])out[k]=window[k];}catch(e){}
+  });
+  // Strategy 3: look for JSON script tags
+  document.querySelectorAll('script[type="application/json"],script[type="application/ld+json"]').forEach(function(s,i){
+    try{out['script_json_'+i]=JSON.parse(s.textContent);}catch(e){}
+  });
+  var blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='clubber-fixtures-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  alert('Clubber data exported ('+out.fixtures.length+' table rows found). Upload the file to the GAA Fixtures Dashboard Compare panel.');
+})();`;
+
+  // Build bookmarklet href
+  const bmCode = 'javascript:' + encodeURIComponent(BOOKMARKLET_SRC.replace(/\s*\n\s*/g,' ').trim());
+  const bmEl = document.getElementById('clubberBookmarklet');
+  if(bmEl) { bmEl.href = bmCode; }
+  const codeEl = document.getElementById('bookmarkletCode');
+  if(codeEl) codeEl.textContent = bmCode;
+
+  // ---- Tab switching (setup / results) ----
+  document.querySelectorAll('#compareModal .cmp-tab[data-tab]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#compareModal .cmp-tab[data-tab]').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('#compareModal .cmp-panel').forEach(p=>p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('cmp'+btn.dataset.tab.charAt(0).toUpperCase()+btn.dataset.tab.slice(1)+'Panel').classList.add('active');
+    });
+  });
+
+  // ---- Sub-tab switching (changed / dashonly / clubberonly / matched) ----
+  let currentSubtab = 'changed';
+  let lastResults = null;
+  document.querySelectorAll('#compareModal .cmp-tab[data-subtab]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#compareModal .cmp-tab[data-subtab]').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      currentSubtab = btn.dataset.subtab;
+      if(lastResults) renderDiffTable(lastResults, currentSubtab);
+    });
+  });
+
+  // ---- Open modal ----
+  document.getElementById('compareBtn').addEventListener('click', () => {
+    document.getElementById('compareModal').classList.add('open');
+  });
+
+  // ---- Upload area ----
+  const dropZone = document.getElementById('cmpDropZone');
+  const fileInput = document.getElementById('compareFileInput');
+  dropZone.addEventListener('click', () => fileInput.click());
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor='var(--accent)'; });
+  dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor=''; });
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault(); dropZone.style.borderColor='';
+    const f = e.dataTransfer.files[0];
+    if(f) readCompareFile(f);
+  });
+  fileInput.addEventListener('change', () => { if(fileInput.files[0]) readCompareFile(fileInput.files[0]); });
+
+  function readCompareFile(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const data = JSON.parse(e.target.result);
+        const clubberFixtures = extractClubberFixtures(data);
+        lastResults = compareFixtures(fixtures, clubberFixtures);
+        renderSummary(lastResults);
+        renderDiffTable(lastResults, currentSubtab);
+        // Switch to results tab
+        document.getElementById('cmpResultsTab').style.display = '';
+        document.querySelectorAll('#compareModal .cmp-tab[data-tab]').forEach(b=>b.classList.remove('active'));
+        document.querySelectorAll('#compareModal .cmp-panel').forEach(p=>p.classList.remove('active'));
+        document.querySelector('#compareModal .cmp-tab[data-tab="results"]').classList.add('active');
+        document.getElementById('cmpResultsPanel').classList.add('active');
+      } catch(err) {
+        alert('Could not read the file. Make sure it is the JSON exported by the bookmarklet.\n\n' + err.message);
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  // ---- Extract Clubber fixtures from bookmarklet output ----
+  function extractClubberFixtures(data) {
+    // The bookmarklet dumps {fixtures: [...table rows...], url, scraped_at, possibly __NEXT_DATA__ etc.}
+    const rows = data.fixtures || [];
+
+    // Try to map common Clubber column names to our schema
+    // We normalise as best we can; unknown structures just pass through as-is
+    return rows.map(row => {
+      // Flatten: look for date, time, home/away or team_a/team_b or club/competitor
+      const keys = Object.keys(row);
+      const get = (...names) => {
+        for(const n of names) {
+          const k = keys.find(k => k.toLowerCase().replace(/[^a-z]/g,'').includes(n.replace(/[^a-z]/g,'')));
+          if(k && row[k]) return row[k].trim();
+        }
+        return '';
+      };
+      return {
+        date: get('date','fixture_date','gamedate','match_date'),
+        time: get('time','kickoff','kick_off','start_time','gametime'),
+        teamA: get('home','home_team','club','team_a','teama','hometeam','home_club'),
+        teamB: get('away','away_team','competitor','team_b','teamb','awayteam','away_club','visitor'),
+        venue: get('venue','ground','location','pitch'),
+        grade: get('grade','level','competition','comp'),
+        round: get('round'),
+        county: get('county'),
+        raw: row
+      };
+    });
+  }
+
+  // ---- Normalise team name for fuzzy matching ----
+  function normTeam(s) {
+    if(!s) return '';
+    return s.toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g,'')  // strip accents
+      .replace(/\b(clg|gfc|gaa|fc|afc|utd|united|rovers|celtic|gaels|st\.?|saint)\b/gi,'')
+      .replace(/[^a-z0-9]/g,' ')
+      .replace(/\s+/g,' ').trim();
+  }
+
+  function teamMatch(a, b) {
+    if(!a || !b) return false;
+    const na = normTeam(a), nb = normTeam(b);
+    return na === nb || na.includes(nb) || nb.includes(na);
+  }
+
+  function dateNorm(d) {
+    // Accepts YYYY-MM-DD or DD/MM/YYYY or similar
+    if(!d) return '';
+    const m1 = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if(m1) return m1[0];
+    const m2 = d.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
+    if(m2) return `${m2[3]}-${m2[2]}-${m2[1]}`;
+    return d;
+  }
+
+  // ---- Compare dashboard fixtures vs clubber fixtures ----
+  function compareFixtures(dashArr, clubberArr) {
+    const matched = [];
+    const dashOnly = [];
+    const usedClubber = new Set();
+
+    dashArr.forEach(df => {
+      const dd = dateNorm(df.date);
+      // Try to find a matching Clubber fixture (same date + matching teams)
+      const ci = clubberArr.findIndex((cf, i) => {
+        if(usedClubber.has(i)) return false;
+        if(dateNorm(cf.date) !== dd) return false;
+        return (teamMatch(df.teamA, cf.teamA) && teamMatch(df.teamB, cf.teamB)) ||
+               (teamMatch(df.teamA, cf.teamB) && teamMatch(df.teamB, cf.teamA));
+      });
+
+      if(ci === -1) {
+        dashOnly.push(df);
+        return;
+      }
+      usedClubber.add(ci);
+      const cf = clubberArr[ci];
+
+      // Detect field changes
+      const changes = [];
+      const fieldCheck = (label, dVal, cVal) => {
+        if(cVal && dVal && dVal.toLowerCase() !== cVal.toLowerCase())
+          changes.push({ field: label, dashboard: dVal, clubber: cVal });
+      };
+      fieldCheck('Time', df.time, cf.time);
+      fieldCheck('Venue', df.venue, cf.venue);
+      fieldCheck('Grade', df.competition, cf.grade);
+      fieldCheck('Round', df.round, cf.round);
+
+      matched.push({ dashboard: df, clubber: cf, changes });
+    });
+
+    const clubberOnly = clubberArr.filter((_, i) => !usedClubber.has(i));
+
+    return {
+      matched: matched.filter(m => m.changes.length === 0),
+      changed: matched.filter(m => m.changes.length > 0),
+      dashOnly,
+      clubberOnly
+    };
+  }
+
+  // ---- Render summary tiles ----
+  function renderSummary(r) {
+    document.getElementById('cmpSummaryGrid').innerHTML = `
+      <div class="cmp-stat changed"><div class="cmp-stat-num">${r.changed.length}</div><div class="cmp-stat-lbl">Changed</div></div>
+      <div class="cmp-stat dashboard-only"><div class="cmp-stat-num">${r.dashOnly.length}</div><div class="cmp-stat-lbl">Dashboard only</div></div>
+      <div class="cmp-stat clubber-only"><div class="cmp-stat-num">${r.clubberOnly.length}</div><div class="cmp-stat-lbl">Clubber only</div></div>
+      <div class="cmp-stat matched"><div class="cmp-stat-num">${r.matched.length}</div><div class="cmp-stat-lbl">Matched</div></div>
+    `;
+  }
+
+  // ---- Render diff table ----
+  function renderDiffTable(r, tab) {
+    const body = document.getElementById('cmpDiffBody');
+    let rows = [];
+
+    if(tab === 'changed') {
+      rows = r.changed.map(m => {
+        const changesHtml = m.changes.map(c =>
+          `<div style="margin-bottom:4px;"><span class="cmp-field-changed">${c.field}:</span>
+            <span class="cmp-field-from">${c.dashboard}</span>
+            <span class="cmp-field-to"> → ${c.clubber}</span></div>`
+        ).join('');
+        return `<tr class="changed">
+          <td>${m.dashboard.date}</td>
+          <td>${m.dashboard.teamA} v ${m.dashboard.teamB}</td>
+          <td>${m.dashboard.county||''}</td>
+          <td>${changesHtml}</td>
+        </tr>`;
+      });
+    } else if(tab === 'dashonly') {
+      rows = r.dashOnly.map(f => `<tr class="dash-only">
+        <td>${f.date}</td>
+        <td>${f.teamA} v ${f.teamB}</td>
+        <td>${f.county||''}</td>
+        <td><span class="cmp-badge cmp-badge-dash">In Dashboard, not Clubber</span></td>
+      </tr>`);
+    } else if(tab === 'clubberonly') {
+      rows = r.clubberOnly.map(f => `<tr class="clubber-only">
+        <td>${f.date}</td>
+        <td>${f.teamA||''} v ${f.teamB||''}</td>
+        <td>${f.county||''}</td>
+        <td><span class="cmp-badge cmp-badge-clubber">In Clubber, not Dashboard</span></td>
+      </tr>`);
+    } else {
+      rows = r.matched.map(m => `<tr>
+        <td>${m.dashboard.date}</td>
+        <td>${m.dashboard.teamA} v ${m.dashboard.teamB}</td>
+        <td>${m.dashboard.county||''}</td>
+        <td style="color:var(--muted);font-size:11px;">No changes</td>
+      </tr>`);
+    }
+
+    body.innerHTML = rows.length
+      ? rows.join('')
+      : `<tr><td colspan="4" class="empty" style="text-align:center;color:var(--muted);padding:24px;">No fixtures in this category</td></tr>`;
+  }
+})();
 </script>
 </body>
 </html>
