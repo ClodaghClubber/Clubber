@@ -1355,7 +1355,8 @@ function exportSelectedToExcel(){
 
 exportBtn.addEventListener('click',exportSelectedToExcel);
 clubberBtn.addEventListener('click',()=>{
-  const selFixtures=fixtures.filter(f=>selected.has(f.id));
+  const visibleIds=new Set(getFiltered().map(f=>f.id));
+  const selFixtures=fixtures.filter(f=>selected.has(f.id)&&visibleIds.has(f.id));
   if(!selFixtures.length) return;
   const results=selFixtures.map(f=>{
     if(f.status!=='Approved') return{fixture:f,payload:null,errors:['Not Approved'],ok:false,skipped:true};
