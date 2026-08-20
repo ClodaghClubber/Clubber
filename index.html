@@ -1979,6 +1979,23 @@ function lookupClubberCompetition(countyA, countyB) {
   return entry ? entry.name : '';
 }
 
+function dublinToUtc(dateStr, time24h) {
+  const [H, M] = time24h.split(':').map(Number);
+  // Create a Date treating the input as UTC, then check what Dublin shows for it
+  const probe = new Date(Date.UTC(
+    +dateStr.slice(0,4), +dateStr.slice(5,7)-1, +dateStr.slice(8,10), H, M
+  ));
+  const dublinStr = new Intl.DateTimeFormat('en-IE', {
+    timeZone:'Europe/Dublin', hour:'2-digit', minute:'2-digit', hour12:false
+  }).format(probe);
+  const [dH, dM] = dublinStr.split(':').map(Number);
+  const offsetMins = (dH * 60 + dM) - (H * 60 + M);
+  const utcTotalMins = (H * 60 + M) - offsetMins;
+  const utcH = Math.floor(((utcTotalMins % 1440) + 1440) % 1440 / 60);
+  const utcM = ((utcTotalMins % 60) + 60) % 60;
+  return `${String(utcH).padStart(2,'0')}:${String(utcM).padStart(2,'0')}`;
+}
+
 function buildGamePayload(f) {
   const errors = [];
 
@@ -1999,7 +2016,7 @@ function buildGamePayload(f) {
   const payload = {
     gameScope: 'Club',
     date: f.date,
-    time: from12h(f.time),
+    time: dublinToUtc(f.date, from12h(f.time)),
     county: f.county,
     club: f.teamA,
     clubId: teamAResult?.clubId || '',
