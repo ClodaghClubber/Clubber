@@ -247,9 +247,6 @@
     <button class="btn-remove" id="refreshBtn" style="background:#2d6cdf;">Refresh</button>
     <button class="btn-clubber" id="clubberBtn" disabled>Create in Clubber</button>
     <button class="btn-remove" id="clearChangesBtn" style="background:#6b7280;display:none;" title="Clear all change markers">Clear changes</button>
-    <button id="simChangesBtn" title="Simulate fixture changes for testing" style="background:none;border:1px dashed #6b7280;color:#6b7280;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;">⚙ Test</button>
-    <button class="btn-compare" id="compareBtn">⇄ Compare Clubber</button>
-    <input type="file" id="compareFileInput" accept=".json" style="display:none;">
     <button class="btn-modal-add" id="addFixtureBtn">+ Add Fixture</button>
     <div class="col-picker-wrap" style="display:none;">
       <button class="btn-remove" id="assignSocialsBtn" style="background:#7c3aed;" disabled>Socials ▾</button>
@@ -1440,57 +1437,6 @@ countyFilter.addEventListener('change',()=>{ populateCompOptions(); render(); })
 dateFrom.addEventListener('change',()=>{ dateTo.value=dateFrom.value; render(); });
 [codeFilter,compFilter,statusFilter,dateTo].forEach(el=>el.addEventListener('change',render));
 document.getElementById('changesFilter').addEventListener('change',e=>{changesOnlyFilter=e.target.value==='changes';render();});
-document.getElementById('simChangesBtn').addEventListener('click',async()=>{
-  const blKeys=Object.keys(fixtureBaseline);
-  if(blKeys.length<3){alert('No baseline yet — load fixtures first.');return;}
-  const today=new Date().toISOString().slice(0,10);
-  // Find the nearest date (today or soonest upcoming) that has at least 3 fixtures
-  const byDate={};
-  blKeys.forEach(sk=>{const d=fixtureBaseline[sk].lastKnown.date;if(d>='')(byDate[d]=byDate[d]||[]).push(sk);});
-  const nearestDate=Object.keys(byDate).sort().find(d=>d>=today&&byDate[d].length>=3)||Object.keys(byDate).sort().reverse().find(d=>byDate[d].length>=3);
-  let keys=nearestDate?byDate[nearestDate]:blKeys;
-  const stride=Math.max(1,Math.floor(keys.length/4));
-  const pick=(i)=>keys[(i*stride+Math.floor(Math.random()*stride))%keys.length];
-  const k0=pick(0),k1=pick(1),k2=pick(2),k3=pick(3);
-  const TIMES=['12:00 PM','1:30 PM','2:00 PM','3:00 PM','4:00 PM','5:30 PM','7:00 PM','7:30 PM','8:00 PM'];
-  const rndTime=(cur)=>{let t;do{t=TIMES[Math.floor(Math.random()*TIMES.length)];}while(t===cur);return t;};
-  const rndDateOffset=(base,days)=>{const d=new Date(base+'T00:00:00');d.setDate(d.getDate()+days);return d.toISOString().slice(0,10);};
-  // Simulate time changes: wind back both original and lastKnown so current state looks changed
-  [k0,k1,k2].forEach(k=>{
-    const fakeTime=rndTime(fixtureBaseline[k].lastKnown.time);
-    fixtureBaseline[k].original={...fixtureBaseline[k].original,time:fakeTime};
-    fixtureBaseline[k].lastKnown={...fixtureBaseline[k].lastKnown,time:fakeTime};
-  });
-  // Simulate new: remove k3 from baseline so detectChanges sees it as first-time
-  delete fixtureBaseline[k3];
-  delete fixtureChangelog[k3];
-  // Simulate a brand-new fixture by injecting it after reload
-  const county2=fixtureChangelog[k2]?.data?.county||'Carlow';
-  const simNewFixture={id:nextId++,county:county2,teamA:'Sim New Team A',teamB:'Sim New Team B',
-    date:today,day:dayName(today),time:'2:00 PM',venue:'New Venue GAA Grounds',
-    competition:'Simulated New Championship',round:'Round 1',code:'Football',status:'Proposed',manual:false};
-  // Simulate removed: inject fake baseline entries that won't match any live fixture
-  const county0=fixtureChangelog[k0]?.data?.county||'';
-  const county1=fixtureChangelog[k1]?.data?.county||'';
-  const fakeK1=`${county0}|__SimA__|__SimB__|Simulated Championship`;
-  const fakeK2=`${county1}|__SimC__|__SimD__|Simulated Hurling Championship`;
-  const now=new Date().toLocaleString('en-IE');
-  fixtureBaseline[fakeK1]={original:{date:today,time:'3:00 PM',venue:'Old Ground',round:'Round 1'},lastKnown:{date:today,time:'3:00 PM',venue:'Old Ground',round:'Round 1'}};
-  fixtureChangelog[fakeK1]={type:'unchanged',data:{county:county0,teamA:'Sim Team A',teamB:'Sim Team B',competition:'Simulated Championship'},history:[{at:now,note:'Loaded from source',diffs:[]}]};
-  fixtureBaseline[fakeK2]={original:{date:today,time:'7:30 PM',venue:'Old Hurling Ground',round:'Round 2'},lastKnown:{date:today,time:'7:30 PM',venue:'Old Hurling Ground',round:'Round 2'}};
-  fixtureChangelog[fakeK2]={type:'unchanged',data:{county:county1,teamA:'Sim Team C',teamB:'Sim Team D',competition:'Simulated Hurling Championship'},history:[{at:now,note:'Loaded from source',diffs:[]}]};
-  saveBaseline();
-  saveChangelog();
-  await loadFixtures(true);
-  fixtures.push(simNewFixture);
-  const nowStr=new Date().toLocaleString('en-IE');
-  const newKey=stableKeyOf(simNewFixture);
-  fixtureBaseline[newKey]={original:{date:today,time:'2:00 PM',venue:'New Venue GAA Grounds',round:'Round 1'},lastKnown:{date:today,time:'2:00 PM',venue:'New Venue GAA Grounds',round:'Round 1'}};
-  fixtureChangelog[newKey]={type:'new',data:{county:county2,teamA:'Sim New Team A',teamB:'Sim New Team B',competition:'Simulated New Championship',date:today,time:'2:00 PM',venue:'New Venue GAA Grounds',round:'Round 1',code:'Football'},history:[{at:nowStr,note:'Loaded from source',diffs:[]}]};
-  saveBaseline();
-  saveChangelog();
-  render();
-});
 document.getElementById('clearChangesBtn').addEventListener('click',()=>{
   fixtureChangelog={};saveChangelog();
   fixtureBaseline={};saveBaseline();
@@ -2146,11 +2092,6 @@ function downloadJson(data, filename) {
       currentSubtab = btn.dataset.subtab;
       if(lastResults) renderDiffTable(lastResults, currentSubtab);
     });
-  });
-
-  // ---- Open modal ----
-  document.getElementById('compareBtn').addEventListener('click', () => {
-    document.getElementById('compareModal').classList.add('open');
   });
 
   // ---- Upload area ----
