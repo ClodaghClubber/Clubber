@@ -672,10 +672,10 @@ function checkUnitConflict(fId,sys,unit,date,time){
   if(!unit||!sys||!time||time===''||time.toLowerCase()==='tbc') return null;
   return fixtures.find(f=>f.id!==fId&&f.unitSystem===sys&&f.unit===unit&&f.date===date&&f.time===time&&f.time.toLowerCase()!=='tbc')||null;
 }
-function showConflictToast(msg){
+function showConflictToast(msg,color){
   const t=document.getElementById('unitConflictToast');
   if(!t) return;
-  t.textContent=msg; t.classList.add('show');
+  t.textContent=msg; t.style.background=color||'#c2410c'; t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),3500);
 }
 function unitBadge(f){
@@ -1408,12 +1408,22 @@ async function syncStatus(ids,status){
 
 approveBtn.addEventListener('click',()=>{
   const ids=[...selected];
+  const approved=fixtures.filter(f=>selected.has(f.id));
   fixtures.forEach(f=>{ if(selected.has(f.id)) f.status='Approved'; });
   manualFixtures.forEach(f=>{ if(ids.includes(f.id)) f.status='Approved'; });
   saveManualFixtures();
   saveCache();
   render();
   syncStatus(ids,'Approved');
+  // Visual feedback
+  approveBtn.textContent='✓ Approved';
+  approveBtn.style.background='#16a34a';
+  setTimeout(()=>{ approveBtn.textContent='Approve'; approveBtn.style.background=''; },2000);
+  const names=approved.map(f=>`${f.teamA} v ${f.teamB}`);
+  const msg=approved.length===1
+    ? `✓ Approved: ${names[0]}`
+    : `✓ ${approved.length} fixtures approved: ${names.join(', ')}`;
+  showConflictToast(msg,'#16a34a');
 });
 rejectBtn.addEventListener('click',()=>{
   const ids=[...selected];
