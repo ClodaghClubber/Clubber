@@ -1375,7 +1375,9 @@ clubberBtn.addEventListener('click',()=>{
   const summary=document.getElementById('clubberSummary');
   summary.innerHTML=`<strong>${okCount} of ${results.length} fixture${results.length!==1?'s':''} mapped successfully.</strong> ${batches.length} JSON file${batches.length!==1?'s':''} downloaded.${okCount<results.length?`<br><span style="color:var(--reject)">${results.length-okCount} had mapping errors.</span>`:''}`;
   const list=document.getElementById('clubberResultList');
-  list.innerHTML=results.map(r=>`<div class="clubber-result-item ${r.ok?'ok':'fail'}"><span class="clubber-icon">${r.ok?'✓':'✗'}</span><div class="clubber-label"><strong>${r.fixture.teamA} v ${r.fixture.teamB}</strong> ${r.fixture.county} · ${r.fixture.date}${r.errors.map(e=>`<div class="clubber-err">⚠ ${e}</div>`).join('')}</div></div>`).join('');
+  const sorted=[...results].sort((a,b)=>a.ok-b.ok);
+  list.innerHTML=sorted.map(r=>`<div class="clubber-result-item ${r.ok?'ok':'fail'}"><span class="clubber-icon">${r.ok?'✓':'✗'}</span><div class="clubber-label"><strong>${r.fixture.teamA} v ${r.fixture.teamB}</strong> ${r.fixture.county} · ${r.fixture.date}${r.errors.map(e=>`<div class="clubber-err">⚠ ${e}</div>`).join('')}</div></div>`).join('');
+
   document.getElementById('clubberModal').classList.add('open');
 });
 
