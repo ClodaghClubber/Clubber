@@ -2013,6 +2013,14 @@ function buildGamePayload(f) {
     teamBResult?.county || f.county
   );
 
+  const roundNorm = (f.round || '').trim().toLowerCase();
+  const isCamogie = (f.competition || '').toLowerCase().includes('camogie');
+  let price = 14.99;
+  if (!isCamogie) {
+    if (/\bfinal\b/.test(roundNorm) && !/semi/.test(roundNorm) && !/quarter/.test(roundNorm)) price = 19.99;
+    else if (/semi.?final|^\bsf\b/.test(roundNorm)) price = 16.99;
+  }
+
   const payload = {
     gameScope: 'Club',
     date: f.date,
@@ -2029,6 +2037,7 @@ function buildGamePayload(f) {
     competitorClubName: f.teamB,
     competitorClubId: teamBResult?.clubId || '',
     competitorClubCounty: teamBResult?.county || '',
+    price,
   };
 
   return { payload, errors };
