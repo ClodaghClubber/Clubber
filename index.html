@@ -1279,6 +1279,8 @@ function render(){
   });
   // Render removed fixtures (from changelog, no longer in live data)
   const countyF=document.getElementById('countyFilter').value;
+  const statusF=document.getElementById('statusFilter').value;
+  if(!statusF)
   Object.entries(fixtureChangelog).forEach(([sk,chg])=>{
     if(chg.type!=='removed'||!chg.data) return;
     const f=chg.data;
