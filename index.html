@@ -2036,9 +2036,9 @@ function deriveGrade(county, competition) {
 function lookupTeam(teamName, preferredCounty) {
   const name = teamName.replace(/\s+/g, ' ').trim();
   if (teamMappings[preferredCounty]?.[name])
-    return { county: preferredCounty, clubId: teamMappings[preferredCounty][name] };
+    return { county: preferredCounty, clubId: teamMappings[preferredCounty][name], matchedName: name };
   for (const [county, teams] of Object.entries(teamMappings)) {
-    if (teams[name]) return { county, clubId: teams[name] };
+    if (teams[name]) return { county, clubId: teams[name], matchedName: name };
   }
   return null;
 }
@@ -2101,7 +2101,7 @@ function buildGamePayload(f) {
     date: f.date,
     time: dublinToUtc(f.date, from12h(f.time)),
     county: f.county,
-    club: normA,
+    club: teamAResult?.matchedName || normA,
     clubId: teamAResult?.clubId || '',
     code: f.code || '',
     grade,
@@ -2109,7 +2109,7 @@ function buildGamePayload(f) {
     season: 'Season 26',
     round: f.round || '',
     title: '',
-    competitorClubName: normB,
+    competitorClubName: teamBResult?.matchedName || normB,
     competitorClubId: teamBResult?.clubId || '',
     competitorClubCounty: teamBResult?.county || '',
     price,
