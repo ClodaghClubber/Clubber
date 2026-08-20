@@ -16,6 +16,14 @@
   .toolbar{display:flex;gap:12px;align-items:center;padding:16px 24px;flex-wrap:wrap;border-bottom:1px solid var(--border);}
   .toolbar label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px;}
   .toolbar select, .toolbar input{background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:13px;}
+  .ms-wrap{position:relative;min-width:120px;}
+  .ms-trigger{width:100%;text-align:left;padding:6px 24px 6px 10px;font-size:13px;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative;}
+  .ms-trigger::after{content:'▾';position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:10px;pointer-events:none;color:var(--muted);}
+  .ms-panel{position:absolute;top:calc(100% + 3px);left:0;min-width:100%;max-height:220px;overflow-y:auto;background:var(--panel);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,.18);z-index:300;padding:4px 0;}
+  .ms-option{display:flex;align-items:center;gap:8px;padding:5px 12px;cursor:pointer;font-size:13px;white-space:nowrap;user-select:none;}
+  .ms-option:hover{background:var(--row-hover);}
+  .ms-option input{cursor:pointer;accent-color:#2d6cdf;}
+  .ms-sep{border:none;border-top:1px solid var(--border);margin:3px 0;}
   .actions{display:flex;gap:8px;margin-left:auto;}
   button{cursor:pointer;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:600;color:#fff;}
   button:disabled{opacity:0.35;cursor:not-allowed;}
@@ -201,29 +209,20 @@
 
 <div class="toolbar">
   <div>
-    <label for="countyFilter">County</label>
-    <select id="countyFilter"><option value="">All</option></select>
+    <label>County</label>
+    <div class="ms-wrap" id="countyFilter"><button class="ms-trigger" type="button"><span class="ms-label">All</span></button><div class="ms-panel" hidden></div></div>
   </div>
   <div>
-    <label for="codeFilter">Code</label>
-    <select id="codeFilter">
-      <option value="">All</option>
-      <option value="Football">Football</option>
-      <option value="Hurling">Hurling</option>
-    </select>
+    <label>Code</label>
+    <div class="ms-wrap" id="codeFilter"><button class="ms-trigger" type="button"><span class="ms-label">All</span></button><div class="ms-panel" hidden></div></div>
   </div>
   <div>
-    <label for="compFilter">Competition</label>
-    <select id="compFilter"><option value="">All</option></select>
+    <label>Competition</label>
+    <div class="ms-wrap" id="compFilter"><button class="ms-trigger" type="button"><span class="ms-label">All</span></button><div class="ms-panel" hidden></div></div>
   </div>
   <div>
-    <label for="statusFilter">Status</label>
-    <select id="statusFilter">
-      <option value="">All</option>
-      <option value="Proposed">Proposed</option>
-      <option value="Approved">Approved</option>
-      <option value="Rejected">Rejected</option>
-    </select>
+    <label>Status</label>
+    <div class="ms-wrap" id="statusFilter"><button class="ms-trigger" type="button"><span class="ms-label">All</span></button><div class="ms-panel" hidden></div></div>
   </div>
   <div>
     <label for="dateFrom">From date</label>
@@ -1174,6 +1173,63 @@ const countyFilter=document.getElementById('countyFilter');
 const codeFilter=document.getElementById('codeFilter');
 const compFilter=document.getElementById('compFilter');
 const statusFilter=document.getElementById('statusFilter');
+
+// ---- Multi-select widget ----
+const _msSelected={};
+function msInit(id,opts,onChange){
+  const wrap=document.getElementById(id);
+  const trigger=wrap.querySelector('.ms-trigger');
+  const panel=wrap.querySelector('.ms-panel');
+  _msSelected[id]=new Set();
+  function rebuild(options){
+    _msSelected[id].clear();
+    panel.innerHTML='';
+    const allLbl=document.createElement('label');
+    allLbl.className='ms-option';
+    const allCb=document.createElement('input');
+    allCb.type='checkbox';allCb.dataset.all='1';allCb.checked=true;
+    allLbl.append(allCb,' All');
+    panel.appendChild(allLbl);
+    const hr=document.createElement('hr');hr.className='ms-sep';panel.appendChild(hr);
+    options.forEach(v=>{
+      const lbl=document.createElement('label');lbl.className='ms-option';
+      const cb=document.createElement('input');cb.type='checkbox';cb.value=v;
+      lbl.append(cb,' '+v);panel.appendChild(lbl);
+    });
+    updateLabel();
+  }
+  function updateLabel(){
+    const sel=_msSelected[id];
+    trigger.querySelector('.ms-label').textContent=sel.size===0?'All':[...sel].join(', ');
+  }
+  panel.addEventListener('change',e=>{
+    const cb=e.target;
+    const sel=_msSelected[id];
+    if(cb.dataset.all){
+      sel.clear();
+      panel.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=cb.checked);
+    } else {
+      if(cb.checked)sel.add(cb.value);else sel.delete(cb.value);
+      panel.querySelector('[data-all]').checked=sel.size===0;
+    }
+    updateLabel();onChange();
+  });
+  trigger.addEventListener('click',e=>{
+    e.stopPropagation();
+    const wasOpen=!panel.hidden;
+    document.querySelectorAll('.ms-panel').forEach(p=>{p.hidden=true;});
+    panel.hidden=wasOpen;
+  });
+  document.addEventListener('click',()=>{panel.hidden=true;});
+  panel.addEventListener('click',e=>e.stopPropagation());
+  if(opts)rebuild(opts);
+  return {setOptions:rebuild,getValues:()=>[..._msSelected[id]]};
+}
+function msGetValues(id){return [...(_msSelected[id]||new Set())];}
+const msCounty=msInit('countyFilter',[],()=>{populateCompOptions();render();});
+const msCode=msInit('codeFilter',['Football','Hurling'],render);
+const msComp=msInit('compFilter',[],render);
+const msStatus=msInit('statusFilter',['Proposed','Approved','Rejected'],render);
 const dateFrom=document.getElementById('dateFrom');
 const dateTo=document.getElementById('dateTo');
 const selectAll=document.getElementById('selectAll');
@@ -1191,27 +1247,28 @@ let selected=new Set();
 let sortKey='date', sortDir=1;
 
 function populateFilterOptions(){
-  const prev=countyFilter.value;
   const counties=[...new Set(fixtures.map(f=>f.county))].sort((a,b)=>a.localeCompare(b));
-  countyFilter.innerHTML='<option value="">All</option>'+counties.map(c=>`<option value="${c}">${c}</option>`).join('');
-  if(counties.includes(prev)) countyFilter.value=prev;
+  msCounty.setOptions(counties);
   populateCompOptions();
 }
 
 function populateCompOptions(){
-  const prev=compFilter.value;
-  const scoped = countyFilter.value ? fixtures.filter(f=>f.county===countyFilter.value) : fixtures;
+  const selCounties=msGetValues('countyFilter');
+  const scoped=selCounties.length?fixtures.filter(f=>selCounties.includes(f.county)):fixtures;
   const comps=[...new Set(scoped.map(f=>f.competition))].sort((a,b)=>a.localeCompare(b));
-  compFilter.innerHTML='<option value="">All</option>'+comps.map(c=>`<option value="${c}">${c}</option>`).join('');
-  if(comps.includes(prev)) compFilter.value=prev;
+  msComp.setOptions(comps);
 }
 
 function getFiltered(){
+  const selCounties=msGetValues('countyFilter');
+  const selCodes=msGetValues('codeFilter');
+  const selComps=msGetValues('compFilter');
+  const selStatuses=msGetValues('statusFilter');
   let list=fixtures.filter(f=>{
-    if(countyFilter.value && f.county!==countyFilter.value) return false;
-    if(codeFilter.value && f.code!==codeFilter.value) return false;
-    if(compFilter.value && f.competition!==compFilter.value) return false;
-    if(statusFilter.value && f.status!==statusFilter.value) return false;
+    if(selCounties.length && !selCounties.includes(f.county)) return false;
+    if(selCodes.length && !selCodes.includes(f.code)) return false;
+    if(selComps.length && !selComps.includes(f.competition)) return false;
+    if(selStatuses.length && !selStatuses.includes(f.status)) return false;
     if(dateFrom.value && f.date<dateFrom.value) return false;
     if(dateTo.value && f.date>dateTo.value) return false;
     if(changesOnlyFilter){const _c=fixtureChangelog[stableKeyOf(f)];if(!_c||(_c.type!=='changed'&&_c.type!=='removed'&&_c.type!=='new')) return false;}
@@ -1278,13 +1335,13 @@ function render(){
     tbody.appendChild(tr);
   });
   // Render removed fixtures (from changelog, no longer in live data)
-  const countyF=document.getElementById('countyFilter').value;
-  const statusF=document.getElementById('statusFilter').value;
-  if(!statusF)
+  const _selCounties=msGetValues('countyFilter');
+  const _selStatuses=msGetValues('statusFilter');
+  if(!_selStatuses.length)
   Object.entries(fixtureChangelog).forEach(([sk,chg])=>{
     if(chg.type!=='removed'||!chg.data) return;
     const f=chg.data;
-    if(countyF && f.county!==countyF) return;
+    if(_selCounties.length && !_selCounties.includes(f.county)) return;
     const tr=document.createElement('tr');
     tr.classList.add('chg-removed');
     const safeKey=sk.replace(/"/g,'&quot;');
@@ -1448,9 +1505,8 @@ removeBtn.addEventListener('click',()=>{
   syncStatus(ids,'Removed');
 });
 
-countyFilter.addEventListener('change',()=>{ populateCompOptions(); render(); });
 dateFrom.addEventListener('change',()=>{ dateTo.value=dateFrom.value; render(); });
-[codeFilter,compFilter,statusFilter,dateTo].forEach(el=>el.addEventListener('change',render));
+dateTo.addEventListener('change',render);
 document.getElementById('changesFilter').addEventListener('change',e=>{changesOnlyFilter=e.target.value==='changes';render();});
 document.getElementById('clearChangesBtn').addEventListener('click',()=>{
   fixtureChangelog={};saveChangelog();
