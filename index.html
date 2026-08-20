@@ -245,6 +245,7 @@
     <button class="btn-reject" id="rejectBtn" disabled>Reject</button>
     <button class="btn-remove" id="removeBtn" disabled>Remove</button>
     <button class="btn-remove" id="refreshBtn" style="background:#2d6cdf;">Refresh</button>
+    <button class="btn-clubber" id="clubberBtn" disabled>Create in Clubber</button>
     <button class="btn-remove" id="clearChangesBtn" style="background:#6b7280;display:none;" title="Clear all change markers">Clear changes</button>
     <button id="simChangesBtn" title="Simulate fixture changes for testing" style="background:none;border:1px dashed #6b7280;color:#6b7280;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;">⚙ Test</button>
     <button class="btn-compare" id="compareBtn">⇄ Compare Clubber</button>
@@ -1186,6 +1187,7 @@ const emptyMsg=document.getElementById('emptyMsg');
 const rowCount=document.getElementById('rowCount');
 const refreshBtn=document.getElementById('refreshBtn');
 const exportBtn=document.getElementById('exportBtn');
+const clubberBtn=document.getElementById('clubberBtn');
 const loadStatus=document.getElementById('loadStatus');
 
 let selected=new Set();
@@ -1325,6 +1327,7 @@ function updateActionButtons(){
   rejectBtn.disabled = selFixtures.length===0;
   removeBtn.disabled = selFixtures.length===0 || !selFixtures.every(f=>f.status==='Rejected');
   exportBtn.disabled = selFixtures.length===0;
+  clubberBtn.disabled = !selFixtures.some(f=>f.status==='Approved');
   assignSocialsBtn.disabled = selFixtures.length===0;
   assignSupport2Btn.disabled = selFixtures.length===0;
 }
@@ -1354,6 +1357,30 @@ function exportSelectedToExcel(){
 }
 
 exportBtn.addEventListener('click',exportSelectedToExcel);
+clubberBtn.addEventListener('click',()=>{
+  const selFixtures=fixtures.filter(f=>selected.has(f.id));
+  if(!selFixtures.length) return;
+  const results=selFixtures.map(f=>{
+    if(f.status!=='Approved') return{fixture:f,payload:null,errors:['Not Approved'],ok:false,skipped:true};
+    const{payload,errors}=buildGamePayload(f);
+    return{fixture:f,payload,errors,ok:errors.length===0,skipped:false};
+  });
+  const BATCH_SIZE=10;
+  const eligible=results.filter(r=>!r.skipped);
+  const batches=[];
+  for(let i=0;i<eligible.length;i+=BATCH_SIZE) batches.push(eligible.slice(i,i+BATCH_SIZE));
+  const stamp=new Date().toISOString().slice(0,10);
+  batches.forEach((batch,idx)=>{
+    const suffix=batches.length>1?`-batch-${idx+1}-of-${batches.length}`:'';
+    setTimeout(()=>downloadJson(batch.map(r=>r.payload),`clubber-fixtures${suffix}-${stamp}.json`),idx*300);
+  });
+  const okCount=results.filter(r=>r.ok).length;
+  const summary=document.getElementById('clubberSummary');
+  summary.innerHTML=`<strong>${okCount} of ${results.length} fixture${results.length!==1?'s':''} mapped successfully.</strong> ${batches.length} JSON file${batches.length!==1?'s':''} downloaded.${okCount<results.length?`<br><span style="color:var(--reject)">${results.length-okCount} had mapping errors.</span>`:''}`;
+  const list=document.getElementById('clubberResultList');
+  list.innerHTML=results.map(r=>`<div class="clubber-result-item ${r.ok?'ok':'fail'}"><span class="clubber-icon">${r.ok?'✓':'✗'}</span><div class="clubber-label"><strong>${r.fixture.teamA} v ${r.fixture.teamB}</strong> ${r.fixture.county} · ${r.fixture.date}${r.errors.map(e=>`<div class="clubber-err">⚠ ${e}</div>`).join('')}</div></div>`).join('');
+  document.getElementById('clubberModal').classList.add('open');
+});
 
 selectAll.addEventListener('change',()=>{
   const list=getFiltered();
