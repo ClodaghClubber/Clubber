@@ -53,7 +53,8 @@ function decodeEntities(s) {
     .replace(/&quot;/g, '"')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
-    .replace(/�/g, ''); // strip Unicode replacement chars (U+FFFD) from mojibake
+    .replace(/�/g, '') // strip Unicode replacement chars (U+FFFD) from mojibake
+    .replace(/\s*&\s*/g, ' & '); // ensure spaces around & in team/venue names
 }
 
 // "31 Jul 2026" -> "31 July 2026"
@@ -1228,11 +1229,59 @@ const KILDARE_FIXTURES = [];
  ['Ardclough','Kill','3 September 2026','20:00','Manguard Park Pitch 2','Round 3'],
 ].forEach(r=>KILDARE_FIXTURES.push(mkStatic('Kildare',r[0],r[1],r[2],r[3],r[4],'Junior Football Championship Group C',r[5])));
 
+// ---- Carlow: live scraper ----
+// Scrapes carlowgaa.ie/fixtures/ for the 4 target competitions.
+// Falls back to empty array if the fetch fails.
+async function fetchCarlowFixtures() {
+  const TARGET_COMPS = [
+    { pattern: /senior football championship/i,       name: 'Senior Football Championship' },
+    { pattern: /intermediate football championship/i, name: 'Intermediate Football Championship' },
+    { pattern: /senior hurling championship/i,        name: 'Senior Hurling Championship' },
+    { pattern: /intermediate hurling championship/i,  name: 'Intermediate Hurling Championship' },
+  ];
+  try {
+    const res = await fetch('https://carlowgaa.ie/fixtures/', {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; GAAFixturesBot/1.0)' }
+    });
+    if (!res.ok) return [];
+    const html = await res.text();
+    // Strip tags and split into lines
+    const text = html.replace(/<[^>]+>/g, '\n').replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ').replace(/&#[0-9]+;/g, '');
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    const fixtures = [];
+    for (let i = 0; i < lines.length; i++) {
+      const comp = TARGET_COMPS.find(c => c.pattern.test(lines[i]));
+      if (!comp) continue;
+      // Next non-empty line should be "Team A vs Team B"
+      const matchLine = lines[i + 1] || '';
+      const vsMatch = matchLine.match(/^(.+?)\s+vs\s+(.+)$/i);
+      if (!vsMatch) continue;
+      // Skip "Referee" line, then find date/time/venue line
+      let dateLine = '';
+      for (let j = i + 2; j <= i + 4; j++) {
+        if (/\d{2}-\d{2}-\d{4}/.test(lines[j] || '')) { dateLine = lines[j]; break; }
+      }
+      if (!dateLine) continue;
+      // Parse: "DD-MM-YYYY / H:MM pm / Venue"
+      const parts = dateLine.split('/').map(s => s.trim());
+      if (parts.length < 3) continue;
+      const [d, m, y] = parts[0].split('-');
+      const date = `${y}-${m}-${d}`;
+      const timePart = parts[1]; // e.g. "7:00 pm"
+      const venue = parts.slice(2).join('/').trim();
+      // Derive round from context — scan back for a round hint or leave blank
+      // (carlowgaa.ie doesn't show round in the listing)
+      fixtures.push(mkStatic('Carlow', vsMatch[1].trim(), vsMatch[2].trim(), date, timePart, venue, comp.name, ''));
+    }
+    return fixtures;
+  } catch (e) {
+    return [];
+  }
+}
+
 // ---- Carlow: static data ----
-// Carlow publishes fixtures as PDF "Fixture Report" documents (carlowgaa.ie),
-// not as a scrapable HTML page, so these were extracted from the official
-// PDFs and transcribed here. BYE rounds (odd team count in the Intermediate
-// championship) are omitted since they aren't real fixtures.
+// Static fixtures are kept as a fallback / supplement for competitions not
+// on carlowgaa.ie, and for historical rounds already passed.
 const CARLOW_FIXTURES = [];
 
 // Carlow - Senior Hurling Championship
@@ -1553,7 +1602,7 @@ export default {
 
     try {
       const cacDebug = [];
-      const [corkResults, waterfordResults, laoisResults, wexfordResults, kerryResults, offalyResults, tipperaryResults, tipperaryFootballResults, kildareResults, roscommonFootballResults, roscommonHurlingResults, kilkennyResults, monaghanResults, meathResults, longfordResults] = await Promise.all([
+      const [corkResults, waterfordResults, laoisResults, wexfordResults, kerryResults, offalyResults, tipperaryResults, tipperaryFootballResults, kildareResults, roscommonFootballResults, roscommonHurlingResults, kilkennyResults, monaghanResults, meathResults, longfordResults, carlowLiveResults] = await Promise.all([
         Promise.all(CORK_COMPETITIONS.map(fetchCorkCompetition)),
         Promise.all(WATERFORD_COMPETITIONS.map(fetchWaterfordCompetition)),
         Promise.all(LAOIS_COMPETITIONS.map((c) => fetchCacDirectCompetition('Laois', 'laoisgaa.ie', c, cacDebug))),
@@ -1569,6 +1618,7 @@ export default {
         Promise.all(MONAGHAN_COMPETITIONS.map((c) => fetchCacDirectCompetition('Monaghan', 'www.monaghangaa.ie', c, cacDebug))),
         Promise.all(MEATH_COMPETITIONS.map((c) => fetchCacDirectCompetition('Meath', 'meath.gaa.ie', c, cacDebug))),
         fetchLongford(env.FOIREANN_API_KEY),
+        fetchCarlowFixtures(),
       ]);
 
       const fixCamel = s => s
@@ -1595,6 +1645,7 @@ export default {
         ...LONGFORD_FIXTURES,
         ...TIPPERARY_FIXTURES,
         ...KILDARE_FIXTURES,
+        ...carlowLiveResults,
         ...CARLOW_FIXTURES,
         ...LOUTH_FIXTURES,
       ];
