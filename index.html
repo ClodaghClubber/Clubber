@@ -204,7 +204,7 @@
 <body>
 <header>
   <h1>GAA Fixtures Dashboard</h1>
-  <p>Live fixtures from Cork, Waterford, Kerry, Offaly, Laois, Wexford, Kilkenny, Tipperary, Monaghan, Meath, Longford, Kildare, Carlow &amp; Roscommon fetched fresh on page load via a server-side proxy &middot; Louth is static (manually transcribed)</p>
+  <p>Live fixtures from Cork, Waterford, Kerry, Offaly, Laois, Wexford, Kilkenny, Tipperary, Monaghan, Meath, Longford, Kildare, Carlow, Louth &amp; Roscommon fetched fresh on page load via a server-side proxy</p>
 </header>
 
 <div class="toolbar">
@@ -2071,11 +2071,14 @@ function dublinToUtc(dateStr, time24h) {
 function buildGamePayload(f) {
   const errors = [];
 
+  const normA = (f.teamA || '').replace(/\s+/g, ' ').trim();
+  const normB = (f.teamB || '').replace(/\s+/g, ' ').trim();
+
   const teamAResult = lookupTeam(f.teamA, f.county);
-  if (!teamAResult) errors.push(`clubId not found for "${f.teamA}"`);
+  if (!teamAResult) errors.push(`clubId not found for "${normA}"`);
 
   const teamBResult = lookupTeam(f.teamB, f.county);
-  if (!teamBResult) errors.push(`competitorClubId not found for "${f.teamB}"`);
+  if (!teamBResult) errors.push(`competitorClubId not found for "${normB}"`);
 
   const grade = deriveGrade(f.county, f.competition);
   if (!grade) errors.push(`grade could not be derived from competition "${f.competition}"`);
@@ -2098,7 +2101,7 @@ function buildGamePayload(f) {
     date: f.date,
     time: dublinToUtc(f.date, from12h(f.time)),
     county: f.county,
-    club: f.teamA,
+    club: normA,
     clubId: teamAResult?.clubId || '',
     code: f.code || '',
     grade,
@@ -2106,7 +2109,7 @@ function buildGamePayload(f) {
     season: 'Season 26',
     round: f.round || '',
     title: '',
-    competitorClubName: f.teamB,
+    competitorClubName: normB,
     competitorClubId: teamBResult?.clubId || '',
     competitorClubCounty: teamBResult?.county || '',
     price,

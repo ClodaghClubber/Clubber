@@ -1427,9 +1427,87 @@ const CARLOW_FIXTURES = [];
   ['Grange','O Hanrahans','3 August 2026','19:30','Grange','Round 3'],
 ].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Junior C Football Championship',r[5])));
 
+// ---- Louth: live scraper ----
+// Scrapes louthgaa.ie/fixtures-results/?countyBoardID=20&fixturesOnly=Y&daysAfter=21
+// for Senior Championship (Football), Intermediate Championship (Football), Senior Hurling.
+// Falls back to empty array if the fetch fails.
+async function fetchLouthFixtures() {
+  const TARGET_COMPS = [
+    { pattern: /anchor tours senior championship/i, name: 'Senior Football Championship', code: 'Football' },
+    { pattern: /cti.*intermediate championship|intermediate championship/i, name: 'Intermediate Football Championship', code: 'Football' },
+    { pattern: /senior hurling/i, name: 'Senior Hurling Championship', code: 'Hurling' },
+  ];
+  try {
+    const res = await fetch(
+      'https://louthgaa.ie/fixtures-results/?countyBoardID=20&fixturesOnly=Y&daysAfter=21',
+      { headers: { 'User-Agent': UA } }
+    );
+    if (!res.ok) return [];
+    const html = await res.text();
+    const text = html.replace(/<[^>]+>/g, '\n').replace(/&amp;/g, '&').replace(/&#039;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+    const fixtures = [];
+    let currentComp = null;
+    let currentDate = null;
+
+    // Date line pattern: "Thursday 20th August 2026" → "20 August 2026"
+    const dateLine = /^(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\s+(\d+)(?:st|nd|rd|th)\s+(\w+)\s+(\d{4})$/i;
+    // Time pattern: "7 00 PM" or "12 30 PM"
+    const timeParse = (t) => {
+      const m = t.match(/^(\d+)\s+(\d{2})\s+(AM|PM)$/i);
+      if (!m) return null;
+      let h = parseInt(m[1], 10);
+      const min = m[2];
+      const ampm = m[3].toUpperCase();
+      if (ampm === 'PM' && h !== 12) h += 12;
+      if (ampm === 'AM' && h === 12) h = 0;
+      return `${String(h).padStart(2,'0')}:${min}`;
+    };
+
+    for (const line of lines) {
+      // Check for date line
+      const dm = line.match(dateLine);
+      if (dm) {
+        currentDate = `${parseInt(dm[1],10)} ${dm[2]} ${dm[3]}`;
+        continue;
+      }
+      // Check for competition header
+      const compMatch = TARGET_COMPS.find(c => c.pattern.test(line));
+      if (compMatch) {
+        currentComp = compMatch;
+        continue;
+      }
+      // Skip "Time Team 1 Score Score Team 2 Venue Referee Round Notes" header row
+      if (/^Time\s+Team\s+1/i.test(line)) continue;
+      // Try to parse a fixture row (tab-separated)
+      if (currentComp && currentDate && line.includes('\t')) {
+        const cols = line.split('\t').map(s => s.trim());
+        // cols: [time, team1, score1, score2, team2, venue, referee, round, ...]
+        if (cols.length >= 5) {
+          const time24 = timeParse(cols[0]);
+          if (!time24) continue;
+          const teamA = cols[1];
+          const teamB = cols[4];
+          const venue = cols[5] || '';
+          const round = cols[7] || '';
+          // Skip placeholder rows
+          if (!teamA || !teamB || teamA.startsWith('Winner') || teamA.startsWith('Loser')) continue;
+          const f = mkStatic('Louth', teamA, teamB, currentDate, time24, venue, currentComp.name, round);
+          f.code = currentComp.code;
+          fixtures.push(f);
+        }
+      }
+    }
+    return fixtures;
+  } catch (e) {
+    return [];
+  }
+}
+
 // ---- Louth: static data ----
-// Louth publishes fixtures as PDF documents (louthgaa.ie), not a scrapable
-// HTML page. Extracted from "LOUTH Championship Fixtures 2026". All code=Football.
+// Static fixtures supplement the live scraper above (covers rounds beyond 21-day window
+// and Junior Championship which is not scraped live).
 const LOUTH_FIXTURES = [];
 
 // Louth - Junior Football Championship Group 1
@@ -1602,7 +1680,7 @@ export default {
 
     try {
       const cacDebug = [];
-      const [corkResults, waterfordResults, laoisResults, wexfordResults, kerryResults, offalyResults, tipperaryResults, tipperaryFootballResults, kildareResults, roscommonFootballResults, roscommonHurlingResults, kilkennyResults, monaghanResults, meathResults, longfordResults, carlowLiveResults] = await Promise.all([
+      const [corkResults, waterfordResults, laoisResults, wexfordResults, kerryResults, offalyResults, tipperaryResults, tipperaryFootballResults, kildareResults, roscommonFootballResults, roscommonHurlingResults, kilkennyResults, monaghanResults, meathResults, longfordResults, carlowLiveResults, louthLiveResults] = await Promise.all([
         Promise.all(CORK_COMPETITIONS.map(fetchCorkCompetition)),
         Promise.all(WATERFORD_COMPETITIONS.map(fetchWaterfordCompetition)),
         Promise.all(LAOIS_COMPETITIONS.map((c) => fetchCacDirectCompetition('Laois', 'laoisgaa.ie', c, cacDebug))),
@@ -1619,6 +1697,7 @@ export default {
         Promise.all(MEATH_COMPETITIONS.map((c) => fetchCacDirectCompetition('Meath', 'meath.gaa.ie', c, cacDebug))),
         fetchLongford(env.FOIREANN_API_KEY),
         fetchCarlowFixtures(),
+        fetchLouthFixtures(),
       ]);
 
       const fixCamel = s => s
@@ -1647,6 +1726,7 @@ export default {
         ...KILDARE_FIXTURES,
         ...carlowLiveResults,
         ...CARLOW_FIXTURES,
+        ...louthLiveResults,
         ...LOUTH_FIXTURES,
       ];
 
