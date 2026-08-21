@@ -245,7 +245,7 @@
     <button class="btn-remove" id="removeBtn" disabled>Remove</button>
     <button class="btn-remove" id="refreshBtn" style="background:#2d6cdf;">Refresh</button>
     <button class="btn-clubber" id="clubberBtn" disabled>Create in Clubber</button>
-    <button class="btn-remove" id="clearChangesBtn" style="background:#6b7280;display:none;" title="Clear all change markers">Clear changes</button>
+    <button class="btn-remove" id="clearChangesBtn" style="display:none;" title="Clear all change markers">Clear changes</button>
     <button class="btn-modal-add" id="addFixtureBtn">+ Add Fixture</button>
     <div class="col-picker-wrap" style="display:none;">
       <button class="btn-remove" id="assignSocialsBtn" style="background:#7c3aed;" disabled>Socials ▾</button>
@@ -841,7 +841,7 @@ function updateClearChangesBtn(){
   const btn=document.getElementById('clearChangesBtn');
   if(!btn) return;
   const hasChanges=Object.values(fixtureChangelog).some(c=>c.type==='changed'||c.type==='removed'||c.type==='new');
-  btn.style.display=hasChanges?'':'none';
+  btn.style.display='none';
 }
 function openChangeHistoryModal(sk){
   const chg=fixtureChangelog[sk];
@@ -1380,6 +1380,8 @@ function render(){
 function updateActionButtons(){
   const selFixtures=fixtures.filter(f=>selected.has(f.id));
   approveBtn.disabled = selFixtures.length===0;
+  const allApproved = selFixtures.length>0 && selFixtures.every(f=>f.status==='Approved');
+  approveBtn.textContent = allApproved ? 'Unapprove' : 'Approve';
   rejectBtn.disabled = selFixtures.length===0;
   removeBtn.disabled = selFixtures.length===0 || !selFixtures.every(f=>f.status==='Rejected');
   exportBtn.disabled = selFixtures.length===0;
@@ -1468,22 +1470,25 @@ async function syncStatus(ids,status){
 
 approveBtn.addEventListener('click',()=>{
   const ids=[...selected];
-  const approved=fixtures.filter(f=>selected.has(f.id));
-  fixtures.forEach(f=>{ if(selected.has(f.id)) f.status='Approved'; });
-  manualFixtures.forEach(f=>{ if(ids.includes(f.id)) f.status='Approved'; });
+  const selFixtures=fixtures.filter(f=>selected.has(f.id));
+  const allApproved=selFixtures.every(f=>f.status==='Approved');
+  const newStatus=allApproved?'Proposed':'Approved';
+  fixtures.forEach(f=>{ if(selected.has(f.id)) f.status=newStatus; });
+  manualFixtures.forEach(f=>{ if(ids.includes(f.id)) f.status=newStatus; });
   saveManualFixtures();
   saveCache();
   render();
-  syncStatus(ids,'Approved');
+  syncStatus(ids,newStatus);
   // Visual feedback
-  approveBtn.textContent='✓ Approved';
-  approveBtn.style.background='#16a34a';
-  setTimeout(()=>{ approveBtn.textContent='Approve'; approveBtn.style.background=''; },2000);
-  const names=approved.map(f=>`${f.teamA} v ${f.teamB}`);
-  const msg=approved.length===1
-    ? `✓ Approved: ${names[0]}`
-    : `✓ ${approved.length} fixtures approved: ${names.join(', ')}`;
-  showConflictToast(msg,'#16a34a');
+  const label=allApproved?'Unapproved':'Approved';
+  approveBtn.textContent=`✓ ${label}`;
+  approveBtn.style.background=allApproved?'#6b7280':'#16a34a';
+  setTimeout(()=>{ approveBtn.textContent=allApproved?'Unapprove':'Approve'; approveBtn.style.background=''; },2000);
+  const names=selFixtures.map(f=>`${f.teamA} v ${f.teamB}`);
+  const msg=selFixtures.length===1
+    ? `✓ ${label}: ${names[0]}`
+    : `✓ ${selFixtures.length} fixtures ${label.toLowerCase()}: ${names.join(', ')}`;
+  showConflictToast(msg,allApproved?'#6b7280':'#16a34a');
 });
 rejectBtn.addEventListener('click',()=>{
   const ids=[...selected];
