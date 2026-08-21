@@ -1420,8 +1420,6 @@ const LOUTH_FIXTURES = [];
   ['Lann Leire G.F.C.','Dowdallshill','16 August 2026','14:00','Shawport Páirc Mac Diarmada','Round 1'],
   ['Dundalk Young Irelands','O\'Connells','16 August 2026','16:30','Páirc Uí Taibh','Round 1'],
   ['Lann Leire C.P.G./Dowdallshill','Dundalk Young Irelands/O\'Connells GFC','21 August 2026','19:00','Cullen Auto Parts Louth GAA Training Centre, Darver','Round 2'],
-  ['Lann Leire C.P.G./Dowdallshill','Dundalk Young Irelands/O\'Connells','29 August 2026','16:00','Páirc Baile Fiach','Round 3'],
-  ['Lann Leire C.P.G/Dowdallshill','Dundalk Young Irelands/O\'Connells GFC','29 August 2026','16:00','Páirc Uí Taibh','Round 3'],
 ].forEach(r=>LOUTH_FIXTURES.push(mkStatic('Louth',r[0],r[1],r[2],r[3],r[4],'Junior Football Championship Group 3',r[5])));
 
 // Louth - Junior Football Championship Group 4
@@ -1430,8 +1428,6 @@ const LOUTH_FIXTURES = [];
   ['John Mitchels','St Finbarrs','16 August 2026','19:00','Páirc Baile Fiach','Round 1'],
   ['Na Piarsaigh-Blackrock/Sean McDermotts','John Mitchels/Naomh Fionnbarra','22 August 2026','16:00','Cullen Auto Parts Louth GAA Training Centre, Darver','Round 2'],
   ['Na Piarsaigh-Blackrock/Sean McDermotts','John Mitchels/Naomh Fionnbarra','23 August 2026','12:00','Cullen Auto Parts Louth GAA Training Centre, Darver','Round 2'],
-  ['Na Piarsaigh-Blackrock/Sean McDermotts','John Mitchels/Naomh Fionnbarra','30 August 2026','12:00','Cullen Auto Parts Louth GAA Training Centre, Darver','Round 3'],
-  ['Na Piarsaigh-Blackrock/Sean McDermotts','John Mitchels/Naomh Fionnbarra','30 August 2026','12:00','Páirc Mochta','Round 3'],
 ].forEach(r=>LOUTH_FIXTURES.push(mkStatic('Louth',r[0],r[1],r[2],r[3],r[4],'Junior Football Championship Group 4',r[5])));
 
 // Louth - Senior Football Championship Group 1
