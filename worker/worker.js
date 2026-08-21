@@ -393,6 +393,11 @@ const KILKENNY_COMPETITIONS = [
   { path: '/fixtures-results/hurling/club/junior/jj-kavanagh-premier-jnr-league/f0ffc6b6-6e0b-4a16-b7a8-9de4766b2af6/', uuid: 'f0ffc6b6-6e0b-4a16-b7a8-9de4766b2af6', sport: 'hurling', level: 'club', grade: 'junior', name: 'Premier Junior Hurling League' },
 ];
 
+const KILKENNY_CAMOGIE_COMPETITIONS = [
+  { path: '/fixtures-results/camogie/club/senior/michael-lyng-motors-senior-camogie-championship/72901512-0136-4202-8b3b-911ccd35355f/', uuid: '72901512-0136-4202-8b3b-911ccd35355f', sport: 'camogie', level: 'club', grade: 'senior', name: 'Senior Camogie Championship' },
+  { path: '/fixtures-results/camogie/club/intermediate/abbott-intermediate-camogie-championship/74fef4e1-9926-4d5d-8538-4cefeaf0fc1f/', uuid: '74fef4e1-9926-4d5d-8538-4cefeaf0fc1f', sport: 'camogie', level: 'club', grade: 'intermediate', name: 'Intermediate Camogie Championship' },
+];
+
 const MONAGHAN_COMPETITIONS = [
   {
     path: '/fixtures-results/football/club/senior/senior-football-championship/5d0d90fc-8f40-4280-817b-7a5d71b6d62a/',
@@ -1600,7 +1605,7 @@ export default {
 
     try {
       const cacDebug = [];
-      const [corkResults, waterfordResults, laoisResults, wexfordResults, kerryResults, offalyResults, tipperaryResults, tipperaryFootballResults, kildareResults, roscommonFootballResults, roscommonHurlingResults, kilkennyResults, monaghanResults, meathResults, longfordResults, carlowLiveResults, louthLiveResults, tipperaryCamogieResults] = await Promise.all([
+      const [corkResults, waterfordResults, laoisResults, wexfordResults, kerryResults, offalyResults, tipperaryResults, tipperaryFootballResults, kildareResults, roscommonFootballResults, roscommonHurlingResults, kilkennyResults, monaghanResults, meathResults, longfordResults, carlowLiveResults, louthLiveResults, tipperaryCamogieResults, kilkennyCamogieResults] = await Promise.all([
         Promise.all(CORK_COMPETITIONS.map(fetchCorkCompetition)),
         Promise.all(WATERFORD_COMPETITIONS.map(fetchWaterfordCompetition)),
         Promise.all(LAOIS_COMPETITIONS.map((c) => fetchCacDirectCompetition('Laois', 'laoisgaa.ie', c, cacDebug))),
@@ -1619,6 +1624,7 @@ export default {
         fetchCarlowFixtures(),
         fetchLouthFixtures(),
         fetchTipperaryCamogieFixtures(),
+        Promise.all(KILKENNY_CAMOGIE_COMPETITIONS.map((c) => fetchCacDirectCompetition('Kilkenny', 'kilkennycamogie.ie', c, cacDebug))),
       ]);
 
       const fixCamel = s => s
@@ -1650,6 +1656,7 @@ export default {
         ...louthLiveResults,
         ...LOUTH_FIXTURES,
         ...tipperaryCamogieResults,
+        ...kilkennyCamogieResults.flat().map(f => ({ ...fixNames(f), sport: 'Camogie' })),
       ];
 
       const statusMap = await getStatusMap(kv);
