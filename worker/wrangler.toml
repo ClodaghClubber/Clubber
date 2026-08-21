@@ -1,3 +1,7 @@
-name = "gaa-fixtures-proxy"
+name = "gaa-fixtures-proxy-v2"
 main = "worker.js"
 compatibility_date = "2024-09-01"
+
+[[kv_namespaces]]
+binding = "FIXTURE_STATUS"
+id = "978753aac88b476bbe43afd5b69cdb45"
