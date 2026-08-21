@@ -1279,11 +1279,19 @@ function populateFilterOptions(){
   populateCompOptions();
 }
 
+function extractGrade(competition){
+  return competition
+    .replace(/^(tipperary|kildare)\s+/i,'')
+    .replace(/\s+group\s+\w+$/i,'')
+    .replace(/\b(football|hurling|fc|hc|championship|league)\b/gi,'')
+    .replace(/\s+/g,' ')
+    .trim();
+}
 function populateCompOptions(){
   const selCounties=msGetValues('countyFilter');
   const scoped=selCounties.length?fixtures.filter(f=>selCounties.includes(f.county)):fixtures;
-  const comps=[...new Set(scoped.map(f=>f.competition))].sort((a,b)=>a.localeCompare(b));
-  msComp.setOptions(comps);
+  const grades=[...new Set(scoped.map(f=>extractGrade(f.competition)).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  msComp.setOptions(grades);
 }
 
 function getFiltered(){
@@ -1294,7 +1302,7 @@ function getFiltered(){
   let list=fixtures.filter(f=>{
     if(selCounties.length && !selCounties.includes(f.county)) return false;
     if(selCodes.length && !selCodes.includes(f.code)) return false;
-    if(selComps.length && !selComps.includes(f.competition)) return false;
+    if(selComps.length && !selComps.includes(extractGrade(f.competition))) return false;
     if(selStatuses.length && !selStatuses.includes(f.status)) return false;
     if(dateFrom.value && f.date<dateFrom.value) return false;
     if(dateTo.value && f.date>dateTo.value) return false;
