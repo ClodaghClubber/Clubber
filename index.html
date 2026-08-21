@@ -246,7 +246,6 @@
     <button class="btn-approve" id="approveBtn" disabled>Approve</button>
     <button class="btn-reject" id="rejectBtn" disabled>Reject</button>
     <button class="btn-remove" id="removeBtn" disabled>Remove</button>
-    <button class="btn-clubber" id="clubberBtn" disabled>Create in Clubber</button>
     <button class="btn-remove" id="clearChangesBtn" style="display:none;" title="Clear all change markers">Clear changes</button>
     <button class="btn-modal-add" id="addFixtureBtn">+ Add Fixture</button>
     <div class="col-picker-wrap" style="display:none;">
@@ -271,6 +270,18 @@
         <path d="M9 11l2.5 3L9 17h2l1.5-2 1.5 2h2l-2.5-3 2.5-3h-2L13 13l-1.5-2H9z" fill="white"/>
       </svg>
       Export
+    </button>
+    <button id="clubberBtn" disabled title="Export to Clubber JSON" style="background:none;border:none;cursor:pointer;padding:4px;opacity:.9;display:flex;align-items:center;gap:6px;color:#1a6fa8;font-size:12px;font-weight:600;">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="28" height="28" rx="4" fill="#1a6fa8"/>
+        <rect x="6" y="6" width="16" height="16" rx="2" fill="none" stroke="white" stroke-width="1.5"/>
+        <path d="M10 12c-1 0-1.5.7-1.5 2s.5 2 1.5 2" stroke="white" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+        <path d="M18 12c1 0 1.5.7 1.5 2s-.5 2-1.5 2" stroke="white" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+        <circle cx="12.5" cy="14" r=".8" fill="white"/>
+        <circle cx="14" cy="11.5" r=".8" fill="white"/>
+        <circle cx="15.5" cy="14" r=".8" fill="white"/>
+      </svg>
+      Clubber
     </button>
     <div class="col-picker-wrap">
       <button id="colsBtn" title="Choose columns" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px;font-weight:600;">
