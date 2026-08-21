@@ -1400,6 +1400,35 @@ async function fetchLouthFixtures() {
   }
 }
 
+// ---- Tipperary Camogie: live scraper (tipperarycamogie.com / Sportlomo) ----
+async function fetchTipperaryCamogieFixtures() {
+  const MONTHS_SHORT = {Jan:'January',Feb:'February',Mar:'March',Apr:'April',May:'May',Jun:'June',Jul:'July',Aug:'August',Sep:'September',Oct:'October',Nov:'November',Dec:'December'};
+  const sportlomoDate = d => { const [day, mon, year] = d.split(' '); return `${parseInt(day,10)} ${MONTHS_SHORT[mon] || mon} ${year}`; };
+  const LEAGUES = [
+    { id: 216795, comp: 'Senior Camogie Championship' },
+    { id: 216796, comp: 'Senior Camogie Championship' },
+    { id: 216797, comp: 'Intermediate Camogie Championship' },
+    { id: 216798, comp: 'Intermediate Camogie Championship' },
+  ];
+  const fixtureRe = /class="[^"]*table-body fixtures[^"]*"[^>]*data-date="([^"]+)"[^>]*data-time="([^"]*)"[^>]*data-hometeam="([^"]+)"[^>]*data-awayteam="([^"]+)"[^>]*data-homescore="([^"]*)"[^>]*data-awayscore="([^"]*)"[^>]*data-venue="([^"]*)"/g;
+  const all = [];
+  await Promise.all(LEAGUES.map(async ({ id, comp }) => {
+    try {
+      const res = await fetch(`https://tipperarycamogie.com/league/${id}/`, { headers: { 'User-Agent': UA } });
+      if (!res.ok) return;
+      const html = await res.text();
+      fixtureRe.lastIndex = 0;
+      let m;
+      while ((m = fixtureRe.exec(html)) !== null) {
+        const [, date, time, home, away, homeScore, awayScore, venue] = m;
+        if (homeScore || awayScore) continue;
+        all.push({ ...mkStatic('Tipperary', home.trim(), away.trim(), sportlomoDate(date), time.trim(), venue.trim(), comp, ''), sport: 'Camogie' });
+      }
+    } catch (e) { /* skip */ }
+  }));
+  return all;
+}
+
 // ---- Louth: static data ----
 // Static fixtures supplement the live scraper above (covers rounds beyond 21-day window
 // and Junior Championship which is not scraped live).
@@ -1571,7 +1600,7 @@ export default {
 
     try {
       const cacDebug = [];
-      const [corkResults, waterfordResults, laoisResults, wexfordResults, kerryResults, offalyResults, tipperaryResults, tipperaryFootballResults, kildareResults, roscommonFootballResults, roscommonHurlingResults, kilkennyResults, monaghanResults, meathResults, longfordResults, carlowLiveResults, louthLiveResults] = await Promise.all([
+      const [corkResults, waterfordResults, laoisResults, wexfordResults, kerryResults, offalyResults, tipperaryResults, tipperaryFootballResults, kildareResults, roscommonFootballResults, roscommonHurlingResults, kilkennyResults, monaghanResults, meathResults, longfordResults, carlowLiveResults, louthLiveResults, tipperaryCamogieResults] = await Promise.all([
         Promise.all(CORK_COMPETITIONS.map(fetchCorkCompetition)),
         Promise.all(WATERFORD_COMPETITIONS.map(fetchWaterfordCompetition)),
         Promise.all(LAOIS_COMPETITIONS.map((c) => fetchCacDirectCompetition('Laois', 'laoisgaa.ie', c, cacDebug))),
@@ -1589,6 +1618,7 @@ export default {
         fetchLongford(env.FOIREANN_API_KEY),
         fetchCarlowFixtures(),
         fetchLouthFixtures(),
+        fetchTipperaryCamogieFixtures(),
       ]);
 
       const fixCamel = s => s
@@ -1619,6 +1649,7 @@ export default {
         ...CARLOW_FIXTURES,
         ...louthLiveResults,
         ...LOUTH_FIXTURES,
+        ...tipperaryCamogieResults,
       ];
 
       const statusMap = await getStatusMap(kv);
