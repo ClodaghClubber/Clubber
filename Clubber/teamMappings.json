@@ -336,6 +336,10 @@
       "id": "4cc5e320-7def-434e-8faf-a40f8d9d1b9f",
       "name": "Carrig & Riverstown"
     },
+    "Carrig Riverstown and St. Cillian’s": {
+      "id": "4cc5e320-7def-434e-8faf-a40f8d9d1b9f",
+      "name": "Carrig & Riverstown"
+    },
     "Pairc de Grás/Gracefield": {
       "id": "911ed5f7-999d-4bb1-aa1e-293dc327bc2e",
       "name": "Gracefield"
@@ -1065,6 +1069,10 @@
     "Rathcline": "01b1b85a-9406-4eec-a7c2-5b54f91ccceb",
     "Seán Conollys": "77a08c51-a4ff-4ae3-b4ad-61e819a40f20",
     "Sean Conollys": {
+      "id": "77a08c51-a4ff-4ae3-b4ad-61e819a40f20",
+      "name": "Seán Conollys"
+    },
+    "Seán Connolly's": {
       "id": "77a08c51-a4ff-4ae3-b4ad-61e819a40f20",
       "name": "Seán Conollys"
     },
