@@ -234,7 +234,18 @@
     "Holycross Ballycahill": {
       "id": "bad629c1-83fd-4c83-a56c-0d1061ffbc94",
       "name": "Holycross-Ballycahill"
-    }
+    },
+    "Annacarty": "e728def1-5a94-4dc0-96c3-e1ba8c881089",
+    "Boherlahan - Dualla": "4d7b049c-1c84-4899-9700-7e0d0d9b8d2c",
+    "Borris - Ileigh": "309c3f80-12e7-41f7-a0a2-baff4ac20c17",
+    "Burgess / Duharra": "b77e7aaf-cb19-4172-930f-17a1220bffca",
+    "Cashel": "622ce4b9-c6e5-4cbb-800b-e5390c6458ab",
+    "Clonoulty / Rossmore": "6206cd1a-7c16-4dd2-8b20-4530180acff0",
+    "Drom Inch": "865a689d-57a6-49f2-b423-9920302f6039",
+    "Holycross / Ballycahill": "bad629c1-83fd-4c83-a56c-0d1061ffbc94",
+    "Moycarkey Borris": "11a7e61b-d983-4d18-9a4c-c8219a42df7f",
+    "Nenagh": "4de49ea7-bd1a-403c-95dc-e1addd783df8",
+    "Newport / Ballinahinch": "6321b66b-ce11-434c-9f69-c9a1f585eaa4"
   },
   "Offaly": {
     "Ballinagar": "eb9d87ca-2048-40ea-96d8-6c27574e2b64",
@@ -818,7 +829,13 @@
     "St. Lachtains": {
       "id": "35f8d93d-4e1a-4e77-9519-31d06c7518f7",
       "name": "St Lachtain's"
-    }
+    },
+    "Ballyhale Shamrocks Camogie Club": "627dbc77-a509-42be-b1c9-29083be12ab8",
+    "Dicksboro GAA and Camogie Club": "4ee3e744-78e5-4277-981e-a43c938c46a8",
+    "Emeralds Camogie": "cb51969e-6421-4aa1-b40c-f2b932cfc9a9",
+    "O`Loughlin Gaels": "5d35c0bd-1d66-4845-b677-4c0a0133e7b3",
+    "St. Martin's Camogie Club": "11c913a5-3ab1-49c8-a9b5-8ff7fd180a8b",
+    "Lisdowney/St Patrick's": "da758706-979d-4b7c-acfd-fc301100ccbf"
   },
   "Monaghan": {
     "Aghabog Emmets": "c21c45b8-f77d-46cc-9b68-2b36df4fba39",

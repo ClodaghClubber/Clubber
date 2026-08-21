@@ -54,6 +54,7 @@ function decodeEntities(s) {
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/�/g, '') // strip Unicode replacement chars (U+FFFD) from mojibake
+    .replace(/['']/g, "'") // normalise curly apostrophes to straight
     .replace(/\s*&\s*/g, ' & '); // ensure spaces around & in team/venue names
 }
 
