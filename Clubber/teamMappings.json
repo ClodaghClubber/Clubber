@@ -225,7 +225,16 @@
       "id": "e728def1-5a94-4dc0-96c3-e1ba8c881089",
       "name": "Éire Óg Annacarty"
     },
-    "Éire Óg Annacarty": "e728def1-5a94-4dc0-96c3-e1ba8c881089"
+    "Éire Óg Annacarty": "e728def1-5a94-4dc0-96c3-e1ba8c881089",
+    "Clonmel Commercials": "7a1b368f-8424-46a5-b6de-7160bdc64fe2",
+    "Grangemockler Ballyneale": {
+      "id": "2f13fc3f-6a22-4262-b4bd-53c0c50cd4d4",
+      "name": "Grangemockler-Ballyneale"
+    },
+    "Holycross Ballycahill": {
+      "id": "bad629c1-83fd-4c83-a56c-0d1061ffbc94",
+      "name": "Holycross-Ballycahill"
+    }
   },
   "Offaly": {
     "Ballinagar": "eb9d87ca-2048-40ea-96d8-6c27574e2b64",
@@ -499,6 +508,10 @@
     "Clonaslee St Manmans/Cluain na Slí Naomh Meanmain": {
       "id": "85d857c2-439f-402d-ab3d-036bba62bd73",
       "name": "Clonaslee St Manman’s"
+    },
+    "Borris in Ossory Kilcotton": {
+      "id": "0ccf146e-a1a9-431c-ac8f-de9b7c77c128",
+      "name": "Borris-in-Ossory-Kilcotton"
     }
   },
   "Wexford": {
@@ -704,6 +717,18 @@
     "St Fintan's G.A.A Club": {
       "id": "3a3e423c-2af5-446d-aa0d-ef5246388bf7",
       "name": "St. Fintans"
+    },
+    "Fr O`Regans Craanford": {
+      "id": "6ae63658-1906-435b-8562-a3f446cf70fe",
+      "name": "Craanford Fr. O'Regans"
+    },
+    "Gusserane-O`Rahilly's": {
+      "id": "5b1a10e4-5de7-46fa-a7f3-f299c98ae24d",
+      "name": "Gusserane O'Rahillys"
+    },
+    "St John's Volunteers": {
+      "id": "50231288-02c9-4f31-a995-1e4a440b35d4",
+      "name": "St. Johns Volunteers"
     }
   },
   "Kilkenny": {
@@ -769,6 +794,26 @@
     "St Patricks": {
       "id": "44d3558b-874b-410c-826f-6c844de9c0b4",
       "name": "St Patrick'S"
+    },
+    "Blacks and  Whites": {
+      "id": "450a867e-460d-4aac-86b7-42dc50451bd1",
+      "name": "Blacks & Whites"
+    },
+    "O Loughlin Gaels": {
+      "id": "5d35c0bd-1d66-4845-b677-4c0a0133e7b3",
+      "name": "O'Loughlin Gaels"
+    },
+    "Shamrocks Ballyhale": {
+      "id": "627dbc77-a509-42be-b1c9-29083be12ab8",
+      "name": "Ballyhale Shamrocks"
+    },
+    "Erins Own": {
+      "id": "89f4df8c-c62d-4250-a8b8-01fb425074bd",
+      "name": "Erin's Own"
+    },
+    "St. Lachtains": {
+      "id": "35f8d93d-4e1a-4e77-9519-31d06c7518f7",
+      "name": "St Lachtain's"
     }
   },
   "Monaghan": {
@@ -830,6 +875,11 @@
     "Latton O'Rahilly GAA Club": {
       "id": "ba2326bb-bbdf-4ab0-a05d-7f530890055b",
       "name": "Latton O'Rahilly"
+    },
+    "Eire Óg": "f9ba4c86-fa49-4789-9b3f-73f9d1af9d1d",
+    "Magheracloone GFC": {
+      "id": "1f0d1a09-343c-466d-868e-7e456eb36ce1",
+      "name": "Magheracloone"
     }
   },
   "Meath": {
@@ -965,6 +1015,30 @@
     "Dunshaughlin & Royal Gaels": {
       "id": "0f84902a-d94a-4e01-9281-b3152091819c",
       "name": "Dunshaughlin"
+    },
+    "Ballivor GFC": {
+      "id": "4832522a-5e48-452f-8f4f-d10039ecba21",
+      "name": "Ballivor"
+    },
+    "Drumbaragh": {
+      "id": "ee262bad-6ec1-40e0-98cb-7949d479f8e0",
+      "name": "Drumbaragh Emmets"
+    },
+    "Kilbride GFC": {
+      "id": "2ae9bc00-47b1-4780-b6fa-eb416ecabbe8",
+      "name": "Kilbride"
+    },
+    "Na Fianna CLG": {
+      "id": "e7e46df0-8e91-4017-8e32-73a8779c723e",
+      "name": "Na Fianna"
+    },
+    "St Patrick's": {
+      "id": "0381c001-cb60-49ac-adf5-c881c91eb76f",
+      "name": "St. Patrick’s"
+    },
+    "St Colmcille's": {
+      "id": "8280b691-108e-48df-9aa0-47fdbc632f6c",
+      "name": "St. Colmcille's"
     }
   },
   "Longford": {
@@ -1001,6 +1075,22 @@
     "Clonguish Gaels": {
       "id": "5ad28f10-e162-403d-af31-038654ba6d5a",
       "name": "Clonguish"
+    },
+    "Fr. Manning Gaels": {
+      "id": "cfee24e9-0f27-4a91-bf18-5e9f5de328c5",
+      "name": "Fr Manning Gaels"
+    },
+    "Mullinalaghta St. Columba's": {
+      "id": "6cd25955-3f51-4967-aeac-e833d86ebb14",
+      "name": "Mullinalaghta St Columbas"
+    },
+    "St. Brigid's Killashee": {
+      "id": "0c863d93-3512-4657-a7be-5e80a1041381",
+      "name": "St. Brigids Killashee"
+    },
+    "St. Mary's Granard": {
+      "id": "0d650f94-9f3f-4bf4-b356-426a3a0c9658",
+      "name": "St. Marys Granard"
     }
   },
   "Roscommon": {
@@ -1094,6 +1184,14 @@
     "Pádraic Pearses GAA": {
       "id": "0eec32ec-95fb-474f-afb7-7c55612adc73",
       "name": "Padraig Pearses"
+    },
+    "Clann na n Gael": {
+      "id": "153e14ad-980c-4f91-899b-0f08fb690191",
+      "name": "Clann na nGael"
+    },
+    "St Michael's": {
+      "id": "a47d309b-2815-4b87-977a-d3f64419ad28",
+      "name": "St. Michaels"
     }
   },
   "Louth": {
@@ -1349,6 +1447,14 @@
     "Wolfe Tones": {
       "id": "39325d8e-8516-4b0c-a633-3432d6d4149c",
       "name": "Kill"
+    },
+    "Castlemitchell GFC": {
+      "id": "9d43e0cd-a949-4f81-9c5e-272a6f74426e",
+      "name": "Castlemitchell"
+    },
+    "St. Laurence's GAA": {
+      "id": "6e3f5521-b6c0-492d-afff-365daca321cf",
+      "name": "St. Laurence's"
     }
   },
   "Cork": {
@@ -1420,7 +1526,15 @@
     "Eire Og": {
       "id": "e41bf6de-d23b-4830-ac91-07cebff02ad0",
       "name": "Éire Óg"
-    }
+    },
+    "Ballincollig": "f57719ab-dd41-4acd-8f42-df4b84734c88",
+    "Ballygiblin": "3a5db2cd-5407-4214-b338-5163c5995b70",
+    "Carrigtwohill": "fb267f00-d393-4b4f-b125-0a1a59437ad2",
+    "Castlehaven": "6629443f-60d8-4af0-8d7f-a571ea0017ad",
+    "Cill na Martra": "ad929e0c-433d-4311-8624-a927f7178a36",
+    "Kildorrery": "127d07f3-5df1-4447-ae5c-0fc43d576112",
+    "Kilshannig": "ff26e75c-8fc5-47a1-a97c-bf0dbe8938a5",
+    "Newmarket": "78cda545-2b11-4598-b9bc-e3a663bbb96f"
   },
   "Waterford": {
     "Abbeyside-Ballinacourty": {
@@ -1564,6 +1678,15 @@
     "Castlegregory GAA Club": {
       "id": "88b3ba44-bc6c-4e91-8788-b8335389d55c",
       "name": "Castlegregory"
+    },
+    "Brosna": "86ebb800-fea9-445c-9416-1b4c4bc2d735",
+    "Currow": "44ad4120-ccf5-487d-ab7b-02026a87e44e",
+    "Listry": "a1833888-2d6b-4670-84e2-ca091940523e",
+    "Tarbert": "bcc15d1a-06df-4a8e-81d0-7609e336eccf",
+    "Waterville": "82af9b50-ac96-4fdb-b580-63a3d5c317a1",
+    "St Pats Blennerville": {
+      "id": "501d1450-0434-428e-8402-f281a17ac85c",
+      "name": "Blennerville St. Pats"
     }
   }
 }
