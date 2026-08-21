@@ -347,6 +347,16 @@
 <div id="unitConflictToast"></div>
 
 <!-- Clubber Feedback Modal -->
+<div id="removeConfirmModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;align-items:center;justify-content:center;">
+  <div class="modal-box" style="width:480px;">
+    <h2>Remove Fixtures?</h2>
+    <p style="margin:0 0 16px;line-height:1.6;color:var(--text);">Warning: if you remove fixtures, they will be gone forever. Are you sure you want to remove them?<br><br>You can <strong>Reject</strong> them if you'd prefer them to still show in the dashboard.</p>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" id="removeCancelBtn">Cancel</button>
+      <button class="btn-remove" id="removeConfirmBtn">Remove</button>
+    </div>
+  </div>
+</div>
 <div id="clubberModal">
   <div class="modal-box">
     <h2>Create in Clubber</h2>
@@ -1505,7 +1515,11 @@ rejectBtn.addEventListener('click',()=>{
   render();
   syncStatus(ids,'Rejected');
 });
-removeBtn.addEventListener('click',()=>{
+const removeConfirmModal=document.getElementById('removeConfirmModal');
+removeBtn.addEventListener('click',()=>{ removeConfirmModal.style.display='flex'; });
+document.getElementById('removeCancelBtn').addEventListener('click',()=>{ removeConfirmModal.style.display='none'; });
+document.getElementById('removeConfirmBtn').addEventListener('click',()=>{
+  removeConfirmModal.style.display='none';
   const ids=fixtures.filter(f=>selected.has(f.id) && f.status==='Rejected').map(f=>f.id);
   fixtures=fixtures.filter(f=>!ids.includes(f.id));
   manualFixtures=manualFixtures.filter(f=>!ids.includes(f.id));
