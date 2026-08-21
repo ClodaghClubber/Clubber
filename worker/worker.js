@@ -1419,15 +1419,15 @@ const LOUTH_FIXTURES = [];
 [
   ['Lann Leire G.F.C.','Dowdallshill','16 August 2026','14:00','Shawport Páirc Mac Diarmada','Round 1'],
   ['Dundalk Young Irelands','O\'Connells','16 August 2026','16:30','Páirc Uí Taibh','Round 1'],
-  ['Lann Leire C.P.G./Dowdallshill','Dundalk Young Irelands/O\'Connells GFC','21 August 2026','19:00','Cullen Auto Parts Louth GAA Training Centre, Darver','Round 2'],
+  ['Lann Léire C.P.G.','Dundalk Young Irelands','22 August 2026','19:30','Stabannon Parnells','Round 2'],
 ].forEach(r=>LOUTH_FIXTURES.push(mkStatic('Louth',r[0],r[1],r[2],r[3],r[4],'Junior Football Championship Group 3',r[5])));
 
 // Louth - Junior Football Championship Group 4
 [
   ['Na Piarsaigh - Blackrock','Sean McDermotts','15 August 2026','19:30','Cullen Auto Parts Louth GAA Training Centre, Darver','Round 1'],
   ['John Mitchels','St Finbarrs','16 August 2026','19:00','Páirc Baile Fiach','Round 1'],
-  ['Na Piarsaigh-Blackrock/Sean McDermotts','John Mitchels/Naomh Fionnbarra','22 August 2026','16:00','Cullen Auto Parts Louth GAA Training Centre, Darver','Round 2'],
-  ['Na Piarsaigh-Blackrock/Sean McDermotts','John Mitchels/Naomh Fionnbarra','23 August 2026','12:00','Cullen Auto Parts Louth GAA Training Centre, Darver','Round 2'],
+  ['Sean McDermotts','John Mitchels','22 August 2026','16:00','Cullen Auto Parts Louth GAA Training Centre, Darver','Round 2'],
+  ['Na Piarsaigh - Blackrock','Naomh Fionnbarra','23 August 2026','12:00','Cullen Auto Parts Louth GAA Training Centre, Darver','Round 2'],
 ].forEach(r=>LOUTH_FIXTURES.push(mkStatic('Louth',r[0],r[1],r[2],r[3],r[4],'Junior Football Championship Group 4',r[5])));
 
 // Louth - Senior Football Championship Group 1
@@ -1446,7 +1446,7 @@ const LOUTH_FIXTURES = [];
 
 // Louth - Senior Football Championship Group 3
 [
-  ['Newtown Blues','Dreadnots','22 August 2026','18:30','Integral GAA Grounds, Drogheda','Round 1'],
+  ['Newtown Blues','Dreadnots','22 August 2026','18:00','Integral GAA Grounds, Drogheda','Round 1'],
   ['Winner of Round 1','Cooley Kickhams','29 August 2026','20:00','Páirc Séamus Mhic hEochaidh, Haggardstown','Round 2'],
   ['Cooley Kickhams','Loser of Round 1','7 September 2026','20:00','Cullen Auto Parts Louth GAA Training Centre, Darver','Round 3'],
 ].forEach(r=>LOUTH_FIXTURES.push(mkStatic('Louth',r[0],r[1],r[2],r[3],r[4],'Senior Football Championship Group 3',r[5])));
