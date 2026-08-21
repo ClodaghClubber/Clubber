@@ -2035,10 +2035,14 @@ function deriveGrade(county, competition) {
 
 function lookupTeam(teamName, preferredCounty) {
   const name = teamName.replace(/\s+/g, ' ').trim();
+  const resolve = (county, val) => {
+    if (typeof val === 'object') return { county, clubId: val.id, matchedName: val.name };
+    return { county, clubId: val, matchedName: name };
+  };
   if (teamMappings[preferredCounty]?.[name])
-    return { county: preferredCounty, clubId: teamMappings[preferredCounty][name], matchedName: name };
+    return resolve(preferredCounty, teamMappings[preferredCounty][name]);
   for (const [county, teams] of Object.entries(teamMappings)) {
-    if (teams[name]) return { county, clubId: teams[name], matchedName: name };
+    if (teams[name]) return resolve(county, teams[name]);
   }
   return null;
 }
