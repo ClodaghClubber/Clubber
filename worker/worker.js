@@ -1053,9 +1053,9 @@ const LONGFORD_FIXTURES = [];
   ['Ardagh Moydow','Killoe Young Emmets','14 August 2026','20:00','Allen Park','Round 4'],
   ['Abbeylara','Dromard','15 August 2026','19:00','Emmet Park','Round 4'],
   ['Rathcline','Mullinalaghta St. Columba\'s','15 August 2026','19:00','Michael Moran Park','Round 4'],
-  ['Mullinalaghta St. Columba\'s','Abbeylara','28 August 2026','','Higginstown','Round 5'],
-  ['Ardagh Moydow','Rathcline','28 August 2026','','Michael Fay Park','Round 5'],
-  ['Dromard','Killoe Young Emmets','28 August 2026','','Monaduff','Round 5'],
+  ['Mullinalaghta St. Columba\'s','Abbeylara','29 August 2026','19:00','Higginstown','Round 5'],
+  ['Ardagh Moydow','Rathcline','29 August 2026','19:00','Michael Fay Park','Round 5'],
+  ['Dromard','Killoe Young Emmets','29 August 2026','19:00','Monaduff','Round 5'],
 ].forEach(r=>LONGFORD_FIXTURES.push(mkStatic('Longford',r[0],r[1],r[2],r[3],r[4],'Senior Football Championship Group A',r[5])));
 
 [
@@ -1067,8 +1067,8 @@ const LONGFORD_FIXTURES = [];
   ['Longford Slashers','Colmcille','9 August 2026','18:00','Allen Park','Round 3'],
   ['Clonguish','Longford Slashers','15 August 2026','19:00','Monaduff','Round 4'],
   ['St. Mary\'s Granard','Carrickedmond','16 August 2026','18:00','Páirc na nGael','Round 4'],
-  ['Longford Slashers','St. Mary\'s Granard','28 August 2026','','Keenan Park','Round 5'],
-  ['Colmcille','Clonguish','28 August 2026','','Oliver Lynch Park','Round 5'],
+  ['Longford Slashers','St. Mary\'s Granard','30 August 2026','14:30','Keenan Park','Round 5'],
+  ['Colmcille','Clonguish','30 August 2026','14:30','Oliver Lynch Park','Round 5'],
 ].forEach(r=>LONGFORD_FIXTURES.push(mkStatic('Longford',r[0],r[1],r[2],r[3],r[4],'Senior Football Championship Group B',r[5])));
 
 [
@@ -1129,10 +1129,13 @@ async function fetchCarlowFixtures() {
     { pattern: /intermediate football championship/i, name: 'Intermediate Football Championship' },
     { pattern: /senior hurling championship/i,        name: 'Senior Hurling Championship' },
     { pattern: /intermediate hurling championship/i,  name: 'Intermediate Hurling Championship' },
+    { pattern: /junior [''‘’]?a[''‘’]? football championship/i, name: "Junior 'A' Football Championship" },
+    { pattern: /junior [''‘’]?b[''‘’]? (football )?championship/i, name: "Junior 'B' Football Championship" },
+    { pattern: /junior [''‘’]?c[''‘’]? (football )?championship/i, name: "Junior 'C' Football Championship" },
   ];
   try {
     const res = await fetch('https://carlowgaa.ie/fixtures/', {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; GAAFixturesBot/1.0)' }
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36' }
     });
     if (!res.ok) return [];
     const html = await res.text();
@@ -1157,7 +1160,8 @@ async function fetchCarlowFixtures() {
       const parts = dateLine.split('/').map(s => s.trim());
       if (parts.length < 3) continue;
       const [d, m, y] = parts[0].split('-');
-      const date = `${y}-${m}-${d}`;
+      const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      const date = `${parseInt(d,10)} ${MONTHS[parseInt(m,10)-1]} ${y}`;
       const timePart = parts[1]; // e.g. "7:00 pm"
       const venue = parts.slice(2).join('/').trim();
       // Derive round from context — scan back for a round hint or leave blank
