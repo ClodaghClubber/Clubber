@@ -58,7 +58,10 @@
   .status-approved{background:rgba(39,174,96,.15);color:var(--approve);}
   .status-rejected{background:rgba(192,57,43,.15);color:var(--reject);}
   .empty{text-align:center;color:var(--muted);padding:40px;}
-  .count{color:var(--muted);font-size:12px;padding:8px 24px;}
+  .count{color:var(--muted);font-size:12px;padding:8px 24px;display:flex;align-items:center;gap:8px;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .spinner{width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;display:none;}
+  .spinner.active{display:block;}
   .container{padding:0 0 40px;}
   ::-webkit-scrollbar{width:10px;height:10px;}
   ::-webkit-scrollbar-thumb{background:var(--border);border-radius:5px;}
@@ -243,7 +246,6 @@
     <button class="btn-approve" id="approveBtn" disabled>Approve</button>
     <button class="btn-reject" id="rejectBtn" disabled>Reject</button>
     <button class="btn-remove" id="removeBtn" disabled>Remove</button>
-    <button class="btn-remove" id="refreshBtn" style="background:#2d6cdf;">Refresh</button>
     <button class="btn-clubber" id="clubberBtn" disabled>Create in Clubber</button>
     <button class="btn-remove" id="clearChangesBtn" style="display:none;" title="Clear all change markers">Clear changes</button>
     <button class="btn-modal-add" id="addFixtureBtn">+ Add Fixture</button>
@@ -286,7 +288,7 @@
     </div>
   </div>
 </div>
-<div class="count" id="loadStatus"></div>
+<div class="count" id="loadStatus"><div class="spinner" id="loadSpinner"></div><span id="loadStatusText"></span></div>
 
 <div class="container">
 <table id="fixtureTable">
@@ -1238,10 +1240,14 @@ const rejectBtn=document.getElementById('rejectBtn');
 const removeBtn=document.getElementById('removeBtn');
 const emptyMsg=document.getElementById('emptyMsg');
 const rowCount=document.getElementById('rowCount');
-const refreshBtn=document.getElementById('refreshBtn');
 const exportBtn=document.getElementById('exportBtn');
 const clubberBtn=document.getElementById('clubberBtn');
-const loadStatus=document.getElementById('loadStatus');
+const loadStatusText=document.getElementById('loadStatusText');
+const loadSpinner=document.getElementById('loadSpinner');
+const loadStatus={
+  set textContent(v){ loadStatusText.textContent=v; },
+  get textContent(){ return loadStatusText.textContent; }
+};
 
 let selected=new Set();
 let sortKey='date', sortDir=1;
@@ -1551,8 +1557,7 @@ function mergeFixtures(incoming){
 }
 
 async function loadFixtures(isRefresh){
-  refreshBtn.disabled=true;
-  refreshBtn.textContent=isRefresh?'Refreshing…':'Loading…';
+  loadSpinner.classList.add('active');
   loadStatus.textContent='Loading fixtures from source websites…';
   try{
     const res=await fetch(WORKER_URL,{cache:'no-store'});
@@ -1570,11 +1575,8 @@ async function loadFixtures(isRefresh){
   }
   populateFilterOptions();
   render();
-  refreshBtn.disabled=false;
-  refreshBtn.textContent='Refresh';
+  loadSpinner.classList.remove('active');
 }
-
-refreshBtn.addEventListener('click',()=>loadFixtures(true));
 
 // Show cached data immediately (instant render), then fetch fresh data
 // from the Worker in the background and merge it in once it arrives.
