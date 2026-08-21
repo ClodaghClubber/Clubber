@@ -912,6 +912,15 @@ function applyOverrides(){
   fixtures.forEach(f=>{
     const k=keyOf(f), ov=fixtureOverrides[k];
     if(!ov) return;
+    if(ov.county!==undefined) f.county=ov.county;
+    if(ov.teamA!==undefined) f.teamA=ov.teamA;
+    if(ov.teamB!==undefined) f.teamB=ov.teamB;
+    if(ov.date!==undefined){f.date=ov.date;f.day=ov.day||dayName(ov.date);}
+    if(ov.time!==undefined) f.time=ov.time;
+    if(ov.venue!==undefined) f.venue=ov.venue;
+    if(ov.competition!==undefined) f.competition=ov.competition;
+    if(ov.round!==undefined) f.round=ov.round;
+    if(ov.code!==undefined) f.code=ov.code;
     if(ov.socials!==undefined){f.socials=ov.socials;f.socialsEmail=ov.socialsEmail;}
     if(ov.support2!==undefined){f.support2=ov.support2;f.support2Email=ov.support2Email;}
     if(ov.replay!==undefined){f.replay=ov.replay;}
@@ -1131,6 +1140,7 @@ function setupModal(){
       if(ex){
         const conflictEd=checkUnitConflict(editingId,unitSystemVal,unitVal,dateVal,timeVal?to12h(timeVal):'');
         if(conflictEd) showConflictToast(`⚠ ${unitVal} is already assigned to another fixture at this time`);
+        const origKey=keyOf(ex);
         Object.assign(ex,{
           county:countyVal, teamA:teamAVal, teamB:teamBVal,
           date:dateVal, day:dayName(dateVal), time:timeVal?to12h(timeVal):'',
@@ -1144,7 +1154,7 @@ function setupModal(){
           if(mf) Object.assign(mf,ex);
           saveManualFixtures();
         } else {
-          fixtureOverrides[keyOf(ex)]=Object.assign(fixtureOverrides[keyOf(ex)]||{},{
+          fixtureOverrides[origKey]=Object.assign(fixtureOverrides[origKey]||{},{
             county:countyVal,teamA:teamAVal,teamB:teamBVal,date:dateVal,day:dayName(dateVal),
             time:ex.time,venue:ex.venue,competition:ex.competition,round:ex.round,
             code:ex.code,socials:ex.socials,socialsEmail:ex.socialsEmail,
