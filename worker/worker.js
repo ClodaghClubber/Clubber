@@ -1396,6 +1396,7 @@ async function fetchLouthFixtures() {
   const TARGET_COMPS = [
     { pattern: /anchor tours senior championship/i, name: 'Senior Football Championship', code: 'Football' },
     { pattern: /cti.*intermediate championship|intermediate championship/i, name: 'Intermediate Football Championship', code: 'Football' },
+    { pattern: /dkit.*junior championship|junior championship/i, name: 'Junior Football Championship', code: 'Football' },
     { pattern: /senior hurling/i, name: 'Senior Hurling Championship', code: 'Hurling' },
   ];
   try {
