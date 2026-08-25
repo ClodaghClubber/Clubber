@@ -448,7 +448,10 @@
 <!-- Add Fixture Modal -->
 <div id="addModal">
   <div class="modal-box">
-    <h2>Add Fixture</h2>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+      <h2 style="margin:0;">Add Fixture</h2>
+      <button type="button" onclick="closeModal()" style="background:none;border:none;cursor:pointer;font-size:20px;line-height:1;color:var(--muted);padding:4px 6px;" aria-label="Close">&times;</button>
+    </div>
     <p style="margin:0 0 18px;font-size:12px;color:var(--muted);"><span style="color:#e05050">*</span> required field</p>
     <form id="addFixtureForm">
       <div class="modal-section">
@@ -551,54 +554,6 @@
               <option value="Camogie">Camogie</option>
               <option value="Camogie">Camogie</option>
             </select>
-          </div>
-        </div>
-      </div>
-      <div class="modal-section">
-        <div class="modal-section-title">Replay</div>
-        <div class="form-row">
-          <div class="form-group" style="flex-direction:row;align-items:center;gap:10px;">
-            <input type="checkbox" id="f_replay" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
-            <label for="f_replay" style="text-transform:none;font-size:13px;cursor:pointer;">Replay required</label>
-          </div>
-        </div>
-      </div>
-      <div class="modal-section">
-        <div class="modal-section-title">Roles</div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Socials</label>
-            <select id="f_socials"><option value="">— None —</option></select>
-          </div>
-          <div class="form-group">
-            <label>2nd Support</label>
-            <select id="f_support2"><option value="">— None —</option></select>
-          </div>
-        </div>
-      </div>
-      <div class="modal-section">
-        <div class="modal-section-title">Videographer</div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Videographer</label>
-            <select id="f_videographer"><option value="">— None —</option></select>
-          </div>
-          <div class="form-group">
-            <label>Unit System</label>
-            <select id="f_unitSystem">
-              <option value="">— None —</option>
-              <option value="Videon">Videon</option>
-              <option value="LiveU">Live U</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-row" style="margin-top:12px;">
-          <div class="form-group">
-            <label>Unit</label>
-            <select id="f_unit"><option value="">— None —</option></select>
-          </div>
-          <div class="form-group" id="f_unitConflictWrap" style="display:none;">
-            <div style="color:#c2410c;font-size:12px;padding:10px 0;">⚠ This unit is already assigned to another fixture at the same date and time.</div>
           </div>
         </div>
       </div>
@@ -991,16 +946,7 @@ function openAddModal(){
     +_ml.comps.map(c=>`<option value="${c}">${c}</option>`).join('')
     +`<option value="__new__">— Add new competition —</option>`;
   g('f_competitionNew').style.display='none'; g('f_competitionNew').value='';
-  g('f_date').value=''; g('f_time').value=''; g('f_round').value=''; g('f_code').value=''; g('f_replay').checked=false;
-  g('f_socials').innerHTML='<option value="">— None —</option>'
-    +SOCIALS.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
-  g('f_support2').innerHTML='<option value="">— None —</option>'
-    +SUPPORT2.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
-  g('f_videographer').innerHTML='<option value="">— None —</option>'
-    +VIDEOGRAPHERS.map(v=>`<option value="${v.name}">${v.name}</option>`).join('');
-  g('f_unitSystem').value='';
-  g('f_unit').innerHTML='<option value="">— None —</option>';
-  g('f_unitConflictWrap').style.display='none';
+  g('f_date').value=''; g('f_time').value=''; g('f_round').value=''; g('f_code').value='';
   document.getElementById('addModal').classList.add('open');
 }
 
@@ -1034,18 +980,6 @@ function openEditModal(id){
   g('f_time').value=from12h(f.time);
   g('f_round').value=f.round||'';
   g('f_code').value=f.code||'';
-  g('f_socials').value=f.socials||'';
-  g('f_support2').value=f.support2||'';
-  g('f_replay').checked=!!f.replay;
-  // Videographer / Unit
-  g('f_videographer').value=f.videographer||'';
-  const _sys=f.unitSystem||'';
-  g('f_unitSystem').value=_sys;
-  if(_sys){
-    const _units=_sys==='Videon'?VIDEON_UNITS:LIVE_U_UNITS;
-    g('f_unit').innerHTML='<option value="">— None —</option>'+_units.map(u=>`<option value="${u}">${u}</option>`).join('');
-  }
-  g('f_unit').value=f.unit||'';
   // Update modal chrome
   document.querySelector('#addModal h2').textContent='Edit Fixture';
   document.querySelector('#addModal .btn-modal-add').textContent='Save Changes';
@@ -1088,21 +1022,6 @@ function setupModal(){
   fv.addEventListener('change', ()=>{ fvNew.style.display=fv.value==='__new__'?'block':'none';   if(fv.value!=='__new__')  fvNew.value=''; });
   fc.addEventListener('change', ()=>{ fcNew.style.display=fc.value==='__new__'?'block':'none';   if(fc.value!=='__new__')  fcNew.value=''; });
 
-  // Videographer / Unit cascade
-  const fvid=g('f_videographer'), fsys=g('f_unitSystem'), funit=g('f_unit'), funitWrap=g('f_unitConflictWrap');
-  function populateModalUnits(sys){
-    const units=sys==='Videon'?VIDEON_UNITS:sys==='LiveU'?LIVE_U_UNITS:[];
-    funit.innerHTML='<option value="">— None —</option>'+units.map(u=>`<option value="${u}">${u}</option>`).join('');
-    funitWrap.style.display='none';
-  }
-  fsys.addEventListener('change',()=>populateModalUnits(fsys.value));
-  fvid.addEventListener('change',()=>{
-    if(!fsys.value){
-      const def=defaultVidUnit(fvid.value);
-      if(def.sys){ fsys.value=def.sys; populateModalUnits(def.sys); setTimeout(()=>{funit.value=def.unit;},0); }
-    }
-  });
-
   function closeModal(){
     editingId=null;
     g('addModal').classList.remove('open');
@@ -1121,33 +1040,20 @@ function setupModal(){
     const venueVal=fv.value==='__new__'?fvNew.value.trim():fv.value;
     const compVal=fc.value==='__new__'?fcNew.value.trim():fc.value;
     const dateVal=g('f_date').value, timeVal=g('f_time').value, roundVal=g('f_round').value.trim();
-    const socialsName=g('f_socials').value;
-    const socialsEmail=(SOCIALS.find(s=>s.name===socialsName)||{}).email||'';
-    const support2Name=g('f_support2').value;
-    const support2Email=(SUPPORT2.find(s=>s.name===support2Name)||{}).email||'';
-    const videographerName=g('f_videographer').value;
-    const videographerEmail=(VIDEOGRAPHERS.find(v=>v.name===videographerName)||{}).email||'';
-    const unitSystemVal=g('f_unitSystem').value;
-    const unitVal=g('f_unit').value;
     if(!countyVal) return alert('Please select or enter a county for Team A.');
     if(!teamAVal)  return alert('Please select or enter Team A.');
     if(!teamBVal)  return alert('Please select or enter Team B.');
     if(!dateVal)   return alert('Please enter a date.');
     const codeVal=g('f_code').value;
-    const replayVal=g('f_replay').checked;
     if(editingId!==null){
       const ex=fixtures.find(f=>f.id===editingId);
       if(ex){
-        const conflictEd=checkUnitConflict(editingId,unitSystemVal,unitVal,dateVal,timeVal?to12h(timeVal):'');
-        if(conflictEd) showConflictToast(`⚠ ${unitVal} is already assigned to another fixture at this time`);
         const origKey=keyOf(ex);
         Object.assign(ex,{
           county:countyVal, teamA:teamAVal, teamB:teamBVal,
           date:dateVal, day:dayName(dateVal), time:timeVal?to12h(timeVal):'',
           venue:venueVal||'', competition:compVal||'', round:roundVal,
-          code:codeVal||deriveCode(compVal||'',null),
-          socials:socialsName, socialsEmail, support2:support2Name, support2Email, replay:replayVal,
-          videographer:videographerName, videographerEmail, unitSystem:unitSystemVal, unit:unitVal
+          code:codeVal||deriveCode(compVal||'',null)
         });
         if(ex.manual){
           const mf=manualFixtures.find(m=>m.id===editingId);
@@ -1157,9 +1063,7 @@ function setupModal(){
           fixtureOverrides[origKey]=Object.assign(fixtureOverrides[origKey]||{},{
             county:countyVal,teamA:teamAVal,teamB:teamBVal,date:dateVal,day:dayName(dateVal),
             time:ex.time,venue:ex.venue,competition:ex.competition,round:ex.round,
-            code:ex.code,socials:ex.socials,socialsEmail:ex.socialsEmail,
-            support2:ex.support2,support2Email:ex.support2Email,replay:replayVal,
-            videographer:videographerName,videographerEmail,unitSystem:unitSystemVal,unit:unitVal
+            code:ex.code
           });
           saveOverrides();
         }
@@ -1167,15 +1071,11 @@ function setupModal(){
       }
       closeModal(); return;
     }
-    const conflictAdd=checkUnitConflict(-1,unitSystemVal,unitVal,dateVal,timeVal?to12h(timeVal):'');
-    if(conflictAdd) showConflictToast(`⚠ ${unitVal} is already assigned to another fixture at this time`);
     const f={
       id:nextId++, county:countyVal, teamA:teamAVal, teamB:teamBVal,
       date:dateVal, day:dayName(dateVal), time:timeVal?to12h(timeVal):'',
       venue:venueVal||'', competition:compVal||'', round:roundVal,
-      code:codeVal||deriveCode(compVal||'',null), status:'Proposed', manual:true,
-      socials:socialsName, socialsEmail, support2:support2Name, support2Email, replay:replayVal,
-      videographer:videographerName, videographerEmail, unitSystem:unitSystemVal, unit:unitVal
+      code:codeVal||deriveCode(compVal||'',null), status:'Proposed', manual:true
     };
     manualFixtures.push(f); fixtures.push(f);
     saveManualFixtures(); saveCache();
