@@ -1328,6 +1328,66 @@ const CARLOW_FIXTURES = [];
   ['Grange','O Hanrahans','3 August 2026','19:30','Grange','Round 3'],
 ].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Junior C Football Championship',r[5])));
 
+// Carlow - Senior Football Championship QFs (source: carlowgaa.ie Aug 2026)
+[
+  ['Rathvilly/Rathbhile','Fenagh','25 August 2026','20:30','Netwatch Cullen Park','QF'],
+  ['Bagenalstown Gaels GAA','Old Leighlin','26 August 2026','20:30','Netwatch Cullen Park','QF'],
+  ['Mt Leinster Rangers','Grange','27 August 2026','19:00','Netwatch Cullen Park','QF'],
+  ['Eire Og','Palatine','27 August 2026','20:30','Netwatch Cullen Park','QF'],
+].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Senior Football Championship',r[5])));
+
+// Carlow - Intermediate Football Championship QFs (source: carlowgaa.ie Aug 2026)
+[
+  ['Eire Og','Tinryland','25 August 2026','19:00','Netwatch Cullen Park','QF'],
+  ['Ballinabranna','Clonmore','26 August 2026','19:00','Netwatch Cullen Park','QF'],
+  ['Kildavin/Clonegal','Ballon','27 August 2026','19:30','Netwatch Cullen Park','QF'],
+  ['Fighting Cocks','St Patricks','27 August 2026','20:15','Fr Ryan Park','QF'],
+].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Intermediate Football Championship',r[5])));
+
+// Carlow - Junior A Football Championship QFs (source: carlowgaa.ie Aug 2026)
+[
+  ['O Hanrahans','Asca','25 August 2026','19:00','O Hanrahans','QF'],
+  ['Leighlinbridge','Eire Og','26 August 2026','19:00','Paul Monahan Park','QF'],
+  ['Kilbride','Naomh Eoin','27 August 2026','19:00','Kilbride','QF'],
+].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Junior A Football Championship',r[5])));
+
+// Carlow - Junior B Football Championship QFs (source: carlowgaa.ie Aug 2026)
+[
+  ['Ballinabranna','St Patricks','25 August 2026','19:00','Baile na mBrannach','QF'],
+  ['Naomh Eoin','Kildavin/Clonegal','25 August 2026','20:00','Naomh Eoin','QF'],
+  ['Tinryland','Bagenalstown Gaels GAA','27 August 2026','19:00','Tinryland','QF'],
+  ['Clonmore','Old Leighlin','27 August 2026','20:00','Clonmore','QF'],
+  ['St Patricks','Clonmore','2 September 2026','20:00','Br. Leo Park','QF'],
+].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Junior B Football Championship',r[5])));
+
+// Carlow - Junior C Football Championship QFs (source: carlowgaa.ie Aug 2026)
+[
+  ['Fighting Cocks','Mt Leinster Rangers','26 August 2026','19:30','Fighting Cocks','QF'],
+  ['Asca','Fenagh','26 August 2026','19:30','Pres College','QF'],
+  ['Ballon','Palatine','26 August 2026','20:00','Ballon','QF'],
+  ['Grange','O Hanrahans','26 August 2026','20:15','Grange','QF'],
+].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Junior C Football Championship',r[5])));
+
+// Carlow - Junior Hurling Championship (source: carlowgaa.ie Sep 2026)
+[
+  ['Naomh Eoin','Burren Rangers','4 September 2026','19:00','Netwatch Cullen Park','QF'],
+  ['Carlow Town Hurling Club','Ballinkillen','4 September 2026','19:00','Netwatch Cullen Park','QF'],
+  ['Naomh Brid GAA','Setanta Ceatharlach','4 September 2026','19:30','Netwatch Cullen Park','QF'],
+  ['Naomh Moling','Mt Leinster Rangers','4 September 2026','20:30','Netwatch Cullen Park','QF'],
+].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Junior Hurling Championship',r[5])));
+
+// Carlow - Intermediate Hurling Championship QFs (source: carlowgaa.ie Sep 2026)
+[
+  ['Burren Rangers','Mt Leinster Rangers','5 September 2026','17:00','Netwatch Cullen Park','QF'],
+  ['Carlow Town Hurling Club','Bagenalstown Gaels GAA','5 September 2026','18:45','Netwatch Cullen Park','QF'],
+].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Intermediate Hurling Championship',r[5])));
+
+// Carlow - Senior Hurling Championship QFs (source: carlowgaa.ie Sep 2026)
+[
+  ['Ballinkillen','Naomh Moling','6 September 2026','14:15','Netwatch Cullen Park','QF'],
+  ['Mt Leinster Rangers','Bagenalstown Gaels GAA','6 September 2026','16:00','Netwatch Cullen Park','QF'],
+].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Senior Hurling Championship',r[5])));
+
 // ---- Louth: live scraper ----
 // Scrapes louthgaa.ie/fixtures-results/?countyBoardID=20&fixturesOnly=Y&daysAfter=21
 // for Senior Championship (Football), Intermediate Championship (Football), Senior Hurling.
