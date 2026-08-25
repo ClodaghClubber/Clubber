@@ -65,7 +65,13 @@
     "St.Patricks": {
       "id": "2bf5b042-f8c1-41ba-8ee5-592f8b43a370",
       "name": "St. Patrick's"
-    }
+    },
+    "St Patricks": {
+      "id": "2bf5b042-f8c1-41ba-8ee5-592f8b43a370",
+      "name": "St. Patrick's"
+    },
+    "Rathvilly/Rathbhile": "8eb2f899-3203-47ca-b7ac-b96b9f5bb23d",
+    "Burren Rangers": "cc0f9dca-5429-459b-b212-6a75d44fd9a8"
   },
   "Tipperary": {
     "CJK Mullinahone": {
