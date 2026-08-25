@@ -21,6 +21,8 @@ const WATERFORD_COMPETITIONS = [
   { id: '214353', name: 'Senior HC Group B' },
   { id: '214355', name: 'Premier Intermediate HC Group A' },
   { id: '214354', name: 'Premier Intermediate HC Group B' },
+  { id: '218650', name: 'Junior A Hurling Championship' },
+  { id: '218649', name: 'Junior C Hurling Championship' },
 ];
 
 const LAOIS_COMPETITIONS = [
