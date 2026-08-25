@@ -1252,6 +1252,7 @@
     "Glen Emmets": "ec48522e-5ec8-4257-b0a1-d144158b1c0d",
     "Glyde Rangers": "75895ba7-dc12-4a45-8212-dfc1823a04b0",
     "Hunterstown Rovers": "9f4aa3dd-8bff-4c2b-bff7-865133b26dfb",
+    "Hunterstown Rovers GFC": "9f4aa3dd-8bff-4c2b-bff7-865133b26dfb",
     "John Mitchels": "2ce79ff9-9fa1-4bb1-92f0-dbde26bdca23",
     "Kilkerley Emmets": "9acf6a44-13d3-4334-bf65-5b7c601c30a0",
     "Knockbridge": "505acc29-251a-4e45-a615-57e9a0966cca",
@@ -1295,6 +1296,10 @@
       "id": "f25dc175-c37b-4529-a14f-f16d06a6fe01",
       "name": "St Mary's Ardee"
     },
+    "Ardee St. Mary's G.F.C.": {
+      "id": "f25dc175-c37b-4529-a14f-f16d06a6fe01",
+      "name": "St Mary's Ardee"
+    },
     "St Mary's Ardee": "f25dc175-c37b-4529-a14f-f16d06a6fe01",
     "St Mochtas": "adaf2e71-ab38-48e7-9042-a1e4a5620553",
     "St Nicholas": {
@@ -1302,6 +1307,10 @@
       "name": "St. Nicholas"
     },
     "St. Nicholas": "bfb21c2c-55fc-4915-ac07-c4c0f5ad1ada",
+    "St Patrick's GFC": {
+      "id": "cb6d3680-1298-4252-8baa-ac0c229ff02e",
+      "name": "St Patrick's"
+    },
     "St Patricks": {
       "id": "cb6d3680-1298-4252-8baa-ac0c229ff02e",
       "name": "St Patrick's"
