@@ -1408,16 +1408,11 @@ async function fetchLouthFixtures() {
     );
     if (!res.ok) return [];
     const html = await res.text();
-    const text = html.replace(/<[^>]+>/g, '\n').replace(/&amp;/g, '&').replace(/&#039;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
-    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    const decEnt = s => s.replace(/&amp;/g, '&').replace(/&#0?39;/g, "'").replace(/&#8217;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/[\u2018\u2019\u0060]/g, "'").replace(/[\u201c\u201d]/g, '"');
 
-    const fixtures = [];
-    let currentComp = null;
-    let currentDate = null;
-
-    // Date line pattern: "Thursday 20th August 2026" → "20 August 2026"
+    // Date line pattern: "Thursday 20th August 2026"
     const dateLine = /^(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\s+(\d+)(?:st|nd|rd|th)\s+(\w+)\s+(\d{4})$/i;
-    // Time pattern: "7 00 PM" or "12 30 PM"
+    // Time pattern: "8 00 PM" or "12 30 PM" (site omits colon, uses spaces)
     const timeParse = (t) => {
       const m = t.match(/^(\d+)\s+(\d{2})\s+(AM|PM)$/i);
       if (!m) return null;
@@ -1428,35 +1423,74 @@ async function fetchLouthFixtures() {
       if (ampm === 'AM' && h === 12) h = 0;
       return `${String(h).padStart(2,'0')}:${min}`;
     };
+    const tdRe = /<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi;
+    const stripTags = s => s.replace(/<[^>]+>/g, '').trim();
 
-    for (const line of lines) {
-      // Check for date line
-      const dm = line.match(dateLine);
-      if (dm) {
-        currentDate = `${parseInt(dm[1],10)} ${dm[2]} ${dm[3]}`;
-        continue;
-      }
-      // Check for competition header
-      const compMatch = TARGET_COMPS.find(c => c.pattern.test(line));
-      if (compMatch) {
-        currentComp = compMatch;
-        continue;
-      }
-      // Skip "Time Team 1 Score Score Team 2 Venue Referee Round Notes" header row
-      if (/^Time\s+Team\s+1/i.test(line)) continue;
-      // Try to parse a fixture row (tab-separated)
-      if (currentComp && currentDate && line.includes('\t')) {
-        const cols = line.split('\t').map(s => s.trim());
-        // cols: [time, team1, score1, score2, team2, venue, referee, round, ...]
-        if (cols.length >= 5) {
-          const time24 = timeParse(cols[0]);
+    // The page structure:
+    //   ...(date heading in text)...
+    //   <span class='compHead'><a>Competition Name</a></span>
+    //   <table class="fixturesresults"><tr><th>...</th><tr class="d1"><td>...</td>...</table>
+    // NOTE: <tr> rows have NO closing </tr> tags, so we split by <tr[^>]*> openers.
+
+    const fixtures = [];
+    let currentDate = null;
+    let currentComp = null;
+
+    // Split HTML at <table boundaries; text segments hold dates/comp headings,
+    // table segments hold fixture rows.
+    const tableRe = /(<table[^>]*>)([\s\S]*?)(<\/table>)/gi;
+    const segments2 = [];
+    let lastEnd2 = 0;
+    let tblMatch;
+    tableRe.lastIndex = 0;
+    while ((tblMatch = tableRe.exec(html)) !== null) {
+      if (tblMatch.index > lastEnd2) segments2.push({ type: 'text', content: html.slice(lastEnd2, tblMatch.index) });
+      segments2.push({ type: 'table', open: tblMatch[1], content: tblMatch[2] });
+      lastEnd2 = tableRe.lastIndex;
+    }
+    if (lastEnd2 < html.length) segments2.push({ type: 'text', content: html.slice(lastEnd2) });
+
+    // Regex to extract <span class='compHead'> text specifically (not generic page text)
+    const compHeadRe = /<span[^>]*compHead[^>]*>([\s\S]*?)<\/span>/i;
+
+    for (const seg of segments2) {
+      if (seg.type === 'text') {
+        // Only pick up date headings from plain text; comp headings ONLY from compHead spans
+        const plainText = seg.content.replace(/<[^>]+>/g, '\n').split('\n').map(l => decEnt(l.trim())).filter(l => l.length > 0);
+        for (const line of plainText) {
+          const dm = line.match(dateLine);
+          if (dm) { currentDate = `${parseInt(dm[1],10)} ${dm[2]} ${dm[3]}`; }
+        }
+        // Extract competition heading from compHead span specifically
+        const chm = compHeadRe.exec(seg.content);
+        if (chm) {
+          const compText = decEnt(stripTags(chm[1])).trim();
+          const compMatch = TARGET_COMPS.find(c => c.pattern.test(compText));
+          currentComp = compMatch || null; // reset to null if not a tracked comp
+        }
+      } else {
+        // Only parse fixture tables
+        if (!seg.open.includes('fixturesresults')) continue;
+        if (!currentComp || !currentDate) continue;
+        // Split table content by <tr> openers (rows have no </tr> closing tags)
+        const rowSegs = seg.content.split(/<tr[^>]*>/i);
+        for (const rowSeg of rowSegs) {
+          // Extract <td>/<th> cells from this row segment
+          const cells = [];
+          let cellMatch;
+          tdRe.lastIndex = 0;
+          while ((cellMatch = tdRe.exec(rowSeg)) !== null) {
+            cells.push(decEnt(stripTags(cellMatch[1])).trim());
+          }
+          if (cells.length < 5) continue;
+          if (/^Time$/i.test(cells[0])) continue; // header row
+          const time24 = timeParse(cells[0]);
           if (!time24) continue;
-          const teamA = cols[1];
-          const teamB = cols[4];
-          const venue = cols[5] || '';
-          const round = cols[7] || '';
-          // Skip placeholder rows
-          if (!teamA || !teamB || teamA.startsWith('Winner') || teamA.startsWith('Loser')) continue;
+          const teamA = cells[1];
+          const teamB = cells[4];
+          const venue = cells[5] || '';
+          const round = cells[7] || '';
+          if (!teamA || !teamB || /^Winner|^Loser/i.test(teamA) || /^Winner|^Loser/i.test(teamB)) continue;
           const f = mkStatic('Louth', teamA, teamB, currentDate, time24, venue, currentComp.name, round);
           f.code = currentComp.code;
           fixtures.push(f);
@@ -1633,6 +1667,7 @@ export default {
       return new Response(null, { headers: CORS_HEADERS });
     }
 
+    const url = new URL(request.url);
     const kv = env.FIXTURE_STATUS;
 
     if (request.method === 'POST') {
@@ -1717,8 +1752,7 @@ export default {
         ...KILDARE_FIXTURES,
         ...carlowLiveResults,
         ...CARLOW_FIXTURES,
-        ...louthLiveResults,
-        ...LOUTH_FIXTURES,
+        ...(louthLiveResults.length > 0 ? louthLiveResults : LOUTH_FIXTURES.filter(f => !/^Winner|^Loser/i.test(f.teamA) && !/^Winner|^Loser/i.test(f.teamB))),
         ...tipperaryCamogieResults,
         ...kilkennyCamogieResults.flat().map(f => ({ ...fixNames(f), sport: 'Camogie' })),
       ];

@@ -1332,6 +1332,30 @@
     "Naomh Fionnbarra": {
       "id": "1961e661-cfe2-4f0c-9430-337543d5eb93",
       "name": "Naomh Fhionnbarra"
+    },
+    "O'Connells GFC": {
+      "id": "aaf47cb3-bef0-4cdb-a7d2-3fc4e29cda11",
+      "name": "O'Connells"
+    },
+    "Oilibhéar Pluincéad": {
+      "id": "fac7f696-0afc-4108-94b7-e6a6b0d9b657",
+      "name": "Oliver Plunketts"
+    },
+    "Roche Emmets GFC": {
+      "id": "42ccf155-271c-4888-a2e7-8e6bbaac9767",
+      "name": "Roche Emmets"
+    },
+    "St Fechins GAA": {
+      "id": "43161694-50eb-44e0-90c6-42c46bffa469",
+      "name": "St Fechins"
+    },
+    "St Nicholas GFC": {
+      "id": "bfb21c2c-55fc-4915-ac07-c4c0f5ad1ada",
+      "name": "St. Nicholas"
+    },
+    "Wolfe Tones Football": {
+      "id": "056b270b-03f7-4174-b227-32062ee7b14d",
+      "name": "Wolfe Tones"
     }
   },
   "Kildare": {
