@@ -1443,6 +1443,7 @@ rejectBtn.addEventListener('click',()=>{
   manualFixtures.forEach(f=>{ if(ids.includes(f.id)) f.status='Rejected'; });
   saveManualFixtures();
   saveCache();
+  selected.clear();
   render();
   syncStatus(ids,'Rejected');
 });
