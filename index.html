@@ -94,6 +94,8 @@
   .status-proposed{background:rgba(212,160,23,.15);color:var(--propose);}
   .status-approved{background:rgba(39,174,96,.15);color:var(--approve);}
   .status-rejected{background:rgba(192,57,43,.18);color:#a02020;font-weight:600;}
+  .badge-clubber-created{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:#1a6fa8;color:#fff;padding:2px 5px;border-radius:8px;margin-right:5px;vertical-align:middle;white-space:nowrap;}
+  .btn-mark-clubber{background:#1a6fa8;}
   .empty{text-align:center;color:var(--muted);padding:40px;}
   .count{color:var(--muted);font-size:12px;padding:8px 24px;display:flex;align-items:center;gap:8px;}
   @keyframes spin{to{transform:rotate(360deg)}}
@@ -305,9 +307,9 @@
         <path d="M15 7h6v2h-4v3h3v2h-3v3h4v2h-6V7z" fill="white"/>
         <path d="M9 11l2.5 3L9 17h2l1.5-2 1.5 2h2l-2.5-3 2.5-3h-2L13 13l-1.5-2H9z" fill="white"/>
       </svg>
-      Export
+      Excel
     </button>
-    <button id="clubberBtn" disabled title="Export to Clubber JSON" style="background:none;border:none;cursor:pointer;padding:4px;opacity:.9;display:flex;align-items:center;gap:6px;color:#1a6fa8;font-size:12px;font-weight:600;">
+    <button id="markClubberBtn" disabled title="Mark as Created in Clubber" style="background:none;border:none;cursor:pointer;padding:4px;opacity:.9;display:flex;align-items:center;gap:6px;color:#1a6fa8;font-size:12px;font-weight:600;">
       <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect width="28" height="28" rx="4" fill="#1a6fa8"/>
         <rect x="6" y="6" width="16" height="16" rx="2" fill="none" stroke="white" stroke-width="1.5"/>
@@ -316,8 +318,17 @@
         <circle cx="12.5" cy="14" r=".8" fill="white"/>
         <circle cx="14" cy="11.5" r=".8" fill="white"/>
         <circle cx="15.5" cy="14" r=".8" fill="white"/>
+        <path d="M18 19l2 2 3-3" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
       Clubber
+    </button>
+    <button id="clubberBtn" disabled title="Export to Clubber JSON" style="background:none;border:none;cursor:pointer;padding:4px;opacity:.9;display:flex;align-items:center;gap:6px;color:#1a6fa8;font-size:12px;font-weight:600;">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="28" height="28" rx="4" fill="#1a6fa8"/>
+        <path d="M8 10h2v8H8zm4-2h2v12h-2zm4 4h2v8h-2z" fill="white" opacity=".3"/>
+        <text x="14" y="18" text-anchor="middle" font-size="9" font-weight="700" font-family="monospace" fill="white">{}</text>
+      </svg>
+      Json
     </button>
     <div class="col-picker-wrap">
       <button id="colsBtn" title="Choose columns" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px;font-weight:600;">
@@ -1232,6 +1243,7 @@ const removeBtn=document.getElementById('removeBtn');
 const emptyMsg=document.getElementById('emptyMsg');
 const rowCount=document.getElementById('rowCount');
 const exportBtn=document.getElementById('exportBtn');
+const markClubberBtn=document.getElementById('markClubberBtn');
 const clubberBtn=document.getElementById('clubberBtn');
 const loadStatusText=document.getElementById('loadStatusText');
 const loadSpinner=document.getElementById('loadSpinner');
@@ -1320,7 +1332,7 @@ function render(){
     const _chgBadge=_chg?`<span class="badge-chg badge-chg-${_chg.type}" data-chg-key="${_sk.replace(/"/g,'&quot;')}" title="Click to see change history">${_chgLabel}</span>`:'';
     tr.innerHTML=`
       <td style="white-space:nowrap;"><input type="checkbox" data-id="${f.id}" ${selected.has(f.id)?'checked':''}><button class="edit-btn" data-edit-id="${f.id}" title="Edit fixture" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:0 4px;vertical-align:middle;opacity:.6;">✎</button></td>
-      <td>${f.county}</td>
+      <td style="white-space:nowrap;">${f.clubberCreated?'<span class="badge-clubber-created" title="Created in Clubber">✓ Clubber</span>':''}${f.county}</td>
       <td>${f.code||''}</td>
       <td>${f.teamA}</td>
       <td>${f.teamB}</td>
@@ -1390,6 +1402,7 @@ function updateActionButtons(){
   rejectBtn.disabled = selFixtures.length===0;
   removeBtn.disabled = selFixtures.length===0 || !selFixtures.every(f=>f.status==='Rejected');
   exportBtn.disabled = selFixtures.length===0;
+  markClubberBtn.disabled = selFixtures.length===0;
   clubberBtn.disabled = !selFixtures.some(f=>f.status==='Approved');
   assignSocialsBtn.disabled = selFixtures.length===0;
   assignSupport2Btn.disabled = selFixtures.length===0;
@@ -1504,6 +1517,14 @@ rejectBtn.addEventListener('click',()=>{
   selected.clear();
   render();
   syncStatus(ids,'Rejected');
+});
+markClubberBtn.addEventListener('click',()=>{
+  const ids=[...selected];
+  fixtures.forEach(f=>{ if(selected.has(f.id)) f.clubberCreated=true; });
+  manualFixtures.forEach(f=>{ if(ids.includes(f.id)) f.clubberCreated=true; });
+  saveManualFixtures();
+  saveCache();
+  render();
 });
 const removeConfirmModal=document.getElementById('removeConfirmModal');
 removeBtn.addEventListener('click',()=>{ removeConfirmModal.style.display='flex'; });
