@@ -369,7 +369,7 @@
       <td><select id="qa_teamB" class="qa-sel" onchange="qaToggle('qa_teamB','qa_teamBNew')"></select><input type="text" id="qa_teamBNew" class="qa-inp qa-new" placeholder="Team name"></td>
       <td><div class="picker-wrap"><input type="date" id="qa_date" class="qa-inp" onchange="document.getElementById('qa_day_cell').textContent=this.value?dayName(this.value):''"><button type="button" class="picker-icon" onclick="document.getElementById('qa_date').showPicker()"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1.5" y="2.5" width="13" height="12" rx="1.5"/><path d="M1.5 6.5h13"/><path d="M5 1v3"/><path d="M11 1v3"/><path d="M4.5 9.5h1.5v1.5H4.5z" stroke="none" fill="currentColor"/><path d="M7.25 9.5h1.5v1.5h-1.5z" stroke="none" fill="currentColor"/><path d="M10 9.5h1.5v1.5H10z" stroke="none" fill="currentColor"/></svg></button></div></td>
       <td id="qa_day_cell" class="qa-day"></td>
-      <td><input type="time" id="qa_time" class="qa-inp" oninput="if(/^\d{2}:\d{2}$/.test(this.value))setTimeout(()=>this.blur(),50)"></td>
+      <td><div style="display:flex;gap:2px;"><select id="qa_time_h" class="qa-sel" style="min-width:54px"><option value="">h</option><option>07</option><option>08</option><option>09</option><option>10</option><option>11</option><option>12</option><option>13</option><option>14</option><option>15</option><option>16</option><option>17</option><option>18</option><option>19</option><option>20</option><option>21</option></select><select id="qa_time_m" class="qa-sel" style="min-width:48px"><option value="00">:00</option><option value="15">:15</option><option value="30">:30</option><option value="45">:45</option></select></div></td>
       <td><select id="qa_venue" class="qa-sel" onchange="qaToggle('qa_venue','qa_venueNew')"></select><input type="text" id="qa_venueNew" class="qa-inp qa-new" placeholder="Venue name"></td>
       <td><select id="qa_comp" class="qa-sel" onchange="qaCompChange()"></select><input type="text" id="qa_compNew" class="qa-inp qa-new" placeholder="Competition"></td>
       <td><select id="qa_round_sel" class="qa-sel" onchange="qaToggle('qa_round_sel','qa_roundNew')"></select><input type="text" id="qa_roundNew" class="qa-inp qa-new" placeholder="e.g. Round 1"></td>
@@ -925,16 +925,39 @@ let _ml=null;
 let editingId=null;
 
 function _buildLookups(){
-  const teams={}, venues={}, compSeen=new Set(), comps=[];
+  const teams={}, venues={}, compsByCounty={};
   for(const f of fixtures){
     if(f.manual) continue;
     if(!teams[f.county]) teams[f.county]=new Set();
     teams[f.county].add(f.teamA); teams[f.county].add(f.teamB);
     if(!venues[f.county]) venues[f.county]=new Set();
     if(f.venue && f.venue.trim() && f.venue!=='TBC') venues[f.county].add(f.venue);
-    if(f.competition && !compSeen.has(f.competition)){ compSeen.add(f.competition); comps.push(f.competition); }
+    if(f.competition){
+      if(!compsByCounty[f.county]) compsByCounty[f.county]=new Set();
+      compsByCounty[f.county].add(f.competition);
+    }
   }
-  return { counties:Object.keys(teams).sort(), teams, venues, comps:comps.sort() };
+  const allComps=new Set();
+  Object.values(compsByCounty).forEach(s=>s.forEach(c=>allComps.add(c)));
+  return { counties:Object.keys(teams).sort(), teams, venues, compsByCounty, comps:[...allComps].sort() };
+}
+function _normCompLabel(c, county){
+  let label=c;
+  if(county) label=label.replace(new RegExp('^'+county.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\s+','i'),'');
+  return label
+    .replace(/\s+group\s+\S+\s*$/i,'')
+    .replace(/\bfc\b/gi,'Football Championship')
+    .replace(/\bhc\b/gi,'Hurling Championship')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+function _buildCompOpts(county){
+  const raw=[...(_qaLk.compsByCounty[county]||new Set())].sort();
+  const seen=new Map();
+  raw.forEach(c=>{ const label=_normCompLabel(c,county); if(!seen.has(label)) seen.set(label,c); });
+  return '<option value="">Competition…</option>'
+    +[...seen.entries()].sort((a,b)=>a[0].localeCompare(b[0])).map(([label,val])=>`<option value="${val}">${label}</option>`).join('')
+    +'<option value="__new__">+ New competition</option>';
 }
 
 function _countyOpts(counties){
@@ -1726,9 +1749,7 @@ function openQuickAdd(){
   g('qa_teamA').innerHTML='<option value="">Select county first…</option>';
   g('qa_teamB').innerHTML='<option value="">Select county first…</option>';
   g('qa_venue').innerHTML='<option value="">Venue…</option><option value="__new__">+ New venue</option>';
-  g('qa_comp').innerHTML='<option value="">Competition…</option>'
-    +_qaLk.comps.map(c=>`<option value="${c}">${c}</option>`).join('')
-    +'<option value="__new__">+ New competition</option>';
+  g('qa_comp').innerHTML='<option value="">Select county first…</option>';
   const rounds=[...new Set(fixtures.map(f=>f.round).filter(Boolean))].sort();
   g('qa_round_sel').innerHTML='<option value="">Round…</option>'
     +rounds.map(r=>`<option value="${r}">${r}</option>`).join('')
@@ -1742,7 +1763,7 @@ function openQuickAdd(){
   g('qa_unitSys').value='';
   g('qa_unit').innerHTML='<option value="">Unit…</option>';
   g('qa_code').value='';
-  g('qa_date').value=''; g('qa_time').value='';
+  g('qa_date').value=''; g('qa_time_h').value=''; g('qa_time_m').value='00';
   g('qa_day_cell').textContent='';
   const row=g('quickAddRow');
   row.style.display='';
@@ -1768,6 +1789,7 @@ function qaCountyChange(){
   const venues=[...(_qaLk&&_qaLk.venues[county]||new Set())].sort();
   const venueOpts='<option value="">Venue…</option>'+venues.map(v=>`<option value="${v}">${v}</option>`).join('')+'<option value="__new__">+ New venue</option>';
   g('qa_venue').innerHTML=venueOpts; g('qa_venueNew').style.display='none'; g('qa_venueNew').value='';
+  g('qa_comp').innerHTML=_buildCompOpts(county); g('qa_compNew').style.display='none'; g('qa_compNew').value='';
 }
 
 function qaCompChange(){
@@ -1787,7 +1809,9 @@ function qaSave(){
   const venueVal =resolve('qa_venue','qa_venueNew');
   const compVal  =resolve('qa_comp','qa_compNew');
   const roundVal=resolve('qa_round_sel','qa_roundNew');
-  const dateVal=g('qa_date').value, timeVal=g('qa_time').value;
+  const dateVal=g('qa_date').value;
+  const _th=g('qa_time_h').value, _tm=g('qa_time_m').value||'00';
+  const timeVal=_th?`${_th}:${_tm}`:'';
   const codeVal=g('qa_code').value;
   const socialsName=g('qa_socials').value;
   const socialsEmail=(SOCIALS.find(s=>s.name===socialsName)||{}).email||'';
