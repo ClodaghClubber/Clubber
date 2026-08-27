@@ -37,35 +37,59 @@
   tbody tr:hover{filter:brightness(1.4);}
   tbody tr.row-rejected{opacity:0.65;}
   /* ---- County row colours (GAA-inspired, each unique) ---- */
-  .cr-cork                {background:#B80020;color:#fff;}
-  .cr-cork .status-proposed{background:rgba(255,255,255,.2);color:#fff;}
-  .cr-waterford {background:#7080E8;color:#06082a;} /* deep periwinkle */
-  .cr-kerry     {background:#009000;color:#e0ffe0;}
-  .cr-kerry .status-approved{background:rgba(255,255,255,.85);color:#006600;}
-  .cr-offaly    {background:#F09840;color:#2a1400;} /* amber-orange */
-  .cr-laois     {background:#4898F4;color:#041628;} /* royal blue */
-  .cr-wexford   {background:#8860E0;color:#100020;} /* indigo (was Longford) */
-  .cr-kilkenny  {background:#ECC030;color:#1a1000;} /* gold/amber */
-  .cr-tipperary {background:#7098E8;color:#041228;} /* steel blue */
-  .cr-monaghan  {background:#50C8E8;color:#002830;} /* sky blue/cyan */
-  .cr-meath     {background:#78D868;color:#0a1e04;} /* lime green */
-  .cr-longford  {background:#1546A0;color:#e8eeff;} /* deep cobalt blue */
-  .cr-roscommon {background:#E8D830;color:#1e1800;} /* primrose yellow */
-  .cr-kildare   {background:#E8EAF0;color:#1a2030;} /* off-white */
-  .cr-carlow    {background:#F060B8;color:#200010;} /* hot pink */
-  .cr-louth     {background:#F09070;color:#200800;} /* vermillion */
+  .cr-cork           {background:#CC0000;color:#fff;}
+  .cr-waterford      {background:#6A7FD4;color:#fff;}
+  .cr-kerry          {background:#008000;color:#e0ffe0;}
+  .cr-offaly         {background:#FF8C00;color:#1a0a00;}
+  .cr-laois          {background:#3B82F6;color:#fff;}
+  .cr-wexford        {background:#7C3AED;color:#fff;}
+  .cr-kilkenny       {background:#F5C400;color:#1a1000;}
+  .cr-tipperary      {background:#4A90D9;color:#fff;}
+  .cr-monaghan       {background:#00BCD4;color:#002830;}
+  .cr-meath          {background:#66BB6A;color:#0a1e04;}
+  .cr-longford       {background:#1A237E;color:#fff;}
+  .cr-roscommon      {background:#FFE600;color:#1e1800;}
+  .cr-kildare        {background:#F5F5F5;color:#1a2030;}
+  .cr-carlow         {background:#E91E8C;color:#fff;}
+  .cr-louth          {background:#F4845F;color:#1a0800;}
+  .cr-munster        {background:#005A00;color:#fff;}
+  .cr-leinster       {background:#92D400;color:#0a1a00;}
+  .cr-munster-camogie{background:#FF4DAF;color:#fff;}
+  .cr-san-francisco  {background:#1B4F72;color:#fff;}
+  .cr-western-australia{background:#E67E22;color:#fff;}
+  .cr-boston         {background:#2E86AB;color:#fff;}
+  .cr-usgaa          {background:#8E44AD;color:#fff;}
   /* Rejected badge overrides for dark/vivid county rows */
   .cr-cork .status-rejected,
-  .cr-longford .status-rejected,
-  .cr-wexford .status-rejected,
-  .cr-laois .status-rejected,
-  .cr-tipperary .status-rejected,
   .cr-waterford .status-rejected,
-  .cr-monaghan .status-rejected,
-  .cr-meath .status-rejected,
+  .cr-kerry .status-rejected,
+  .cr-laois .status-rejected,
+  .cr-wexford .status-rejected,
+  .cr-tipperary .status-rejected,
+  .cr-longford .status-rejected,
   .cr-carlow .status-rejected,
-  .cr-kerry .status-rejected
+  .cr-munster .status-rejected,
+  .cr-leinster .status-rejected,
+  .cr-munster-camogie .status-rejected,
+  .cr-san-francisco .status-rejected,
+  .cr-western-australia .status-rejected,
+  .cr-boston .status-rejected,
+  .cr-usgaa .status-rejected
   {background:rgba(0,0,0,.35);color:#ffb3b3;}
+  /* Proposed/approved badge overrides for dark rows */
+  .cr-cork .status-proposed,.cr-waterford .status-proposed,.cr-kerry .status-proposed,
+  .cr-laois .status-proposed,.cr-wexford .status-proposed,.cr-tipperary .status-proposed,
+  .cr-longford .status-proposed,.cr-carlow .status-proposed,.cr-munster .status-proposed,
+  .cr-munster-camogie .status-proposed,.cr-san-francisco .status-proposed,
+  .cr-western-australia .status-proposed,.cr-boston .status-proposed,.cr-usgaa .status-proposed
+  {background:rgba(255,255,255,.2);color:#fff;}
+  .cr-cork .status-approved,.cr-waterford .status-approved,.cr-kerry .status-approved,
+  .cr-laois .status-approved,.cr-wexford .status-approved,.cr-tipperary .status-approved,
+  .cr-longford .status-approved,.cr-carlow .status-approved,.cr-munster .status-approved,
+  .cr-munster-camogie .status-approved,.cr-san-francisco .status-approved,
+  .cr-western-australia .status-approved,.cr-boston .status-approved,.cr-usgaa .status-approved
+  {background:rgba(255,255,255,.25);color:#e0ffe8;}
+  .cr-cork .badge-dh{background:rgba(255,255,255,.25);color:#fff;border:1px solid rgba(255,255,255,.5);}
   .status{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;text-transform:uppercase;}
   .status-proposed{background:rgba(212,160,23,.15);color:var(--propose);}
   .status-approved{background:rgba(39,174,96,.15);color:var(--approve);}
@@ -95,7 +119,6 @@
   .btn-modal-add{background:#5a4fcf;color:#fff;}
   .badge-manual{font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:rgba(90,79,207,.2);color:#9b8fe8;padding:2px 6px;border-radius:8px;margin-left:6px;vertical-align:middle;}
   .badge-dh{font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:rgba(234,88,12,.15);color:#c2410c;padding:2px 5px;border-radius:8px;margin-left:5px;vertical-align:middle;cursor:default;}
-  .cr-cork .badge-dh{background:rgba(255,255,255,.25);color:#fff;border:1px solid rgba(255,255,255,.5);}
   /* ---- Quick Add Row ---- */
   #quickAddBtn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:4px;width:22px;height:22px;font-size:16px;line-height:1;cursor:pointer;margin-left:6px;padding:0;vertical-align:middle;}
   #quickAddBtn:hover{color:var(--text);border-color:var(--accent);}
