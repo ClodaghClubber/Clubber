@@ -54,6 +54,18 @@
   .cr-kildare   {background:#E8EAF0;color:#1a2030;} /* off-white */
   .cr-carlow    {background:#F060B8;color:#200010;} /* hot pink */
   .cr-louth     {background:#F09070;color:#200800;} /* vermillion */
+  /* Rejected badge overrides for dark/vivid county rows */
+  .cr-cork .status-rejected,
+  .cr-longford .status-rejected,
+  .cr-wexford .status-rejected,
+  .cr-laois .status-rejected,
+  .cr-tipperary .status-rejected,
+  .cr-waterford .status-rejected,
+  .cr-monaghan .status-rejected,
+  .cr-meath .status-rejected,
+  .cr-carlow .status-rejected,
+  .cr-kerry .status-rejected
+  {background:rgba(0,0,0,.35);color:#ffb3b3;}
   .status{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;text-transform:uppercase;}
   .status-proposed{background:rgba(212,160,23,.15);color:var(--propose);}
   .status-approved{background:rgba(39,174,96,.15);color:var(--approve);}
