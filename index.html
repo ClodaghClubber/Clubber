@@ -147,24 +147,25 @@
   #assignSocialsPanel .add-new-row input{flex:1;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:4px 7px;font-size:12px;}
   #assignSocialsPanel .add-new-row button{background:var(--accent);color:#fff;border:none;border-radius:4px;padding:4px 10px;font-size:12px;cursor:pointer;}
   /* Column hide classes — applied to <table id="fixtureTable"> */
-  #fixtureTable.hide-county      th:nth-child(2),#fixtureTable.hide-county      td:nth-child(2){display:none;}
-  #fixtureTable.hide-code        th:nth-child(3),#fixtureTable.hide-code        td:nth-child(3){display:none;}
-  #fixtureTable.hide-teamA       th:nth-child(4),#fixtureTable.hide-teamA       td:nth-child(4){display:none;}
-  #fixtureTable.hide-teamB       th:nth-child(5),#fixtureTable.hide-teamB       td:nth-child(5){display:none;}
-  #fixtureTable.hide-date        th:nth-child(6),#fixtureTable.hide-date        td:nth-child(6){display:none;}
-  #fixtureTable.hide-day         th:nth-child(7),#fixtureTable.hide-day         td:nth-child(7){display:none;}
-  #fixtureTable.hide-time        th:nth-child(8),#fixtureTable.hide-time        td:nth-child(8){display:none;}
-  #fixtureTable.hide-venue       th:nth-child(9),#fixtureTable.hide-venue       td:nth-child(9){display:none;}
-  #fixtureTable.hide-competition th:nth-child(10),#fixtureTable.hide-competition td:nth-child(10){display:none;}
-  #fixtureTable.hide-round       th:nth-child(11),#fixtureTable.hide-round       td:nth-child(11){display:none;}
-  #fixtureTable.hide-status      th:nth-child(12),#fixtureTable.hide-status      td:nth-child(12){display:none;}
-  #fixtureTable.hide-socials     th:nth-child(13),#fixtureTable.hide-socials     td:nth-child(13){display:none;}
-  #fixtureTable.hide-support2    th:nth-child(14),#fixtureTable.hide-support2    td:nth-child(14){display:none;}
-  #fixtureTable.hide-replay      th:nth-child(15),#fixtureTable.hide-replay      td:nth-child(15){display:none;}
+  #fixtureTable.hide-clubberCreated th:nth-child(2),#fixtureTable.hide-clubberCreated td:nth-child(2){display:none;}
+  #fixtureTable.hide-county      th:nth-child(3),#fixtureTable.hide-county      td:nth-child(3){display:none;}
+  #fixtureTable.hide-code        th:nth-child(4),#fixtureTable.hide-code        td:nth-child(4){display:none;}
+  #fixtureTable.hide-teamA       th:nth-child(5),#fixtureTable.hide-teamA       td:nth-child(5){display:none;}
+  #fixtureTable.hide-teamB       th:nth-child(6),#fixtureTable.hide-teamB       td:nth-child(6){display:none;}
+  #fixtureTable.hide-date        th:nth-child(7),#fixtureTable.hide-date        td:nth-child(7){display:none;}
+  #fixtureTable.hide-day         th:nth-child(8),#fixtureTable.hide-day         td:nth-child(8){display:none;}
+  #fixtureTable.hide-time        th:nth-child(9),#fixtureTable.hide-time        td:nth-child(9){display:none;}
+  #fixtureTable.hide-venue       th:nth-child(10),#fixtureTable.hide-venue       td:nth-child(10){display:none;}
+  #fixtureTable.hide-competition th:nth-child(11),#fixtureTable.hide-competition td:nth-child(11){display:none;}
+  #fixtureTable.hide-round       th:nth-child(12),#fixtureTable.hide-round       td:nth-child(12){display:none;}
+  #fixtureTable.hide-status      th:nth-child(13),#fixtureTable.hide-status      td:nth-child(13){display:none;}
+  #fixtureTable.hide-socials     th:nth-child(14),#fixtureTable.hide-socials     td:nth-child(14){display:none;}
+  #fixtureTable.hide-support2    th:nth-child(15),#fixtureTable.hide-support2    td:nth-child(15){display:none;}
+  #fixtureTable.hide-replay      th:nth-child(16),#fixtureTable.hide-replay      td:nth-child(16){display:none;}
   .replay-cell{text-align:center;cursor:pointer;font-size:16px;user-select:none;}
   .replay-cell:hover{opacity:.7;}
-  #fixtureTable.hide-videographer th:nth-child(16),#fixtureTable.hide-videographer td:nth-child(16){display:none;}
-  #fixtureTable.hide-unit          th:nth-child(17),#fixtureTable.hide-unit          td:nth-child(17){display:none;}
+  #fixtureTable.hide-videographer th:nth-child(17),#fixtureTable.hide-videographer td:nth-child(17){display:none;}
+  #fixtureTable.hide-unit          th:nth-child(18),#fixtureTable.hide-unit          td:nth-child(18){display:none;}
   .vid-cell,.unit-cell{cursor:pointer;white-space:nowrap;}
   .vid-cell:hover,.unit-cell:hover{opacity:.7;}
   #unitConflictToast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#c2410c;color:#fff;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;}
@@ -264,6 +265,14 @@
   <div>
     <label>Status</label>
     <div class="ms-wrap" id="statusFilter"><button class="ms-trigger" type="button"><span class="ms-label">All</span></button><div class="ms-panel" hidden></div></div>
+  </div>
+  <div>
+    <label for="clubberFilter">In Clubber</label>
+    <select id="clubberFilter">
+      <option value="">All</option>
+      <option value="yes">In Clubber</option>
+      <option value="no">Not in Clubber</option>
+    </select>
   </div>
   <div>
     <label for="dateFrom">From date</label>
@@ -366,6 +375,7 @@
   <thead>
     <tr>
       <th><input type="checkbox" id="selectAll"><button onclick="openQuickAdd()" title="Quick add fixture" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:4px;width:22px;height:22px;font-size:16px;line-height:1;cursor:pointer;margin-left:6px;padding:0;vertical-align:middle;">+</button></th>
+      <th data-key="clubberCreated">In Clubber</th>
       <th data-key="county">County</th>
       <th data-key="code">Code</th>
       <th data-key="teamA">Team A</th>
@@ -386,6 +396,7 @@
   </thead>
   <tbody id="tbody">
     <tr id="quickAddRow" class="quick-add-row" style="display:none;">
+      <td></td>
       <td></td>
       <td><select id="qa_county" class="qa-sel" onchange="qaCountyChange()"></select><input type="text" id="qa_countyNew" class="qa-inp qa-new" placeholder="County name"></td>
       <td><select id="qa_code" class="qa-sel"><option value="">Code…</option><option value="Football">Football</option><option value="Hurling">Hurling</option><option value="Camogie">Camogie</option></select></td>
@@ -782,6 +793,7 @@ let lastLoadInfo = "";
 let fixtureBaseline = {}; // stableKey -> { original:{date,time,venue,round}, lastKnown:{...} }
 let fixtureChangelog = {}; // stableKey -> { type:'unchanged'|'changed'|'removed', data:{county,teamA,teamB,competition}, history:[{at,note?,diffs}] }
 let changesOnlyFilter = false;
+let clubberFilterVal = '';
 
 function saveManualFixtures(){
   try{ localStorage.setItem(MANUAL_KEY, JSON.stringify(manualFixtures)); }catch(e){}
@@ -1302,6 +1314,8 @@ function getFiltered(){
     if(dateFrom.value && f.date<dateFrom.value) return false;
     if(dateTo.value && f.date>dateTo.value) return false;
     if(changesOnlyFilter){const _c=fixtureChangelog[stableKeyOf(f)];if(!_c||(_c.type!=='changed'&&_c.type!=='removed'&&_c.type!=='new')) return false;}
+    if(clubberFilterVal==='yes' && !f.clubberCreated) return false;
+    if(clubberFilterVal==='no' && f.clubberCreated) return false;
     return true;
   });
   list.sort((a,b)=>{
@@ -1345,7 +1359,8 @@ function render(){
     const _chgBadge=_chg?`<span class="badge-chg badge-chg-${_chg.type}" data-chg-key="${_sk.replace(/"/g,'&quot;')}" title="Click to see change history">${_chgLabel}</span>`:'';
     tr.innerHTML=`
       <td style="white-space:nowrap;"><input type="checkbox" data-id="${f.id}" ${selected.has(f.id)?'checked':''}><button class="edit-btn" data-edit-id="${f.id}" title="Edit fixture" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:0 4px;vertical-align:middle;opacity:.6;">✎</button></td>
-      <td style="white-space:nowrap;">${f.clubberCreated?'<span class="badge-clubber-created" title="Created in Clubber">✓ Clubber</span>':''}${f.county}</td>
+      <td style="text-align:center;">${f.clubberCreated?'<span class="badge-clubber-created" title="Created in Clubber">✓ Clubber</span>':''}</td>
+      <td style="white-space:nowrap;">${f.county}</td>
       <td>${f.code||''}</td>
       <td>${f.teamA}</td>
       <td>${f.teamB}</td>
@@ -1560,6 +1575,7 @@ document.getElementById('removeConfirmBtn').addEventListener('click',()=>{
 dateFrom.addEventListener('change',()=>{ dateTo.value=dateFrom.value; render(); });
 dateTo.addEventListener('change',render);
 document.getElementById('changesFilter').addEventListener('change',e=>{changesOnlyFilter=e.target.value==='changes';render();});
+document.getElementById('clubberFilter').addEventListener('change',e=>{clubberFilterVal=e.target.value;render();});
 document.getElementById('clearChangesBtn').addEventListener('click',()=>{
   fixtureChangelog={};saveChangelog();
   fixtureBaseline={};saveBaseline();
@@ -1909,6 +1925,7 @@ function qaUnitSysChange(){
 // ---- Column Visibility ----
 const COL_PREFS_KEY='gaaHiddenCols';
 const COLS=[
+  {key:'clubberCreated',label:'In Clubber'},
   {key:'county',label:'County'},
   {key:'code',label:'Code'},
   {key:'teamA',label:'Team A'},
