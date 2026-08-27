@@ -300,6 +300,17 @@
 <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 24px 0;">
   <div class="count" id="rowCount" style="padding:0;"></div>
   <div style="display:flex;align-items:center;gap:16px;">
+    <button id="markClubberBtn" disabled title="Mark as Created in Clubber" style="background:none;border:none;cursor:pointer;padding:4px;opacity:.9;display:flex;align-items:center;gap:6px;color:#4a9e1a;font-size:12px;font-weight:600;">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="28" height="28" rx="6" fill="#0F1B2D"/>
+        <!-- 4 concentric C arcs, center (14,14), opening right -->
+        <path d="M26 3H14A11 11 0 1 0 14 25H26" stroke="#6CC21A" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        <path d="M26 6H14A8 8 0 1 0 14 22H26" stroke="#6CC21A" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        <path d="M26 9H14A5 5 0 1 0 14 19H26" stroke="#6CC21A" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+        <path d="M26 11.5H14A2.5 2.5 0 1 0 14 16.5H22V14" stroke="#6CC21A" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Clubber
+    </button>
     <button id="exportBtn" disabled title="Export to Excel" style="background:none;border:none;cursor:pointer;padding:4px;opacity:.9;display:flex;align-items:center;gap:6px;color:#217346;font-size:12px;font-weight:600;">
       <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect width="28" height="28" rx="4" fill="#217346"/>
@@ -308,16 +319,6 @@
         <path d="M9 11l2.5 3L9 17h2l1.5-2 1.5 2h2l-2.5-3 2.5-3h-2L13 13l-1.5-2H9z" fill="white"/>
       </svg>
       Excel
-    </button>
-    <button id="markClubberBtn" disabled title="Mark as Created in Clubber" style="background:none;border:none;cursor:pointer;padding:4px;opacity:.9;display:flex;align-items:center;gap:6px;color:#4a9e1a;font-size:12px;font-weight:600;">
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="28" height="28" rx="6" fill="#0F1B2D"/>
-        <path d="M25 4H10A10 10 0 1 0 10 24H25" stroke="#6CC21A" stroke-width="1.7" fill="none" stroke-linecap="round"/>
-        <path d="M25 7H10A7 7 0 1 0 10 21H25" stroke="#6CC21A" stroke-width="1.7" fill="none" stroke-linecap="round"/>
-        <path d="M25 9.5H10A4.5 4.5 0 1 0 10 18.5H25" stroke="#6CC21A" stroke-width="1.7" fill="none" stroke-linecap="round"/>
-        <path d="M25 11.5H10A2.5 2.5 0 1 0 10 16.5H20V14" stroke="#6CC21A" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      Clubber
     </button>
     <button id="clubberBtn" disabled title="Export to Clubber JSON" style="background:none;border:none;cursor:pointer;padding:4px;opacity:.9;display:flex;align-items:center;gap:6px;color:#1a6fa8;font-size:12px;font-weight:600;">
       <svg width="28" height="32" viewBox="0 0 28 32" fill="none" xmlns="http://www.w3.org/2000/svg">
