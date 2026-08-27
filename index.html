@@ -217,7 +217,9 @@
   .clubber-result-list{max-height:380px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;}
   .clubber-result-item{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:6px;font-size:12px;border:1px solid var(--border);}
   .clubber-result-item.ok{border-color:rgba(39,174,96,.3);background:rgba(39,174,96,.05);}
+  .clubber-result-item.ok.warn{border-color:rgba(217,119,6,.4);background:rgba(217,119,6,.06);}
   .clubber-result-item.fail{border-color:rgba(192,57,43,.3);background:rgba(192,57,43,.05);}
+  .clubber-warn{color:#92400e;margin-top:2px;}
   .clubber-icon{font-size:15px;line-height:1.4;flex-shrink:0;}
   .clubber-label{flex:1;}
   .clubber-label strong{display:block;margin-bottom:2px;}
@@ -1466,9 +1468,9 @@ clubberBtn.addEventListener('click',()=>{
   const selFixtures=fixtures.filter(f=>selected.has(f.id)&&visibleIds.has(f.id));
   if(!selFixtures.length) return;
   const results=selFixtures.map(f=>{
-    if(f.status!=='Approved') return{fixture:f,payload:null,errors:['Not Approved'],ok:false,skipped:true};
-    const{payload,errors}=buildGamePayload(f);
-    return{fixture:f,payload,errors,ok:errors.length===0,skipped:false};
+    if(f.status!=='Approved') return{fixture:f,payload:null,errors:['Not Approved'],warnings:[],ok:false,skipped:true};
+    const{payload,errors,warnings}=buildGamePayload(f);
+    return{fixture:f,payload,errors,warnings,ok:errors.length===0,skipped:false};
   });
   const BATCH_SIZE=10;
   const eligible=results.filter(r=>!r.skipped);
@@ -1484,7 +1486,12 @@ clubberBtn.addEventListener('click',()=>{
   summary.innerHTML=`<strong>${okCount} of ${results.length} fixture${results.length!==1?'s':''} mapped successfully.</strong> ${batches.length} JSON file${batches.length!==1?'s':''} downloaded.${okCount<results.length?`<br><span style="color:var(--reject)">${results.length-okCount} had mapping errors.</span>`:''}`;
   const list=document.getElementById('clubberResultList');
   const sorted=[...results].sort((a,b)=>a.ok-b.ok);
-  list.innerHTML=sorted.map(r=>`<div class="clubber-result-item ${r.ok?'ok':'fail'}"><span class="clubber-icon">${r.ok?'✓':'✗'}</span><div class="clubber-label"><strong>${r.fixture.teamA} v ${r.fixture.teamB}</strong> ${r.fixture.county} · ${r.fixture.date}${r.errors.map(e=>`<div class="clubber-err">⚠ ${e}</div>`).join('')}</div></div>`).join('');
+  list.innerHTML=sorted.map(r=>{
+    const hasWarn=r.ok&&r.warnings&&r.warnings.length>0;
+    const cls=r.ok?(hasWarn?'ok warn':'ok'):'fail';
+    const icon=r.ok?(hasWarn?'⚠':'✓'):'✗';
+    return `<div class="clubber-result-item ${cls}"><span class="clubber-icon">${icon}</span><div class="clubber-label"><strong>${r.fixture.teamA} v ${r.fixture.teamB}</strong> ${r.fixture.county} · ${r.fixture.date}${(r.errors||[]).map(e=>`<div class="clubber-err">✗ ${e}</div>`).join('')}${(r.warnings||[]).map(w=>`<div class="clubber-warn">⚠ ${w}</div>`).join('')}</div></div>`;
+  }).join('');
 
   document.getElementById('clubberModal').classList.add('open');
 });
@@ -2049,19 +2056,44 @@ setupColPicker();
 // ---- Clubber Integration ----
 let teamMappings = {};
 let competitionLookup = {};
+let sportsCountiesIndex = {}; // county name (lowercase) → [{id, name, normName}]
 
 (async () => {
   try {
-    const [tm, cl] = await Promise.all([
+    const [tm, cl, sc] = await Promise.all([
       fetch('Clubber/teamMappings.json').then(r => r.json()),
       fetch('Clubber/competitionLookup.json').then(r => r.json()),
+      fetch('Clubber/sportsCountiesLookup.json').then(r => r.json()),
     ]);
     teamMappings = tm;
     competitionLookup = cl;
+    // Build flat county→clubs index from sportsCountiesLookup
+    for (const sport of (sc.sportList || [])) {
+      if (sport.sportType !== 'GAA') continue;
+      for (const county of (sport.countyList || [])) {
+        const key = county.name.toLowerCase();
+        if (!sportsCountiesIndex[key]) sportsCountiesIndex[key] = [];
+        for (const club of (county.clubsList || [])) {
+          sportsCountiesIndex[key].push({
+            id: club.id,
+            name: club.name,
+            normName: normClubName(club.name),
+          });
+        }
+      }
+    }
   } catch (e) {
     console.warn('Clubber data files could not be loaded:', e);
   }
 })();
+
+function normClubName(n) {
+  return (n || '').toLowerCase()
+    .replace(/\bst\.?\s*/g, 'saint ')
+    .replace(/[''`]/g, "'")
+    .replace(/[^a-z0-9' ]/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+}
 
 function deriveGrade(county, competition) {
   if (!competition) return '';
@@ -2105,10 +2137,34 @@ function lookupTeam(teamName, preferredCounty) {
     if (typeof val === 'object') return { county, clubId: val.id, matchedName: val.name };
     return { county, clubId: val, matchedName: name };
   };
+  // 1. Exact match in teamMappings (preferred county first)
   if (teamMappings[preferredCounty]?.[name])
     return resolve(preferredCounty, teamMappings[preferredCounty][name]);
   for (const [county, teams] of Object.entries(teamMappings)) {
     if (teams[name]) return resolve(county, teams[name]);
+  }
+  // 2. Fuzzy match in sportsCountiesLookup — county-scoped only
+  const result = fuzzyLookupClub(name, preferredCounty);
+  if (result) return result;
+  return null;
+}
+
+function fuzzyLookupClub(teamName, county) {
+  const countyKey = (county || '').toLowerCase();
+  const clubs = sportsCountiesIndex[countyKey];
+  if (!clubs || clubs.length === 0) return null;
+
+  const norm = normClubName(teamName);
+  const exact = clubs.filter(c => c.normName === norm);
+  if (exact.length === 1) {
+    return { county, clubId: exact[0].id, matchedName: exact[0].name, autoMatched: true };
+  }
+  // Partial: norm is contained in club name or vice versa (minimum 5 chars)
+  if (norm.length >= 5) {
+    const partial = clubs.filter(c => c.normName.includes(norm) || norm.includes(c.normName));
+    if (partial.length === 1) {
+      return { county, clubId: partial[0].id, matchedName: partial[0].name, autoMatched: true };
+    }
   }
   return null;
 }
@@ -2140,15 +2196,18 @@ function dublinToUtc(dateStr, time24h) {
 
 function buildGamePayload(f) {
   const errors = [];
+  const warnings = [];
 
   const normA = (f.teamA || '').replace(/\s+/g, ' ').trim();
   const normB = (f.teamB || '').replace(/\s+/g, ' ').trim();
 
   const teamAResult = lookupTeam(f.teamA, f.county);
-  if (!teamAResult) errors.push(`clubId not found for "${normA}"`);
+  if (!teamAResult) errors.push(`Club not found for "${normA}" (${f.county}) — add to teamMappings.json`);
+  else if (teamAResult.autoMatched) warnings.push(`"${normA}" auto-matched to "${teamAResult.matchedName}" — verify this is correct`);
 
   const teamBResult = lookupTeam(f.teamB, f.county);
-  if (!teamBResult) errors.push(`competitorClubId not found for "${normB}"`);
+  if (!teamBResult) errors.push(`Club not found for "${normB}" (${f.county}) — add to teamMappings.json`);
+  else if (teamBResult.autoMatched) warnings.push(`"${normB}" auto-matched to "${teamBResult.matchedName}" — verify this is correct`);
 
   const grade = deriveGrade(f.county, f.competition);
   if (!grade) errors.push(`grade could not be derived from competition "${f.competition}"`);
@@ -2185,7 +2244,7 @@ function buildGamePayload(f) {
     price,
   };
 
-  return { payload, errors };
+  return { payload, errors, warnings };
 }
 
 function downloadJson(data, filename) {
