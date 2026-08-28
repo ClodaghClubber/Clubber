@@ -269,10 +269,10 @@
     <div class="ms-wrap" id="statusFilter"><button class="ms-trigger" type="button"><span class="ms-label">All</span></button><div class="ms-panel" hidden></div></div>
   </div>
   <div>
-    <label for="clubberFilter">In Clubber</label>
+    <label for="clubberFilter">Clubber</label>
     <select id="clubberFilter">
       <option value="">All</option>
-      <option value="yes">In Clubber</option>
+      <option value="yes">Clubber</option>
       <option value="no">Not in Clubber</option>
     </select>
   </div>
@@ -377,7 +377,7 @@
   <thead>
     <tr>
       <th><input type="checkbox" id="selectAll"><button onclick="openQuickAdd()" title="Quick add fixture" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:4px;width:22px;height:22px;font-size:16px;line-height:1;cursor:pointer;margin-left:6px;padding:0;vertical-align:middle;">+</button></th>
-      <th data-key="clubberCreated">In Clubber</th>
+      <th data-key="clubberCreated">Clubber</th>
       <th data-key="county">County</th>
       <th data-key="code">Code</th>
       <th data-key="teamA">Team A</th>
@@ -1932,7 +1932,7 @@ function qaUnitSysChange(){
 // ---- Column Visibility ----
 const COL_PREFS_KEY='gaaHiddenCols';
 const COLS=[
-  {key:'clubberCreated',label:'In Clubber'},
+  {key:'clubberCreated',label:'Clubber'},
   {key:'county',label:'County'},
   {key:'code',label:'Code'},
   {key:'teamA',label:'Team A'},
