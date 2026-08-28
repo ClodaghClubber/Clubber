@@ -1655,7 +1655,9 @@ function mergeFixtures(incoming){
     // the refresh; inc fields (including status from KV) take precedence.
     return ex ? {...ex, ...inc, id: ex.id, _origKey: origKey} : {...inc, id: nextId++, _origKey: origKey};
   });
-  selected.clear();
+  // Preserve selections for fixtures that survived the reload
+  const existingIds = new Set(fixtures.map(f => f.id));
+  for (const id of selected) { if (!existingIds.has(id)) selected.delete(id); }
   saveCache();
   applyManualFixtures();
   applyOverrides();
