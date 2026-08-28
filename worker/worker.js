@@ -1631,6 +1631,7 @@ const CORS_HEADERS = {
 const VALID_STATUSES = ['Proposed', 'Approved', 'Rejected', 'Removed'];
 const STATUS_KV_KEY = 'statuses';
 const OVERRIDES_KV_KEY = 'overrides';
+const MANUAL_KV_KEY = 'manualFixtures';
 
 // Same composite key the dashboard uses client-side to match a fixture
 // across reloads (county|competition|teamA|teamB|date), so Approve/Reject/
@@ -1665,6 +1666,13 @@ async function getOverridesMap(kv) {
   try { return JSON.parse(raw); } catch { return {}; }
 }
 
+async function getManualFixtures(kv) {
+  if (!kv) return [];
+  const raw = await kv.get(MANUAL_KV_KEY);
+  if (!raw) return [];
+  try { const p = JSON.parse(raw); return Array.isArray(p) ? p : []; } catch { return []; }
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') {
@@ -1677,6 +1685,19 @@ export default {
     if (request.method === 'POST') {
       try {
         const body = await request.json();
+
+        // Manual fixture sync
+        if (body.action === 'setManualFixtures') {
+          if (!kv) {
+            return new Response(
+              JSON.stringify({ ok: false, error: 'No FIXTURE_STATUS KV namespace bound' }),
+              { status: 500, headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } }
+            );
+          }
+          const mf = Array.isArray(body.fixtures) ? body.fixtures : [];
+          await kv.put(MANUAL_KV_KEY, JSON.stringify(mf));
+          return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } });
+        }
 
         // Shared-override sync (socials, replay, videographer, clubberCreated, etc.)
         if (body.action === 'setOverrides') {
@@ -1781,7 +1802,7 @@ export default {
         ...kilkennyCamogieResults.flat().map(f => ({ ...fixNames(f), sport: 'Camogie' })),
       ];
 
-      const [statusMap, overridesMap] = await Promise.all([getStatusMap(kv), getOverridesMap(kv)]);
+      const [statusMap, overridesMap, kvManualFixtures] = await Promise.all([getStatusMap(kv), getOverridesMap(kv), getManualFixtures(kv)]);
       fixtures = fixtures
         .map((f) => {
           const key = fixtureKey(f);
@@ -1797,6 +1818,7 @@ export default {
           fetchedAt: new Date().toISOString(),
           fixtures,
           overrides: overridesMap,
+          manualFixtures: kvManualFixtures,
           ...(includeDebug ? { cacDebug } : {}),
         }),
         {

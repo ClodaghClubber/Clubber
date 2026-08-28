@@ -797,8 +797,9 @@ let fixtureChangelog = {}; // stableKey -> { type:'unchanged'|'changed'|'removed
 let changesOnlyFilter = false;
 let clubberFilterVal = '';
 
-function saveManualFixtures(){
+function saveManualFixtures(noSync){
   try{ localStorage.setItem(MANUAL_KEY, JSON.stringify(manualFixtures)); }catch(e){}
+  if(!noSync) syncManualFixtures();
 }
 function loadManualFixtures(){
   try{
@@ -1157,19 +1158,18 @@ function setupModal(){
           if(mf) Object.assign(mf,ex);
           saveManualFixtures();
         } else {
-          fixtureOverrides[origKey]=Object.assign(fixtureOverrides[origKey]||{},{
-            county:countyVal,teamA:teamAVal,teamB:teamBVal,date:dateVal,day:dayName(dateVal),
-            time:ex.time,venue:ex.venue,competition:ex.competition,round:ex.round,
-            code:ex.code
-          });
+          const structEdit={county:countyVal,teamA:teamAVal,teamB:teamBVal,date:dateVal,day:dayName(dateVal),time:ex.time,venue:ex.venue,competition:ex.competition,round:ex.round,code:ex.code};
+          fixtureOverrides[origKey]=Object.assign(fixtureOverrides[origKey]||{},structEdit);
           saveOverrides();
+          syncOverrides([{key:origKey,fields:structEdit}]);
         }
         saveCache(); populateFilterOptions(); render();
       }
       closeModal(); return;
     }
     const f={
-      id:nextId++, county:countyVal, teamA:teamAVal, teamB:teamBVal,
+      id:'m'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+      county:countyVal, teamA:teamAVal, teamB:teamBVal,
       date:dateVal, day:dayName(dateVal), time:timeVal?to12h(timeVal):'',
       venue:venueVal||'', competition:compVal||'', round:roundVal,
       code:codeVal||deriveCode(compVal||'',null), status:'Proposed', manual:true
@@ -1638,6 +1638,14 @@ async function syncOverrides(updates){
   }catch(e){ console.warn('Override sync failed:',e); }
 }
 
+function syncManualFixtures(){
+  fetch(WORKER_URL,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:'setManualFixtures',fixtures:manualFixtures})
+  }).catch(e=>console.warn('Manual fixture sync failed:',e));
+}
+
 async function loadFixtures(isRefresh){
   loadSpinner.classList.add('active');
   loadStatus.textContent='Loading fixtures from source websites…';
@@ -1646,6 +1654,11 @@ async function loadFixtures(isRefresh){
     if(!res.ok) throw new Error(`Worker responded ${res.status}`);
     const json=await res.json();
     if(json.error) throw new Error(json.error);
+    // Authoritative manual fixtures from KV replace local copy
+    if(Array.isArray(json.manualFixtures)){
+      manualFixtures=json.manualFixtures;
+      saveManualFixtures(true); // noSync — data came from KV, don't echo it back
+    }
     // Merge KV overrides into local store so applyOverrides() picks them up
     if(json.overrides && typeof json.overrides==='object'){
       for(const [key,fields] of Object.entries(json.overrides)){
@@ -1917,7 +1930,8 @@ function qaSave(){
   const qaConflict=checkUnitConflict(-1,unitSystemVal,unitVal,dateVal,timeVal?to12h(timeVal):'');
   if(qaConflict) showConflictToast(`⚠ ${unitVal} is already assigned to another fixture at this time`);
   const f={
-    id:nextId++, county:countyVal, teamA:teamAVal, teamB:teamBVal,
+    id:'m'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+    county:countyVal, teamA:teamAVal, teamB:teamBVal,
     date:dateVal, day:dayName(dateVal), time:timeVal?to12h(timeVal):'',
     venue:venueVal||'', competition:compVal||'', round:roundVal,
     code:codeVal||deriveCode(compVal||'',null), status:'Proposed', manual:true,
