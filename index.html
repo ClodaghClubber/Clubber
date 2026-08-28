@@ -919,15 +919,32 @@ function detectChanges(newSnap){
   saveBaseline();
   saveChangelog();
 }
+function recordStatusChange(f, fromStatus, toStatus){
+  const sk=stableKeyOf(f);
+  const now=new Date().toLocaleString('en-IE');
+  if(!fixtureChangelog[sk]){
+    fixtureChangelog[sk]={type:'unchanged',data:{county:f.county,teamA:f.teamA,teamB:f.teamB,competition:f.competition,date:f.date,time:f.time,venue:f.venue||'',round:f.round||'',code:f.code||''},history:[]};
+  }
+  fixtureChangelog[sk].history.push({at:now,diffs:[{field:'Status',from:fromStatus,to:toStatus}]});
+  saveChangelog();
+}
 function updateClearChangesBtn(){
   const btn=document.getElementById('clearChangesBtn');
   if(!btn) return;
   const hasChanges=Object.values(fixtureChangelog).some(c=>c.type==='changed'||c.type==='removed'||c.type==='new');
   btn.style.display='none';
 }
-function openChangeHistoryModal(sk){
-  const chg=fixtureChangelog[sk];
-  if(!chg) return;
+function openChangeHistoryModal(sk,fid){
+  // If opened by fixture id, find the stable key from the fixture
+  if(!sk&&fid!==undefined){
+    const f=fixtures.find(x=>x.id==fid);
+    if(f) sk=stableKeyOf(f);
+  }
+  let chg=fixtureChangelog[sk];
+  // Allow opening even with no changelog entry yet
+  const f2=sk?fixtures.find(x=>stableKeyOf(x)===sk):null;
+  if(!chg&&!f2) return;
+  if(!chg) chg={type:'unchanged',data:{county:f2.county,teamA:f2.teamA,teamB:f2.teamB,competition:f2.competition},history:[]};
   const d=chg.data||{};
   document.getElementById('changeHistoryTitle').textContent=`${d.teamA||''} v ${d.teamB||''}`;
   document.getElementById('changeHistorySubtitle').textContent=`${d.county||''} · ${d.competition||''}`;
@@ -1388,9 +1405,9 @@ function render(){
     if(_chg) tr.classList.add('chg-'+_chg.type);
     if(f.manual) tr.classList.add('row-manual');
     const _chgLabel=_chg?(_chg.type==='new'?'NEW':_chg.type==='changed'?'CHANGED':_chg.type==='removed'?'REMOVED':'~'):'';
-    const _chgBadge=_chg?`<span class="badge-chg badge-chg-${_chg.type}" data-chg-key="${_sk.replace(/"/g,'&quot;')}" title="Click to see change history">${_chgLabel}</span>`:'';
+    const _chgBadge=_chg&&_chg.type!=='unchanged'?`<span class="badge-chg badge-chg-${_chg.type}" style="cursor:default;">${_chgLabel}</span>`:'';
     tr.innerHTML=`
-      <td style="white-space:nowrap;"><input type="checkbox" data-id="${f.id}" ${selected.has(f.id)?'checked':''}><button class="edit-btn" data-edit-id="${f.id}" title="Edit fixture" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:0 4px;vertical-align:middle;opacity:.6;">✎</button></td>
+      <td style="white-space:nowrap;"><input type="checkbox" data-id="${f.id}" ${selected.has(f.id)?'checked':''}><button class="edit-btn" data-edit-id="${f.id}" title="Edit fixture" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:0 4px;vertical-align:middle;opacity:.6;">✎</button><button class="hist-btn" data-hist-sk="${_sk.replace(/"/g,'&quot;')}" data-hist-id="${f.id}" title="View change history" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:12px;padding:0 3px;vertical-align:middle;opacity:.6;">⏱</button></td>
       <td style="text-align:center;">${f.clubberCreated?'<span class="badge-clubber-created" title="Created in Clubber">✓ Clubber</span>':''}</td>
       <td style="white-space:nowrap;">${f.county}</td>
       <td>${f.code||''}</td>
@@ -1559,6 +1576,7 @@ approveBtn.addEventListener('click',()=>{
   const selFixtures=fixtures.filter(f=>selected.has(f.id));
   const allApproved=selFixtures.every(f=>f.status==='Approved');
   const newStatus=allApproved?'Proposed':'Approved';
+  selFixtures.forEach(f=>recordStatusChange(f,f.status,newStatus));
   fixtures.forEach(f=>{ if(selected.has(f.id)) f.status=newStatus; });
   manualFixtures.forEach(f=>{ if(ids.includes(f.id)) f.status=newStatus; });
   saveManualFixtures();
@@ -1579,6 +1597,7 @@ approveBtn.addEventListener('click',()=>{
 });
 rejectBtn.addEventListener('click',()=>{
   const ids=[...selected];
+  fixtures.filter(f=>selected.has(f.id)).forEach(f=>recordStatusChange(f,f.status,'Rejected'));
   fixtures.forEach(f=>{ if(selected.has(f.id)) f.status='Rejected'; });
   manualFixtures.forEach(f=>{ if(ids.includes(f.id)) f.status='Rejected'; });
   saveManualFixtures();
@@ -1804,8 +1823,8 @@ document.getElementById('historyBtn').addEventListener('click', async () => {
 
 // ---- Inline socials editing ----
 document.getElementById('tbody').addEventListener('click',e=>{
-  const chgBadgeEl=e.target.closest('[data-chg-key]');
-  if(chgBadgeEl){openChangeHistoryModal(chgBadgeEl.dataset.chgKey);return;}
+  const histBtn=e.target.closest('.hist-btn');
+  if(histBtn){openChangeHistoryModal(histBtn.dataset.histSk,histBtn.dataset.histId);return;}
   const replayTd=e.target.closest('td[data-replay-id]');
   if(replayTd){
     const id=+replayTd.dataset.replayId;
