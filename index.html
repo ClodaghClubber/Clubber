@@ -1290,6 +1290,7 @@ function msInit(id,opts,onChange){
       panel.querySelector('[data-all]').checked=sel.size===0;
     }
     updateLabel();onChange();
+    panel.hidden=true;
   });
   trigger.addEventListener('click',e=>{
     e.stopPropagation();
