@@ -1408,7 +1408,7 @@ function render(){
     const _chgLabel=_chg?(_chg.type==='new'?'NEW':_chg.type==='changed'?'CHANGED':_chg.type==='removed'?'REMOVED':'~'):'';
     const _chgBadge=_chg&&_chg.type!=='unchanged'?`<span class="badge-chg badge-chg-${_chg.type}" style="cursor:default;">${_chgLabel}</span>`:'';
     tr.innerHTML=`
-      <td style="white-space:nowrap;"><input type="checkbox" data-id="${f.id}" ${selected.has(f.id)?'checked':''}><button class="edit-btn" data-edit-id="${f.id}" title="Edit fixture" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:0 4px;vertical-align:middle;opacity:.6;">✎</button><button class="hist-btn" data-hist-sk="${_sk.replace(/"/g,'&quot;')}" data-hist-id="${f.id}" title="View change history" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:12px;padding:0 3px;vertical-align:middle;opacity:.6;">⏱</button></td>
+      <td style="white-space:nowrap;"><input type="checkbox" data-id="${f.id}" ${selected.has(f.id)?'checked':''}><button class="edit-btn" data-edit-id="${f.id}" title="Edit fixture" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:0 4px;vertical-align:middle;opacity:.6;">✎</button></td>
       <td style="text-align:center;">${f.clubberCreated?'<span class="badge-clubber-created" title="Created in Clubber">✓ Clubber</span>':''}</td>
       <td style="white-space:nowrap;">${f.county}</td>
       <td>${f.code||''}</td>
@@ -1420,7 +1420,7 @@ function render(){
       <td>${f.venue}</td>
       <td>${f.competition}</td>
       <td>${f.round}</td>
-      <td><span class="status status-${f.status.toLowerCase()}">${f.status}</span>${_chgBadge}</td>
+      <td><span class="status status-${f.status.toLowerCase()}">${f.status}</span>${_chgBadge}<button class="hist-btn" data-hist-sk="${_sk.replace(/"/g,'&quot;')}" data-hist-id="${f.id}" title="View change history" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:0 0 0 4px;vertical-align:middle;opacity:.6;"><svg width="14" height="14" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="14" cy="14" r="11" stroke="currentColor" stroke-width="1.6"/><path d="M14 8v6l4 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></td>
       <td class="socials-cell" data-socials-id="${f.id}" title="Click to assign socials" style="cursor:pointer;color:${f.socials?'inherit':'var(--muted)'};">${f.socials||'—'}</td>
       <td class="socials-cell" data-support2-id="${f.id}" title="Click to assign 2nd support" style="cursor:pointer;color:${f.support2?'inherit':'var(--muted)'};">${f.support2||'—'}</td>
       <td class="replay-cell" data-replay-id="${f.id}" title="Click to toggle replay">${f.replay?'✔':'—'}</td>
