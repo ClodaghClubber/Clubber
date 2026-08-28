@@ -96,7 +96,6 @@
   .status-rejected{background:rgba(192,57,43,.18);color:#a02020;font-weight:600;}
   .badge-clubber-created{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:#1a6fa8;color:#fff;padding:2px 5px;border-radius:8px;margin-right:5px;vertical-align:middle;white-space:nowrap;}
   .badge-manual{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:transparent;color:var(--muted);border:1px dashed var(--muted);padding:1px 5px;border-radius:8px;margin-left:5px;vertical-align:middle;white-space:nowrap;}
-  tr.row-manual td:first-child{border-left:3px dashed var(--muted);}
   .btn-mark-clubber{background:#1a6fa8;}
   .empty{text-align:center;color:var(--muted);padding:40px;}
   .count{color:var(--muted);font-size:12px;padding:8px 24px;display:flex;align-items:center;gap:8px;}
@@ -121,8 +120,8 @@
   .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px;padding-top:16px;border-top:1px solid var(--border);}
   .btn-modal-cancel{background:var(--border);color:var(--text);}
   .btn-modal-add{background:#5a4fcf;color:#fff;}
-  .badge-manual{font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:rgba(90,79,207,.2);color:#9b8fe8;padding:2px 6px;border-radius:8px;margin-left:6px;vertical-align:middle;}
-  .badge-dh{font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:rgba(234,88,12,.15);color:#c2410c;padding:2px 5px;border-radius:8px;margin-left:5px;vertical-align:middle;cursor:default;}
+  .badge-manual{font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:#7c3aed;color:#fff;padding:2px 6px;border-radius:8px;margin-right:5px;vertical-align:middle;}
+  .badge-dh{font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:rgba(234,88,12,.15);color:#c2410c;padding:2px 5px;border-radius:8px;margin-right:5px;vertical-align:middle;cursor:default;}
   /* ---- Quick Add Row ---- */
   #quickAddBtn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:4px;width:22px;height:22px;font-size:16px;line-height:1;cursor:pointer;margin-left:6px;padding:0;vertical-align:middle;}
   #quickAddBtn:hover{color:var(--text);border-color:var(--accent);}
@@ -1393,14 +1392,14 @@ function render(){
     tr.innerHTML=`
       <td style="white-space:nowrap;"><input type="checkbox" data-id="${f.id}" ${selected.has(f.id)?'checked':''}><button class="edit-btn" data-edit-id="${f.id}" title="Edit fixture" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:0 4px;vertical-align:middle;opacity:.6;">✎</button></td>
       <td style="text-align:center;">${f.clubberCreated?'<span class="badge-clubber-created" title="Created in Clubber">✓ Clubber</span>':''}</td>
-      <td style="white-space:nowrap;">${f.county}${f.manual?'<span class="badge-manual">Manual</span>':''}</td>
+      <td style="white-space:nowrap;">${f.county}</td>
       <td>${f.code||''}</td>
-      <td>${f.teamA}</td>
+      <td>${f.manual?'<span class="badge-manual">MAN</span>':''}${dhIds.has(f.id)?'<span class="badge-dh" title="Double header — multiple fixtures at this venue on this day">DH</span>':''}${f.teamA}</td>
       <td>${f.teamB}</td>
       <td>${f.date}</td>
       <td>${f.day}</td>
       <td>${f.time}</td>
-      <td>${f.venue}${dhIds.has(f.id)?'<span class="badge-dh" title="Double header — multiple fixtures at this venue on this day">DH</span>':''}</td>
+      <td>${f.venue}</td>
       <td>${f.competition}</td>
       <td>${f.round}</td>
       <td><span class="status status-${f.status.toLowerCase()}">${f.status}</span>${_chgBadge}</td>
