@@ -1146,7 +1146,7 @@ function setupModal(){
     if(editingId!==null){
       const ex=fixtures.find(f=>f.id===editingId);
       if(ex){
-        const origKey=keyOf(ex);
+        const origKey=ex._origKey||keyOf(ex);
         Object.assign(ex,{
           county:countyVal, teamA:teamAVal, teamB:teamBVal,
           date:dateVal, day:dayName(dateVal), time:timeVal?to12h(timeVal):'',
@@ -1508,7 +1508,7 @@ selectAll.addEventListener('change',()=>{
 // see it on their next load. Applies the change locally regardless of
 // whether the sync succeeds, but flags it in loadStatus if it fails.
 async function syncStatus(ids,status){
-  const keys=fixtures.filter(f=>ids.includes(f.id)).map(keyOf);
+  const keys=fixtures.filter(f=>ids.includes(f.id)).map(f=>f._origKey||keyOf(f));
   try{
     const res=await fetch(WORKER_URL,{
       method:'POST',
@@ -1616,10 +1616,14 @@ function mergeFixtures(incoming){
   // only the local row `id` needs to be carried over for checkbox/selection
   // continuity across reloads — status itself is never preserved from the
   // old client-side copy.
-  const existingByKey=new Map(fixtures.map(f=>[keyOf(f),f]));
+  // _origKey preserves the pre-override key so syncStatus always sends the
+  // correct key to KV (overrides can change county/team names, which would
+  // otherwise corrupt the status key).
+  const existingByKey=new Map(fixtures.map(f=>[f._origKey||keyOf(f),f]));
   fixtures = incoming.map(inc=>{
-    const ex=existingByKey.get(keyOf(inc));
-    return {...inc, id: ex ? ex.id : nextId++};
+    const origKey=keyOf(inc);
+    const ex=existingByKey.get(origKey);
+    return {...inc, id: ex ? ex.id : nextId++, _origKey: origKey};
   });
   selected.clear();
   saveCache();
