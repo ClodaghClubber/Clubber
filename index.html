@@ -1490,7 +1490,7 @@ function exportSelectedToExcel(){
   URL.revokeObjectURL(url);
 }
 
-exportBtn.addEventListener('click',exportSelectedToExcel);
+exportBtn.addEventListener('click',()=>{ exportSelectedToExcel(); selected.clear(); render(); });
 clubberBtn.addEventListener('click',()=>{
   const visibleIds=new Set(getFiltered().map(f=>f.id));
   const selFixtures=fixtures.filter(f=>selected.has(f.id)&&visibleIds.has(f.id));
@@ -1522,6 +1522,8 @@ clubberBtn.addEventListener('click',()=>{
   }).join('');
 
   document.getElementById('clubberModal').classList.add('open');
+  selected.clear();
+  render();
 });
 
 selectAll.addEventListener('change',()=>{
@@ -1558,6 +1560,7 @@ approveBtn.addEventListener('click',()=>{
   manualFixtures.forEach(f=>{ if(ids.includes(f.id)) f.status=newStatus; });
   saveManualFixtures();
   saveCache();
+  selected.clear();
   render();
   syncStatus(ids,newStatus);
   // Visual feedback
@@ -1593,7 +1596,7 @@ markClubberBtn.addEventListener('click',()=>{
     if(!f.manual) syncUpdates.push({key:fk,fields:{clubberCreated:true}});
   });
   manualFixtures.forEach(f=>{ if(ids.includes(f.id)) f.clubberCreated=true; });
-  saveOverrides(); saveManualFixtures(); saveCache(); render();
+  saveOverrides(); saveManualFixtures(); saveCache(); selected.clear(); render();
   if(syncUpdates.length) syncOverrides(syncUpdates);
   const warn=document.getElementById('clubberWarning');
   warn.style.display='block';
