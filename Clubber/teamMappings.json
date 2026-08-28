@@ -28,12 +28,12 @@
     },
     "Kildavin / Clonegal": {
       "id": "807d72ec-d3e9-4b6c-8681-4689dab61a2f",
-      "name": "Kildavin/Clonegal"
+      "name": "Kildavin Clonegal"
     },
-    "Kildavin/Clonegal": "807d72ec-d3e9-4b6c-8681-4689dab61a2f",
+    "Kildavin Clonegal": "807d72ec-d3e9-4b6c-8681-4689dab61a2f",
     "Kildavin": {
       "id": "807d72ec-d3e9-4b6c-8681-4689dab61a2f",
-      "name": "Kildavin/Clonegal"
+      "name": "Kildavin Clonegal"
     },
     "Burren Rangers Hurling and Camogie Club": {
       "id": "cc0f9dca-5429-459b-b212-6a75d44fd9a8",
@@ -274,9 +274,9 @@
     },
     "Ballyfore": {
       "id": "141fc9c4-b883-4c81-8e0f-976fe19e5218",
-      "name": "Ballyskenach / Killavilla"
+      "name": "Ballyskenach Killavilla"
     },
-    "Ballyskenach / Killavilla": "141fc9c4-b883-4c81-8e0f-976fe19e5218",
+    "Ballyskenach Killavilla": "141fc9c4-b883-4c81-8e0f-976fe19e5218",
     "Belmont": "9200c767-6e41-47bc-b5ad-c79bf23ecc4d",
     "Birr": "0e1d553d-bb54-4f6b-ad37-51130e6417eb",
     "Bracknagh": "97aaface-b0dc-4a2f-b230-10dd94b1bb6b",
@@ -308,10 +308,10 @@
     "Ferbane": "86b31bc1-0ec5-41c0-bc3c-1c31542bc48c",
     "Gracefield": "911ed5f7-999d-4bb1-aa1e-293dc327bc2e",
     "Kilclonfert": "5d9b8dae-d93e-4eaa-ac11-5e0d6490a6b4",
-    "Kilcormac / Killoughey": "ae24f6f5-62f0-4a32-9883-5f1bdb1ef6b5",
+    "Kilcormac Killoughey": "ae24f6f5-62f0-4a32-9883-5f1bdb1ef6b5",
     "Kilcormac-Killoughey": {
       "id": "ae24f6f5-62f0-4a32-9883-5f1bdb1ef6b5",
-      "name": "Kilcormac / Killoughey"
+      "name": "Kilcormac Killoughey"
     },
     "Kinnitty": "742c3cf8-1420-4695-b6f4-95b9208b93ce",
     "Lusmagh": "89c33064-4a99-4cea-98c4-78cc43eeafd7",
@@ -713,10 +713,10 @@
       "id": "c2b628c8-c8e0-4459-982c-8a3e3959684f",
       "name": "St. Mogues Fethard on Sea"
     },
-    "Taghmon/Camross": "ee9f58ea-266b-442f-bdc2-05cf2d1eff6e",
+    "Taghmon Camross": "ee9f58ea-266b-442f-bdc2-05cf2d1eff6e",
     "Taghmon-Camross": {
       "id": "ee9f58ea-266b-442f-bdc2-05cf2d1eff6e",
-      "name": "Taghmon/Camross"
+      "name": "Taghmon Camross"
     },
     "Tara Rocks": "bda29180-8b6f-49bc-af85-9de1212dd1c2",
     "Wexford": "b1ffe362-c85d-430d-9fac-0380ee830425",
@@ -951,18 +951,18 @@
     "Clonard": "dd55b45d-2a7d-43bc-9c28-677a502c1a0b",
     "Cortown": "d13cf4ac-1c77-4bf2-b23d-cebe51233369",
     "Curraha": "05404ca1-7563-42e3-8847-b3f53f16be17",
-    "Donaghmore / Ashbourne": "537b9c5d-a25c-4595-a2cf-e8e3f19d9594",
+    "Donaghmore Ashbourne": "537b9c5d-a25c-4595-a2cf-e8e3f19d9594",
     "Donaghmore/Ashbourne": {
       "id": "537b9c5d-a25c-4595-a2cf-e8e3f19d9594",
-      "name": "Donaghmore / Ashbourne"
+      "name": "Donaghmore Ashbourne"
     },
     "Drumbaragh Emmets": "ee262bad-6ec1-40e0-98cb-7949d479f8e0",
     "Drumconrath": "79fc7293-385c-4a4b-a164-d633763bcfa4",
     "Drumree": "ae09e93a-b0a1-4a3c-931d-bfb2bb35f61a",
-    "Duleek / Bellewstown": "86ea3487-0094-4594-8814-b056520e4419",
+    "Duleek Bellewstown": "86ea3487-0094-4594-8814-b056520e4419",
     "Duleek/Bellewstown": {
       "id": "86ea3487-0094-4594-8814-b056520e4419",
-      "name": "Duleek / Bellewstown"
+      "name": "Duleek Bellewstown"
     },
     "Dunderry": "9f6237a1-c581-4715-8594-83c92504d081",
     "Dunsany": "aba99ec9-064b-4d03-baeb-e039209b9067",
@@ -1047,7 +1047,7 @@
     },
     "Duleek-Bellewstown GFC": {
       "id": "86ea3487-0094-4594-8814-b056520e4419",
-      "name": "Duleek / Bellewstown"
+      "name": "Duleek Bellewstown"
     },
     "Dunshaughlin & Royal Gaels": {
       "id": "0f84902a-d94a-4e01-9281-b3152091819c",
@@ -1595,7 +1595,7 @@
     "Youghal": "7c948ab3-87d3-4a6d-aed0-eabcf8421ea6",
     "Dohenys": {
       "id": "148e61bf-4604-456f-a97d-dda99d93a3c8",
-      "name": "Dohenys / Sam Maguires"
+      "name": "Dohenys Sam Maguires"
     },
     "Eire Og": {
       "id": "e41bf6de-d23b-4830-ac91-07cebff02ad0",
@@ -1613,12 +1613,12 @@
   "Waterford": {
     "Abbeyside-Ballinacourty": {
       "id": "ef6ad607-f0f2-41a4-b936-94b31a91d7d2",
-      "name": "Abbeyside / Ballinacourty"
+      "name": "Abbeyside Ballinacourty"
     },
     "An Rinn": "1ceca09d-7f2a-4bb9-9346-636c7733d621",
     "Affane/Cappoquin/Tourin": {
       "id": "5c2bc184-7783-4680-9bcb-b5ade134911a",
-      "name": "Cappoquin / Affane / Tourin"
+      "name": "Cappoquin Affane Tourin"
     },
     "Ballysaggart": "2bedccc9-ba64-47e8-b954-ecfe5af5b56d",
     "Ballygunner A": {
@@ -1629,7 +1629,7 @@
     "Brickey Rangers": "7da182e8-4f1f-425f-81f5-a199cf13d51f",
     "Clashmore Kinsalebeg": {
       "id": "c7ab92b2-c4aa-48b9-94de-8e319214b623",
-      "name": "Clashmore / Kinsalebeg"
+      "name": "Clashmore Kinsalebeg"
     },
     "Clonea GAA Club": {
       "id": "07325ee1-5b7a-40e8-9ecd-6ef16a437f98",
@@ -1643,7 +1643,7 @@
     "Ferrybank": "6c85b64a-89d7-42e2-a8c0-e1d987b4d2ba",
     "Fourmilewater": {
       "id": "cad42736-c349-4adb-8d7c-78eb7028daca",
-      "name": "The Nire/Fourmilewater"
+      "name": "The Nire Fourmilewater"
     },
     "Lismore": "a1dccd52-83f3-4184-aee9-f11157540011",
     "Mount Sion": {
@@ -1705,7 +1705,7 @@
     "Fossa": "35e40aba-bb26-4596-af56-a1abb1897c68",
     "Glenbeigh-Glencar": {
       "id": "a14e1921-b63b-4511-b978-eda476d7d61d",
-      "name": "Glenbeigh/Glencar"
+      "name": "Glenbeigh Glencar"
     },
     "Glenflesk": "7cbeb7ea-71de-450c-a19e-c519de4dea1b",
     "Gneeveguilla": "a9f230da-f1cc-4080-bd62-1d26309ea85e",
