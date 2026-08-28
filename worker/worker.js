@@ -1630,6 +1630,7 @@ const CORS_HEADERS = {
 
 const VALID_STATUSES = ['Proposed', 'Approved', 'Rejected', 'Removed'];
 const STATUS_KV_KEY = 'statuses';
+const OVERRIDES_KV_KEY = 'overrides';
 
 // Same composite key the dashboard uses client-side to match a fixture
 // across reloads (county|competition|teamA|teamB|date), so Approve/Reject/
@@ -1654,11 +1655,14 @@ async function getStatusMap(kv) {
   if (!kv) return {};
   const raw = await kv.get(STATUS_KV_KEY);
   if (!raw) return {};
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return {};
-  }
+  try { return JSON.parse(raw); } catch { return {}; }
+}
+
+async function getOverridesMap(kv) {
+  if (!kv) return {};
+  const raw = await kv.get(OVERRIDES_KV_KEY);
+  if (!raw) return {};
+  try { return JSON.parse(raw); } catch { return {}; }
 }
 
 export default {
@@ -1673,6 +1677,26 @@ export default {
     if (request.method === 'POST') {
       try {
         const body = await request.json();
+
+        // Shared-override sync (socials, replay, videographer, clubberCreated, etc.)
+        if (body.action === 'setOverrides') {
+          const updates = Array.isArray(body.updates) ? body.updates : [];
+          if (!kv) {
+            return new Response(
+              JSON.stringify({ ok: false, error: 'No FIXTURE_STATUS KV namespace bound' }),
+              { status: 500, headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } }
+            );
+          }
+          const overridesMap = await getOverridesMap(kv);
+          for (const { key, fields } of updates) {
+            if (key && fields && typeof fields === 'object') {
+              overridesMap[key] = Object.assign(overridesMap[key] || {}, fields);
+            }
+          }
+          await kv.put(OVERRIDES_KV_KEY, JSON.stringify(overridesMap));
+          return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } });
+        }
+
         const keys = Array.isArray(body.keys) ? body.keys : [];
         const status = body.status;
         if (!VALID_STATUSES.includes(status) || keys.length === 0) {
@@ -1757,18 +1781,22 @@ export default {
         ...kilkennyCamogieResults.flat().map(f => ({ ...fixNames(f), sport: 'Camogie' })),
       ];
 
-      const statusMap = await getStatusMap(kv);
+      const [statusMap, overridesMap] = await Promise.all([getStatusMap(kv), getOverridesMap(kv)]);
       fixtures = fixtures
-        .map((f) => ({ ...f, status: statusMap[fixtureKey(f)] || 'Proposed' }))
+        .map((f) => {
+          const key = fixtureKey(f);
+          const ov = overridesMap[key];
+          return { ...f, ...(ov || {}), status: statusMap[key] || 'Proposed' };
+        })
         .filter((f) => f.status !== 'Removed');
 
-      const url = new URL(request.url);
       const includeDebug = url.searchParams.has('debug');
 
       return new Response(
         JSON.stringify({
           fetchedAt: new Date().toISOString(),
           fixtures,
+          overrides: overridesMap,
           ...(includeDebug ? { cacDebug } : {}),
         }),
         {

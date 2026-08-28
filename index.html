@@ -955,6 +955,7 @@ function applyOverrides(){
     if(ov.videographer!==undefined){f.videographer=ov.videographer;f.videographerEmail=ov.videographerEmail;}
     if(ov.unitSystem!==undefined){f.unitSystem=ov.unitSystem;}
     if(ov.unit!==undefined){f.unit=ov.unit;}
+    if(ov.clubberCreated!==undefined){f.clubberCreated=ov.clubberCreated;}
   });
 }
 
@@ -1555,11 +1556,17 @@ rejectBtn.addEventListener('click',()=>{
 });
 markClubberBtn.addEventListener('click',()=>{
   const ids=[...selected];
-  fixtures.forEach(f=>{ if(selected.has(f.id)) f.clubberCreated=true; });
+  const syncUpdates=[];
+  fixtures.forEach(f=>{
+    if(!selected.has(f.id)) return;
+    f.clubberCreated=true;
+    const ov=fixtureOverrides[keyOf(f)]||{};
+    ov.clubberCreated=true; fixtureOverrides[keyOf(f)]=ov;
+    if(!f.manual) syncUpdates.push({key:keyOf(f),fields:{clubberCreated:true}});
+  });
   manualFixtures.forEach(f=>{ if(ids.includes(f.id)) f.clubberCreated=true; });
-  saveManualFixtures();
-  saveCache();
-  render();
+  saveOverrides(); saveManualFixtures(); saveCache(); render();
+  if(syncUpdates.length) syncOverrides(syncUpdates);
   const warn=document.getElementById('clubberWarning');
   warn.style.display='block';
   setTimeout(()=>{ warn.style.display='none'; }, 8000);
@@ -1620,6 +1627,17 @@ function mergeFixtures(incoming){
   applyOverrides();
 }
 
+async function syncOverrides(updates){
+  if(!updates||!updates.length) return;
+  try{
+    await fetch(WORKER_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'setOverrides',updates})
+    });
+  }catch(e){ console.warn('Override sync failed:',e); }
+}
+
 async function loadFixtures(isRefresh){
   loadSpinner.classList.add('active');
   loadStatus.textContent='Loading fixtures from source websites…';
@@ -1628,6 +1646,13 @@ async function loadFixtures(isRefresh){
     if(!res.ok) throw new Error(`Worker responded ${res.status}`);
     const json=await res.json();
     if(json.error) throw new Error(json.error);
+    // Merge KV overrides into local store so applyOverrides() picks them up
+    if(json.overrides && typeof json.overrides==='object'){
+      for(const [key,fields] of Object.entries(json.overrides)){
+        fixtureOverrides[key]=Object.assign(fixtureOverrides[key]||{},fields);
+      }
+      saveOverrides();
+    }
     const incoming=(json.fixtures||[]).map(f=>({...mk(f.county,f.teamA,f.teamB,f.date,f.time,f.venue,f.competition,f.round), code:deriveCode(f.competition,f.sport), status:f.status||'Proposed'}));
     mergeFixtures(incoming);
     detectChanges(takeSnapshot());
@@ -1676,6 +1701,7 @@ document.getElementById('tbody').addEventListener('click',e=>{
       const ov=fixtureOverrides[keyOf(f)]||{};
       ov.replay=f.replay; fixtureOverrides[keyOf(f)]=ov;
       saveOverrides();
+      if(!f.manual) syncOverrides([{key:keyOf(f),fields:{replay:f.replay}}]);
       if(f.manual){const mf=manualFixtures.find(m=>m.id===id);if(mf)mf.replay=f.replay;saveManualFixtures();}
       saveCache(); render();
     }
@@ -1704,6 +1730,7 @@ document.getElementById('tbody').addEventListener('click',e=>{
         if(def.sys){f.unitSystem=def.sys;f.unit=def.unit;ov.unitSystem=def.sys;ov.unit=def.unit;}
       }
       fixtureOverrides[keyOf(f)]=ov; saveOverrides();
+      if(!f.manual) syncOverrides([{key:keyOf(f),fields:{videographer:ov.videographer,videographerEmail:ov.videographerEmail,unitSystem:ov.unitSystem,unit:ov.unit}}]);
       if(f.manual){const mf=manualFixtures.find(m=>m.id===id);if(mf)Object.assign(mf,{videographer:f.videographer,videographerEmail:f.videographerEmail,unitSystem:f.unitSystem,unit:f.unit});saveManualFixtures();}
       saveCache(); render();
     };
@@ -1745,6 +1772,7 @@ document.getElementById('tbody').addEventListener('click',e=>{
       f.unitSystem=sys; f.unit=unit;
       const ov=fixtureOverrides[keyOf(f)]||{};
       ov.unitSystem=sys; ov.unit=unit; fixtureOverrides[keyOf(f)]=ov; saveOverrides();
+      if(!f.manual) syncOverrides([{key:keyOf(f),fields:{unitSystem:sys,unit}}]);
       if(f.manual){const mf=manualFixtures.find(m=>m.id===id);if(mf){mf.unitSystem=sys;mf.unit=unit;}saveManualFixtures();}
       saveCache();
     };
@@ -1961,16 +1989,19 @@ function setupAssignSocials(){
   panel.innerHTML=`<div class="col-pick-item" data-name="" data-email="" style="cursor:pointer;color:var(--muted);">— None —</div>`
     +SOCIALS.map(s=>`<div class="col-pick-item" data-name="${s.name}" data-email="${s.email}" style="cursor:pointer;">${s.name}</div>`).join('');
   function assignToSelected(name,email){
+    const syncUpdates=[];
     fixtures.forEach(f=>{
       if(!selected.has(f.id)) return;
       f.socials=name; f.socialsEmail=email;
       fixtureOverrides[keyOf(f)]=Object.assign(fixtureOverrides[keyOf(f)]||{},{socials:name,socialsEmail:email});
+      if(!f.manual) syncUpdates.push({key:keyOf(f),fields:{socials:name,socialsEmail:email}});
       if(f.manual){
         const mf=manualFixtures.find(m=>m.id===f.id);
         if(mf){mf.socials=name;mf.socialsEmail=email;}
       }
     });
     saveOverrides(); saveManualFixtures(); saveCache(); render();
+    if(syncUpdates.length) syncOverrides(syncUpdates);
   }
   panel.querySelectorAll('[data-name]').forEach(item=>{
     item.addEventListener('click',()=>{
@@ -2007,16 +2038,19 @@ function setupAssignSupport2(){
   panel.innerHTML=`<div class="col-pick-item" data-name="" data-email="" style="cursor:pointer;color:var(--muted);">— None —</div>`
     +SUPPORT2.map(s=>`<div class="col-pick-item" data-name="${s.name}" data-email="${s.email}" style="cursor:pointer;">${s.name}</div>`).join('');
   function assignToSelected(name,email){
+    const syncUpdates=[];
     fixtures.forEach(f=>{
       if(!selected.has(f.id)) return;
       f.support2=name; f.support2Email=email;
       fixtureOverrides[keyOf(f)]=Object.assign(fixtureOverrides[keyOf(f)]||{},{support2:name,support2Email:email});
+      if(!f.manual) syncUpdates.push({key:keyOf(f),fields:{support2:name,support2Email:email}});
       if(f.manual){
         const mf=manualFixtures.find(m=>m.id===f.id);
         if(mf){mf.support2=name;mf.support2Email=email;}
       }
     });
     saveOverrides(); saveManualFixtures(); saveCache(); render();
+    if(syncUpdates.length) syncOverrides(syncUpdates);
   }
   panel.querySelectorAll('[data-name]').forEach(item=>{
     item.addEventListener('click',()=>{assignToSelected(item.dataset.name,item.dataset.email);panel.style.display='none';});
