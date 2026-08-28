@@ -1474,6 +1474,10 @@ function render(){
 }
 
 function updateActionButtons(){
+  const visibleIds=getFiltered().map(f=>f.id);
+  const selCount=visibleIds.filter(id=>selected.has(id)).length;
+  selectAll.checked=selCount>0&&selCount===visibleIds.length;
+  selectAll.indeterminate=selCount>0&&selCount<visibleIds.length;
   const selFixtures=fixtures.filter(f=>selected.has(f.id));
   approveBtn.disabled = selFixtures.length===0;
   const allApproved = selFixtures.length>0 && selFixtures.every(f=>f.status==='Approved');
