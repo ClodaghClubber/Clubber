@@ -1807,7 +1807,7 @@ export default {
         .map((f) => {
           const key = fixtureKey(f);
           const ov = overridesMap[key];
-          return { ...f, ...(ov || {}), status: statusMap[key] || 'Proposed' };
+          return { ...f, ...(ov || {}), status: statusMap[key] || 'Proposed', _rawKey: key };
         })
         .filter((f) => f.status !== 'Removed');
 

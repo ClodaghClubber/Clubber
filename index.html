@@ -939,7 +939,7 @@ function loadOverrides(){try{const r=localStorage.getItem(OVERRIDES_KEY);if(r)fi
 function saveOverrides(){try{localStorage.setItem(OVERRIDES_KEY,JSON.stringify(fixtureOverrides));}catch(e){}}
 function applyOverrides(){
   fixtures.forEach(f=>{
-    const k=keyOf(f), ov=fixtureOverrides[k];
+    const k=f._origKey||keyOf(f), ov=fixtureOverrides[k];
     if(!ov) return;
     if(ov.county!==undefined) f.county=ov.county;
     if(ov.teamA!==undefined) f.teamA=ov.teamA;
@@ -1560,9 +1560,10 @@ markClubberBtn.addEventListener('click',()=>{
   fixtures.forEach(f=>{
     if(!selected.has(f.id)) return;
     f.clubberCreated=true;
-    const ov=fixtureOverrides[keyOf(f)]||{};
-    ov.clubberCreated=true; fixtureOverrides[keyOf(f)]=ov;
-    if(!f.manual) syncUpdates.push({key:keyOf(f),fields:{clubberCreated:true}});
+    const fk=f._origKey||keyOf(f);
+    const ov=fixtureOverrides[fk]||{};
+    ov.clubberCreated=true; fixtureOverrides[fk]=ov;
+    if(!f.manual) syncUpdates.push({key:fk,fields:{clubberCreated:true}});
   });
   manualFixtures.forEach(f=>{ if(ids.includes(f.id)) f.clubberCreated=true; });
   saveOverrides(); saveManualFixtures(); saveCache(); render();
@@ -1621,7 +1622,7 @@ function mergeFixtures(incoming){
   // otherwise corrupt the status key).
   const existingByKey=new Map(fixtures.map(f=>[f._origKey||keyOf(f),f]));
   fixtures = incoming.map(inc=>{
-    const origKey=keyOf(inc);
+    const origKey=inc._rawKey||keyOf(inc);
     const ex=existingByKey.get(origKey);
     return {...inc, id: ex ? ex.id : nextId++, _origKey: origKey};
   });
@@ -1670,7 +1671,7 @@ async function loadFixtures(isRefresh){
       }
       saveOverrides();
     }
-    const incoming=(json.fixtures||[]).map(f=>({...mk(f.county,f.teamA,f.teamB,f.date,f.time,f.venue,f.competition,f.round), code:deriveCode(f.competition,f.sport), status:f.status||'Proposed'}));
+    const incoming=(json.fixtures||[]).map(f=>({...mk(f.county,f.teamA,f.teamB,f.date,f.time,f.venue,f.competition,f.round), code:deriveCode(f.competition,f.sport), status:f.status||'Proposed', _rawKey:f._rawKey}));
     mergeFixtures(incoming);
     detectChanges(takeSnapshot());
     updateClearChangesBtn();
