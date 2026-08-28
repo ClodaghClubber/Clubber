@@ -1624,7 +1624,9 @@ function mergeFixtures(incoming){
   fixtures = incoming.map(inc=>{
     const origKey=inc._rawKey||keyOf(inc);
     const ex=existingByKey.get(origKey);
-    return {...inc, id: ex ? ex.id : nextId++, _origKey: origKey};
+    // Spread ex first so local state (clubberCreated, socials, etc.) survives
+    // the refresh; inc fields (including status from KV) take precedence.
+    return ex ? {...ex, ...inc, id: ex.id, _origKey: origKey} : {...inc, id: nextId++, _origKey: origKey};
   });
   selected.clear();
   saveCache();
