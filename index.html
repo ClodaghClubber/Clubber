@@ -95,6 +95,8 @@
   .status-approved{background:rgba(39,174,96,.15);color:var(--approve);}
   .status-rejected{background:rgba(192,57,43,.18);color:#a02020;font-weight:600;}
   .badge-clubber-created{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:#1a6fa8;color:#fff;padding:2px 5px;border-radius:8px;margin-right:5px;vertical-align:middle;white-space:nowrap;}
+  .badge-manual{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:transparent;color:var(--muted);border:1px dashed var(--muted);padding:1px 5px;border-radius:8px;margin-left:5px;vertical-align:middle;white-space:nowrap;}
+  tr.row-manual td:first-child{border-left:3px dashed var(--muted);}
   .btn-mark-clubber{background:#1a6fa8;}
   .empty{text-align:center;color:var(--muted);padding:40px;}
   .count{color:var(--muted);font-size:12px;padding:8px 24px;display:flex;align-items:center;gap:8px;}
@@ -1385,12 +1387,13 @@ function render(){
     const _sk=stableKeyOf(f);
     const _chg=fixtureChangelog[_sk];
     if(_chg) tr.classList.add('chg-'+_chg.type);
+    if(f.manual) tr.classList.add('row-manual');
     const _chgLabel=_chg?(_chg.type==='new'?'NEW':_chg.type==='changed'?'CHANGED':_chg.type==='removed'?'REMOVED':'~'):'';
     const _chgBadge=_chg?`<span class="badge-chg badge-chg-${_chg.type}" data-chg-key="${_sk.replace(/"/g,'&quot;')}" title="Click to see change history">${_chgLabel}</span>`:'';
     tr.innerHTML=`
       <td style="white-space:nowrap;"><input type="checkbox" data-id="${f.id}" ${selected.has(f.id)?'checked':''}><button class="edit-btn" data-edit-id="${f.id}" title="Edit fixture" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:0 4px;vertical-align:middle;opacity:.6;">✎</button></td>
       <td style="text-align:center;">${f.clubberCreated?'<span class="badge-clubber-created" title="Created in Clubber">✓ Clubber</span>':''}</td>
-      <td style="white-space:nowrap;">${f.county}</td>
+      <td style="white-space:nowrap;">${f.county}${f.manual?'<span class="badge-manual">Manual</span>':''}</td>
       <td>${f.code||''}</td>
       <td>${f.teamA}</td>
       <td>${f.teamB}</td>
