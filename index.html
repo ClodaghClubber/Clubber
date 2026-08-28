@@ -353,6 +353,20 @@
       </svg>
       Json
     </button>
+    <button id="historyBtn" title="Status change history" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px;font-weight:600;">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="14" cy="14" r="11" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M14 8v6l4 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      History
+    </button>
+    <button id="userBtn" title="Set your name for the audit log" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px;font-weight:600;">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="14" cy="10" r="5" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M4 24c0-5.523 4.477-10 10-10s10 4.477 10 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <span id="userBtnLabel">Set name</span>
+    </button>
     <div class="col-picker-wrap">
       <button id="colsBtn" title="Choose columns" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px;font-weight:600;">
         <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -371,6 +385,17 @@
 </div>
 <div class="count" id="loadStatus"><div class="spinner" id="loadSpinner"></div><span id="loadStatusText"></span></div>
 <div id="clubberWarning" style="display:none;padding:6px 24px;font-size:12px;color:#92400e;background:#fef3c7;border-top:1px solid #fcd34d;">⚠ <strong>Warning:</strong> This is for tracking purposes only. Verify manually that the fixture exists on the Clubber site!</div>
+
+<!-- History modal -->
+<div id="historyModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;width:min(680px,95vw);max-height:80vh;display:flex;flex-direction:column;overflow:hidden;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);">
+      <h2 style="margin:0;font-size:15px;font-weight:700;">Status Change History</h2>
+      <button id="historyClose" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:20px;line-height:1;padding:2px 6px;">&times;</button>
+    </div>
+    <div id="historyContent" style="overflow-y:auto;padding:16px 20px;font-size:13px;"></div>
+  </div>
+</div>
 
 <div class="container">
 <table id="fixtureTable">
@@ -782,6 +807,8 @@ function mk(county,teamA,teamB,date,time,venue,competition,round){
 // browser CORS restrictions) and returns normalized fixture JSON.
 // Replace with your deployed Worker URL after running: wrangler deploy
 const WORKER_URL = 'https://gaa-fixtures-proxy-v2.clodagh-b01.workers.dev/';
+const USER_KEY = 'gaaUserName';
+let currentUser = localStorage.getItem(USER_KEY) || '';
 
 // ---- App state ----
 const CACHE_KEY = 'gaaFixturesCache';
@@ -1513,7 +1540,7 @@ async function syncStatus(ids,status){
     const res=await fetch(WORKER_URL,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({keys,status})
+      body:JSON.stringify({keys,status,user:currentUser})
     });
     const json=await res.json();
     if(!json.ok) throw new Error(json.error||'Update rejected');
@@ -1707,6 +1734,64 @@ if(cached){
 }
 loadFixtures(false);
 setupModal();
+
+// ---- User name management ----
+const userBtnLabel = document.getElementById('userBtnLabel');
+function updateUserBtn() {
+  userBtnLabel.textContent = currentUser || 'Set name';
+  userBtnLabel.style.color = currentUser ? 'var(--text)' : '';
+}
+updateUserBtn();
+document.getElementById('userBtn').addEventListener('click', () => {
+  const name = prompt('Enter your name for the status change audit log (leave blank to clear):', currentUser);
+  if (name === null) return;
+  currentUser = name.trim().slice(0, 60);
+  if (currentUser) localStorage.setItem(USER_KEY, currentUser);
+  else localStorage.removeItem(USER_KEY);
+  updateUserBtn();
+});
+
+// ---- Status history modal ----
+const historyModal = document.getElementById('historyModal');
+const historyContent = document.getElementById('historyContent');
+document.getElementById('historyClose').addEventListener('click', () => { historyModal.style.display = 'none'; });
+historyModal.addEventListener('click', e => { if (e.target === historyModal) historyModal.style.display = 'none'; });
+
+const STATUS_COLOURS = { Approved: '#4a9e1a', Rejected: '#dc2626', Removed: '#6b7280', Proposed: '#d97706' };
+
+document.getElementById('historyBtn').addEventListener('click', async () => {
+  historyModal.style.display = 'flex';
+  historyContent.innerHTML = '<em style="color:var(--muted)">Loading…</em>';
+  try {
+    const res = await fetch(WORKER_URL + '?history=1', { cache: 'no-store' });
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || 'Failed');
+    const hist = json.history || [];
+    if (!hist.length) { historyContent.innerHTML = '<em style="color:var(--muted)">No status changes recorded yet.</em>'; return; }
+    const rows = hist.map(h => {
+      const ts = new Date(h.timestamp).toLocaleString();
+      const [county, comp, teamA, teamB, date] = h.key.split('|');
+      const label = `${teamA} v ${teamB}`;
+      const prevCol = STATUS_COLOURS[h.previousStatus] || '#999';
+      const nextCol = STATUS_COLOURS[h.status] || '#999';
+      const who = [h.user, h.device].filter(Boolean).join(' · ') || 'Unknown';
+      return `<div style="border-bottom:1px solid var(--border);padding:10px 0;display:grid;grid-template-columns:1fr auto;gap:4px 12px;">
+        <div style="font-weight:600;">${label}</div>
+        <div style="text-align:right;font-size:11px;color:var(--muted);">${ts}</div>
+        <div style="font-size:12px;color:var(--muted);">${county} · ${comp} · ${date}</div>
+        <div style="text-align:right;font-size:12px;">
+          <span style="color:${prevCol}">${h.previousStatus}</span>
+          <span style="color:var(--muted);margin:0 4px;">→</span>
+          <span style="color:${nextCol};font-weight:700;">${h.status}</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);grid-column:1/-1;">${who}</div>
+      </div>`;
+    }).join('');
+    historyContent.innerHTML = rows;
+  } catch (err) {
+    historyContent.innerHTML = `<em style="color:#dc2626">Failed to load history: ${err.message}</em>`;
+  }
+});
 
 // ---- Inline socials editing ----
 document.getElementById('tbody').addEventListener('click',e=>{

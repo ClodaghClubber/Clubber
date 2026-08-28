@@ -1632,6 +1632,8 @@ const VALID_STATUSES = ['Proposed', 'Approved', 'Rejected', 'Removed'];
 const STATUS_KV_KEY = 'statuses';
 const OVERRIDES_KV_KEY = 'overrides';
 const MANUAL_KV_KEY = 'manualFixtures';
+const STATUS_HISTORY_KV_KEY = 'statusHistory';
+const STATUS_HISTORY_MAX = 500;
 
 // Same composite key the dashboard uses client-side to match a fixture
 // across reloads (county|competition|teamA|teamB|date), so Approve/Reject/
@@ -1671,6 +1673,24 @@ async function getManualFixtures(kv) {
   const raw = await kv.get(MANUAL_KV_KEY);
   if (!raw) return [];
   try { const p = JSON.parse(raw); return Array.isArray(p) ? p : []; } catch { return []; }
+}
+
+async function getStatusHistory(kv) {
+  if (!kv) return [];
+  const raw = await kv.get(STATUS_HISTORY_KV_KEY);
+  if (!raw) return [];
+  try { const p = JSON.parse(raw); return Array.isArray(p) ? p : []; } catch { return []; }
+}
+
+function parseDevice(ua) {
+  if (!ua) return 'Unknown';
+  if (/iPhone/.test(ua)) return 'iPhone';
+  if (/iPad/.test(ua)) return 'iPad';
+  if (/Android/.test(ua)) return 'Android';
+  if (/Windows/.test(ua)) return 'Windows';
+  if (/Macintosh|Mac OS X/.test(ua)) return 'Mac';
+  if (/Linux/.test(ua)) return 'Linux';
+  return 'Unknown';
 }
 
 export default {
@@ -1732,9 +1752,21 @@ export default {
             { status: 500, headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } }
           );
         }
-        const statusMap = await getStatusMap(kv);
-        for (const key of keys) statusMap[key] = status;
-        await kv.put(STATUS_KV_KEY, JSON.stringify(statusMap));
+        const [statusMap, history] = await Promise.all([getStatusMap(kv), getStatusHistory(kv)]);
+        const timestamp = new Date().toISOString();
+        const user = typeof body.user === 'string' ? body.user.slice(0, 60) : '';
+        const device = parseDevice(request.headers.get('User-Agent') || '');
+        for (const key of keys) {
+          const previousStatus = statusMap[key] || 'Proposed';
+          statusMap[key] = status;
+          history.push({ key, status, previousStatus, timestamp, user, device });
+        }
+        // Keep only the most recent entries
+        if (history.length > STATUS_HISTORY_MAX) history.splice(0, history.length - STATUS_HISTORY_MAX);
+        await Promise.all([
+          kv.put(STATUS_KV_KEY, JSON.stringify(statusMap)),
+          kv.put(STATUS_HISTORY_KV_KEY, JSON.stringify(history)),
+        ]);
         return new Response(
           JSON.stringify({ ok: true }),
           { headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } }
@@ -1744,6 +1776,20 @@ export default {
           JSON.stringify({ ok: false, error: String(err && err.message ? err.message : err) }),
           { status: 500, headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } }
         );
+      }
+    }
+
+    // History endpoint — lightweight, returns only the audit log
+    if (url.searchParams.has('history')) {
+      try {
+        const hist = await getStatusHistory(kv);
+        return new Response(JSON.stringify({ ok: true, history: hist.slice().reverse() }), {
+          headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
+        });
+      } catch (err) {
+        return new Response(JSON.stringify({ ok: false, error: String(err && err.message ? err.message : err) }), {
+          status: 500, headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
+        });
       }
     }
 
