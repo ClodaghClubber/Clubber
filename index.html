@@ -1622,7 +1622,7 @@ function mergeFixtures(incoming){
   // otherwise corrupt the status key).
   const existingByKey=new Map(fixtures.map(f=>[f._origKey||keyOf(f),f]));
   fixtures = incoming.map(inc=>{
-    const origKey=inc._rawKey||keyOf(inc);
+    const origKey=keyOf(inc);
     const ex=existingByKey.get(origKey);
     // Spread ex first so local state (clubberCreated, socials, etc.) survives
     // the refresh; inc fields (including status from KV) take precedence.
@@ -1673,7 +1673,7 @@ async function loadFixtures(isRefresh){
       }
       saveOverrides();
     }
-    const incoming=(json.fixtures||[]).map(f=>({...mk(f.county,f.teamA,f.teamB,f.date,f.time,f.venue,f.competition,f.round), code:deriveCode(f.competition,f.sport), status:f.status||'Proposed', _rawKey:f._rawKey, ...(f.clubberCreated!==undefined?{clubberCreated:f.clubberCreated}:{})}));
+    const incoming=(json.fixtures||[]).map(f=>({...mk(f.county,f.teamA,f.teamB,f.date,f.time,f.venue,f.competition,f.round), code:deriveCode(f.competition,f.sport), status:f.status||'Proposed', ...(f.clubberCreated!==undefined?{clubberCreated:f.clubberCreated}:{})}));
     mergeFixtures(incoming);
     detectChanges(takeSnapshot());
     updateClearChangesBtn();
