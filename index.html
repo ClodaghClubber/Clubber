@@ -1683,7 +1683,14 @@ function mergeFixtures(incoming){
     const ex=existingByKey.get(origKey);
     // Spread ex first so local state (clubberCreated, socials, etc.) survives
     // the refresh; inc fields (including status from KV) take precedence.
-    return ex ? {...ex, ...inc, id: ex.id, _origKey: origKey} : {...inc, id: nextId++, _origKey: origKey};
+    const merged = ex ? {...ex, ...inc, id: ex.id, _origKey: origKey} : {...inc, id: nextId++, _origKey: origKey};
+    // Record status changes that arrived from KV (set by another device/user)
+    // so every status transition is visible in the per-fixture history.
+    const prevStatus = ex ? ex.status : null;
+    if (prevStatus && prevStatus !== merged.status) {
+      recordStatusChange(merged, prevStatus, merged.status);
+    }
+    return merged;
   });
   saveCache();
   applyManualFixtures();

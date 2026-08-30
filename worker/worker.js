@@ -1634,6 +1634,7 @@ const OVERRIDES_KV_KEY = 'overrides';
 const MANUAL_KV_KEY = 'manualFixtures';
 const STATUS_HISTORY_KV_KEY = 'statusHistory';
 const STATUS_HISTORY_MAX = 500;
+const CLUBBER_SNAPSHOT_KV_KEY = 'clubberSnapshot';
 
 // Same composite key the dashboard uses client-side to match a fixture
 // across reloads (county|competition|teamA|teamB|date), so Approve/Reject/
@@ -1693,7 +1694,113 @@ function parseDevice(ua) {
   return 'Unknown';
 }
 
+async function getClubberSnapshot(kv) {
+  if (!kv) return {};
+  const raw = await kv.get(CLUBBER_SNAPSHOT_KV_KEY);
+  if (!raw) return {};
+  try { return JSON.parse(raw); } catch { return {}; }
+}
+
+// Sends a change-alert card to a Microsoft Teams incoming webhook.
+// webhookUrl comes from the TEAMS_WEBHOOK_URL secret.
+async function sendTeamsNotification(webhookUrl, changes) {
+  if (!webhookUrl || !changes.length) return;
+
+  const rows = changes.map(c => {
+    const diffs = c.diffs.map(d => `**${d.field}**: ~~${d.from}~~ → ${d.to}`).join('\n\n');
+    return `### ${c.teamA} v ${c.teamB}\n${c.county} · ${c.competition}\n\n${diffs}`;
+  }).join('\n\n---\n\n');
+
+  const body = {
+    type: 'message',
+    attachments: [{
+      contentType: 'application/vnd.microsoft.card.adaptive',
+      content: {
+        $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
+        type: 'AdaptiveCard',
+        version: '1.4',
+        body: [
+          {
+            type: 'TextBlock',
+            text: `⚠️ ${changes.length} Clubber fixture${changes.length > 1 ? 's' : ''} changed`,
+            weight: 'Bolder',
+            size: 'Medium',
+          },
+          {
+            type: 'TextBlock',
+            text: rows,
+            wrap: true,
+          },
+        ],
+      },
+    }],
+  };
+
+  await fetch(webhookUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+}
+
+const TRACKED_FIELDS = ['date', 'time', 'venue', 'round'];
+
 export default {
+  // Cron handler: runs every hour, fetches all fixtures, diffs against the
+  // stored snapshot for In Clubber fixtures, and sends a Teams alert if anything changed.
+  async scheduled(event, env, ctx) {
+    const kv = env.FIXTURE_STATUS;
+    if (!kv) return;
+
+    // Re-use the existing fetch handler to get the full fixtures payload — this
+    // keeps the scraping + merging logic in one place with no duplication.
+    let payload;
+    try {
+      const resp = await this.fetch(new Request('https://internal/fixtures'), env);
+      payload = await resp.json();
+    } catch (e) {
+      console.error('Cron: fixture fetch failed', e);
+      return;
+    }
+
+    const fixtures = payload.fixtures || [];
+    const overridesMap = payload.overrides || {};
+
+    const snapshot = await getClubberSnapshot(kv);
+    const changes = [];
+    const newSnapshot = { ...snapshot };
+
+    for (const f of fixtures) {
+      const key = fixtureKey(f);
+      const ov = overridesMap[key] || {};
+      if (!ov.clubberCreated) continue;
+
+      const curr = { date: toIsoDate(f.date), time: f.time || '', venue: f.venue || '', round: f.round || '' };
+      const prev = snapshot[key];
+
+      if (prev) {
+        const diffs = TRACKED_FIELDS
+          .filter(field => prev[field] !== curr[field])
+          .map(field => ({ field: field.charAt(0).toUpperCase() + field.slice(1), from: prev[field], to: curr[field] }));
+        if (diffs.length) {
+          changes.push({ teamA: f.teamA, teamB: f.teamB, county: f.county, competition: f.competition, diffs });
+        }
+      }
+
+      newSnapshot[key] = curr;
+    }
+
+    await kv.put(CLUBBER_SNAPSHOT_KV_KEY, JSON.stringify(newSnapshot));
+
+    if (changes.length && env.TEAMS_WEBHOOK_URL) {
+      try {
+        await sendTeamsNotification(env.TEAMS_WEBHOOK_URL, changes);
+      } catch (e) {
+        console.error('Cron: Teams notification failed', e);
+      }
+    }
+  },
+
   async fetch(request, env) {
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: CORS_HEADERS });
