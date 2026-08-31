@@ -1628,6 +1628,137 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
+// ---- Championship Rugby: static fixtures (all 15 rounds) ----
+// Venue = home team (first listed). Sport = 'Rugby' so dashboard Code column shows 'Rugby'.
+const RUGBY_FIXTURES = [];
+(function() {
+  const add = (round, teamA, teamB, date, time) => {
+    const f = mkStatic('Champ', teamA, teamB, date, time, teamA, 'Champ', round);
+    f.sport = 'Rugby';
+    RUGBY_FIXTURES.push(f);
+  };
+  // Round 1
+  add('Round 1','Nottingham','Blackheath','18 September 2026','19:45');
+  add('Round 1','Cornish Pirates','Doncaster Knights','20 September 2026','16:00');
+  add('Round 1','Richmond','Ampthill','19 September 2026','17:00');
+  add('Round 1','Rotherham Titans','Coventry','19 September 2026','15:00');
+  add('Round 1','Chinnor','Ealing Trailfinders','19 September 2026','17:00');
+  add('Round 1','Worcester Warriors','Bedford Blues','19 September 2026','15:00');
+  add('Round 1','Caldy','Hartpury','19 September 2026','15:00');
+  // Round 2
+  add('Round 2','Bedford Blues','Chinnor','26 September 2026','15:00');
+  add('Round 2','Worcester Warriors','Rotherham Titans','26 September 2026','13:00');
+  add('Round 2','Ealing Trailfinders','Richmond','27 September 2026','14:00');
+  add('Round 2','Coventry','Cornish Pirates','26 September 2026','15:00');
+  add('Round 2','Ampthill','Nottingham','26 September 2026','15:00');
+  add('Round 2','Doncaster Knights','Hartpury','27 September 2026','16:00');
+  add('Round 2','Blackheath','Caldy','25 September 2026','19:45');
+  // Round 3
+  add('Round 3','Blackheath','Doncaster Knights','4 October 2026','16:00');
+  add('Round 3','Hartpury','Ampthill','2 October 2026','19:45');
+  add('Round 3','Nottingham','Coventry','2 October 2026','19:45');
+  add('Round 3','Cornish Pirates','Ealing Trailfinders','3 October 2026','15:00');
+  add('Round 3','Richmond','Worcester Warriors','3 October 2026','15:00');
+  add('Round 3','Rotherham Titans','Bedford Blues','3 October 2026','15:00');
+  add('Round 3','Caldy','Chinnor','3 October 2026','13:00');
+  // Round 4
+  add('Round 4','Coventry','Blackheath','9 October 2026','19:45');
+  add('Round 4','Ampthill','Doncaster Knights','10 October 2026','15:00');
+  add('Round 4','Chinnor','Richmond','10 October 2026','15:00');
+  add('Round 4','Bedford Blues','Cornish Pirates','10 October 2026','17:00');
+  add('Round 4','Worcester Warriors','Nottingham','10 October 2026','15:00');
+  add('Round 4','Ealing Trailfinders','Hartpury','11 October 2026','16:00');
+  add('Round 4','Rotherham Titans','Caldy','9 October 2026','19:45');
+  // Round 5
+  add('Round 5','Caldy','Ampthill','17 October 2026','15:00');
+  add('Round 5','Doncaster Knights','Coventry','17 October 2026','15:00');
+  add('Round 5','Blackheath','Ealing Trailfinders','17 October 2026','15:00');
+  add('Round 5','Hartpury','Worcester Warriors','17 October 2026','17:00');
+  add('Round 5','Nottingham','Bedford Blues','16 October 2026','19:45');
+  add('Round 5','Cornish Pirates','Chinnor','17 October 2026','13:00');
+  add('Round 5','Richmond','Rotherham Titans','18 October 2026','16:00');
+  // Round 6
+  add('Round 6','Worcester Warriors','Blackheath','30 October 2026','19:45');
+  add('Round 6','Ealing Trailfinders','Doncaster Knights','31 October 2026','15:00');
+  add('Round 6','Coventry','Ampthill','31 October 2026','13:00');
+  add('Round 6','Rotherham Titans','Cornish Pirates','1 November 2026','16:00');
+  add('Round 6','Chinnor','Nottingham','30 October 2026','19:45');
+  add('Round 6','Bedford Blues','Hartpury','31 October 2026','15:00');
+  add('Round 6','Richmond','Caldy','31 October 2026','15:00');
+  // Round 7
+  add('Round 7','Caldy','Coventry','7 November 2026','13:00');
+  add('Round 7','Ampthill','Ealing Trailfinders','7 November 2026','18:00');
+  add('Round 7','Doncaster Knights','Worcester Warriors','7 November 2026','15:00');
+  add('Round 7','Blackheath','Bedford Blues','7 November 2026','15:00');
+  add('Round 7','Hartpury','Chinnor','8 November 2026','16:00');
+  add('Round 7','Nottingham','Rotherham Titans','6 November 2026','19:45');
+  add('Round 7','Cornish Pirates','Richmond','7 November 2026','15:00');
+  // Round 8
+  add('Round 8','Chinnor','Blackheath','14 November 2026','15:00');
+  add('Round 8','Bedford Blues','Doncaster Knights','13 November 2026','19:45');
+  add('Round 8','Worcester Warriors','Ampthill','15 November 2026','16:00');
+  add('Round 8','Ealing Trailfinders','Coventry','15 November 2026','14:00');
+  add('Round 8','Richmond','Nottingham','14 November 2026','13:00');
+  add('Round 8','Rotherham Titans','Hartpury','14 November 2026','15:00');
+  add('Round 8','Cornish Pirates','Caldy','14 November 2026','13:00');
+  // Round 9
+  add('Round 9','Caldy','Ealing Trailfinders','21 November 2026','13:00');
+  add('Round 9','Coventry','Worcester Warriors','21 November 2026','15:00');
+  add('Round 9','Ampthill','Bedford Blues','21 November 2026','12:00');
+  add('Round 9','Doncaster Knights','Chinnor','21 November 2026','17:00');
+  add('Round 9','Blackheath','Rotherham Titans','21 November 2026','15:00');
+  add('Round 9','Hartpury','Richmond','21 November 2026','15:00');
+  add('Round 9','Nottingham','Cornish Pirates','22 November 2026','16:00');
+  // Round 10
+  add('Round 10','Richmond','Blackheath','5 December 2026','15:00');
+  add('Round 10','Rotherham Titans','Doncaster Knights','5 December 2026','15:00');
+  add('Round 10','Chinnor','Ampthill','6 December 2026','16:00');
+  add('Round 10','Bedford Blues','Coventry','5 December 2026','15:00');
+  add('Round 10','Worcester Warriors','Ealing Trailfinders','5 December 2026','15:00');
+  add('Round 10','Cornish Pirates','Hartpury','5 December 2026','15:00');
+  add('Round 10','Nottingham','Caldy','4 December 2026','19:45');
+  // Round 11
+  add('Round 11','Caldy','Worcester Warriors','12 December 2026','13:00');
+  add('Round 11','Ealing Trailfinders','Bedford Blues','12 December 2026','15:00');
+  add('Round 11','Coventry','Chinnor','13 December 2026','16:00');
+  add('Round 11','Ampthill','Rotherham Titans','12 December 2026','13:00');
+  add('Round 11','Doncaster Knights','Richmond','12 December 2026','15:00');
+  add('Round 11','Blackheath','Cornish Pirates','12 December 2026','17:00');
+  add('Round 11','Hartpury','Nottingham','12 December 2026','15:00');
+  // Round 12
+  add('Round 12','Hartpury','Blackheath','18 December 2026','19:45');
+  add('Round 12','Nottingham','Doncaster Knights','18 December 2026','19:45');
+  add('Round 12','Cornish Pirates','Ampthill','18 December 2026','19:45');
+  add('Round 12','Richmond','Coventry','19 December 2026','15:00');
+  add('Round 12','Rotherham Titans','Ealing Trailfinders','19 December 2026','15:00');
+  add('Round 12','Chinnor','Worcester Warriors','19 December 2026','15:00');
+  add('Round 12','Bedford Blues','Caldy','20 December 2026','16:00');
+  // Round 13
+  add('Round 13','Ampthill','Blackheath','26 December 2026','13:00');
+  add('Round 13','Chinnor','Rotherham Titans','27 December 2026','14:00');
+  add('Round 13','Richmond','Bedford Blues','26 December 2026','15:00');
+  add('Round 13','Worcester Warriors','Cornish Pirates','26 December 2026','15:00');
+  add('Round 13','Ealing Trailfinders','Nottingham','27 December 2026','14:00');
+  add('Round 13','Coventry','Hartpury','26 December 2026','15:00');
+  add('Round 13','Doncaster Knights','Caldy','26 December 2026','15:00');
+  // Round 14
+  add('Round 14','Caldy','Doncaster Knights','2 January 2027','13:00');
+  add('Round 14','Blackheath','Ampthill','1 January 2027','15:00');
+  add('Round 14','Hartpury','Coventry','2 January 2027','15:00');
+  add('Round 14','Nottingham','Ealing Trailfinders','1 January 2027','15:00');
+  add('Round 14','Cornish Pirates','Worcester Warriors','2 January 2027','15:00');
+  add('Round 14','Bedford Blues','Richmond','1 January 2027','15:00');
+  add('Round 14','Rotherham Titans','Chinnor','2 January 2027','15:00');
+  // Round 15
+  add('Round 15','Ealing Trailfinders','Worcester Warriors','23 January 2027','15:00');
+  add('Round 15','Coventry','Bedford Blues','23 January 2027','15:00');
+  add('Round 15','Ampthill','Chinnor','23 January 2027','13:00');
+  add('Round 15','Doncaster Knights','Rotherham Titans','23 January 2027','15:00');
+  add('Round 15','Blackheath','Richmond','22 January 2027','19:45');
+  add('Round 15','Hartpury','Cornish Pirates','23 January 2027','15:00');
+  add('Round 15','Caldy','Nottingham','23 January 2027','13:00');
+})();
+
 const VALID_STATUSES = ['Proposed', 'Approved', 'Rejected', 'Removed'];
 const STATUS_KV_KEY = 'statuses';
 const OVERRIDES_KV_KEY = 'overrides';
@@ -1708,7 +1839,7 @@ async function sendTeamsNotification(webhookUrl, changes) {
 
   const rows = changes.map(c => {
     const diffs = c.diffs.map(d => `**${d.field}**: ~~${d.from}~~ → ${d.to}`).join('\n\n');
-    return `### ${c.teamA} v ${c.teamB}\n${c.county} · ${c.competition}\n\n${diffs}`;
+    return `### ${c.teamA} v ${c.teamB}\n${c.county} · ${c.competition}${c.date ? ` · ${c.date}` : ''}\n\n${diffs}`;
   }).join('\n\n---\n\n');
 
   const body = {
@@ -1783,7 +1914,7 @@ export default {
           .filter(field => prev[field] !== curr[field])
           .map(field => ({ field: field.charAt(0).toUpperCase() + field.slice(1), from: prev[field], to: curr[field] }));
         if (diffs.length) {
-          changes.push({ teamA: f.teamA, teamB: f.teamB, county: f.county, competition: f.competition, diffs });
+          changes.push({ teamA: f.teamA, teamB: f.teamB, county: f.county, competition: f.competition, date: curr.date, diffs });
         }
       }
 
@@ -1953,6 +2084,7 @@ export default {
         ...(louthLiveResults.length > 0 ? louthLiveResults : LOUTH_FIXTURES.filter(f => !/^Winner|^Loser/i.test(f.teamA) && !/^Winner|^Loser/i.test(f.teamB))),
         ...tipperaryCamogieResults,
         ...kilkennyCamogieResults.flat().map(f => ({ ...fixNames(f), sport: 'Camogie' })),
+        ...RUGBY_FIXTURES,
       ];
 
       const [statusMap, overridesMap, kvManualFixtures] = await Promise.all([getStatusMap(kv), getOverridesMap(kv), getManualFixtures(kv)]);
