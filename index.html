@@ -105,8 +105,10 @@
   .spinner{width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;display:none;}
   .spinner.active{display:block;}
   .container{padding:0 0 40px;}
-  ::-webkit-scrollbar{width:10px;height:10px;}
-  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:5px;}
+  ::-webkit-scrollbar{width:12px;height:12px;}
+  ::-webkit-scrollbar-track{background:var(--panel);}
+  ::-webkit-scrollbar-thumb{background:#9ca3af;border-radius:6px;border:2px solid var(--panel);}
+  ::-webkit-scrollbar-thumb:hover{background:#6b7280;}
   /* ---- Add Fixture Modal ---- */
   #addModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;align-items:flex-start;justify-content:center;padding-top:40px;}
   #addModal.open{display:flex;}
