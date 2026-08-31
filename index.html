@@ -82,7 +82,8 @@
   .cr-laois .status-proposed,.cr-wexford .status-proposed,.cr-tipperary .status-proposed,
   .cr-longford .status-proposed,.cr-carlow .status-proposed,.cr-munster .status-proposed,
   .cr-munster-camogie .status-proposed,.cr-san-francisco .status-proposed,
-  .cr-western-australia .status-proposed,.cr-boston .status-proposed,.cr-usgaa .status-proposed
+  .cr-western-australia .status-proposed,.cr-boston .status-proposed,.cr-usgaa .status-proposed,
+  .cr-champ .status-proposed
   {background:rgba(255,255,255,.2);color:#fff;}
   .cr-cork .status-approved,.cr-waterford .status-approved,.cr-kerry .status-approved,
   .cr-laois .status-approved,.cr-wexford .status-approved,.cr-tipperary .status-approved,
@@ -1260,6 +1261,7 @@ function msInit(id,opts,onChange){
   const panel=wrap.querySelector('.ms-panel');
   _msSelected[id]=new Set();
   function rebuild(options){
+    const prev=new Set(_msSelected[id]); // preserve selections across rebuilds
     _msSelected[id].clear();
     panel.innerHTML='';
     const allLbl=document.createElement('label');
@@ -1272,8 +1274,10 @@ function msInit(id,opts,onChange){
     options.forEach(v=>{
       const lbl=document.createElement('label');lbl.className='ms-option';
       const cb=document.createElement('input');cb.type='checkbox';cb.value=v;
+      if(prev.has(v)){ cb.checked=true; _msSelected[id].add(v); }
       lbl.append(cb,' '+v);panel.appendChild(lbl);
     });
+    if(_msSelected[id].size>0) allCb.checked=false;
     updateLabel();
   }
   function updateLabel(){
