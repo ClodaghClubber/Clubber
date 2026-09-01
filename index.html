@@ -2396,30 +2396,36 @@ function buildGamePayload(f) {
   if (!teamBResult) errors.push(`Club not found for "${normB}" (${f.county}) — add to teamMappings.json`);
   else if (teamBResult.autoMatched) warnings.push(`"${normB}" auto-matched to "${teamBResult.matchedName}" — verify this is correct`);
 
-  const grade = deriveGrade(f.county, f.competition);
-  if (!grade) errors.push(`grade could not be derived from competition "${f.competition}"`);
+  const isRugby = (f.county === 'Champ' || (f.code || '').toLowerCase() === 'rugby');
 
-  const championsType = lookupClubberCompetition(
-    teamAResult?.county || f.county,
-    teamBResult?.county || f.county
-  );
+  const grade = isRugby ? '' : deriveGrade(f.county, f.competition);
+  if (!isRugby && !grade) errors.push(`grade could not be derived from competition "${f.competition}"`);
+
+  const championsType = isRugby
+    ? 'Champ Rugby'
+    : lookupClubberCompetition(
+        teamAResult?.county || f.county,
+        teamBResult?.county || f.county
+      );
 
   const roundNorm = (f.round || '').trim().toLowerCase();
   const isCamogie = (f.competition || '').toLowerCase().includes('camogie');
-  let price = 14.99;
-  if (!isCamogie) {
+  let price = isRugby ? 9.99 : 14.99;
+  if (!isRugby && !isCamogie) {
     if (/\bfinal\b/.test(roundNorm) && !/semi/.test(roundNorm) && !/quarter/.test(roundNorm)) price = 19.99;
     else if (/semi.?final|^\bsf\b/.test(roundNorm)) price = 16.99;
   }
+
+  const county = isRugby ? 'UK' : f.county;
 
   const payload = {
     gameScope: 'Club',
     date: f.date,
     time: dublinToUtc(f.date, from12h(f.time)),
-    county: f.county,
+    county,
     club: teamAResult?.matchedName || normA,
     clubId: teamAResult?.clubId || '',
-    code: f.code || '',
+    code: isRugby ? 'Union' : (f.code || ''),
     grade,
     championsType,
     season: 'Season 26',
@@ -2427,7 +2433,7 @@ function buildGamePayload(f) {
     title: '',
     competitorClubName: teamBResult?.matchedName || normB,
     competitorClubId: teamBResult?.clubId || '',
-    competitorClubCounty: teamBResult?.county || '',
+    competitorClubCounty: isRugby ? 'UK' : (teamBResult?.county || ''),
     price,
   };
 
