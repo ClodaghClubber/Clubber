@@ -1825,6 +1825,33 @@ function parseDevice(ua) {
   return 'Unknown';
 }
 
+// Normalise a time string to 24h HH:MM so "2:15 pm" and "14:15" compare equal.
+function normaliseTime(t) {
+  if (!t) return '';
+  const m12 = t.trim().match(/^(\d{1,2}):(\d{2})\s*(am|pm)$/i);
+  if (m12) {
+    let h = parseInt(m12[1], 10);
+    const min = m12[2];
+    const ap = m12[3].toUpperCase();
+    if (ap === 'PM' && h !== 12) h += 12;
+    if (ap === 'AM' && h === 12) h = 0;
+    return `${String(h).padStart(2, '0')}:${min}`;
+  }
+  // Already HH:MM or similar — return as-is after trimming
+  return t.trim();
+}
+
+// Normalise a venue string: lowercase, strip trailing ", County/City" suffix,
+// and collapse whitespace — so "Netwatch Cullen Park, Carlow" and
+// "Netwatch Cullen Park" compare equal.
+function normaliseVenue(v) {
+  if (!v) return '';
+  return v.trim()
+    .replace(/,\s*[^,]+$/, '') // strip last ", something" segment
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
+}
+
 async function getClubberSnapshot(kv) {
   if (!kv) return {};
   const raw = await kv.get(CLUBBER_SNAPSHOT_KV_KEY);
@@ -1906,19 +1933,32 @@ export default {
       const ov = overridesMap[key] || {};
       if (!ov.clubberCreated) continue;
 
-      const curr = { date: toIsoDate(f.date), time: f.time || '', venue: f.venue || '', round: f.round || '' };
+      // Normalised values used for comparison (strips formatting differences)
+      const norm = {
+        date: toIsoDate(f.date),
+        time: normaliseTime(f.time),
+        venue: normaliseVenue(f.venue),
+        round: (f.round || '').trim(),
+      };
+      // Raw values used for display in the Teams card
+      const raw = { date: toIsoDate(f.date), time: f.time || '', venue: f.venue || '', round: f.round || '' };
       const prev = snapshot[key];
 
       if (prev) {
+        // Support old flat snapshot format ({ date, time, venue, round }) transparently
+        const prevNorm = prev.norm
+          ? prev.norm
+          : { date: prev.date, time: normaliseTime(prev.time), venue: normaliseVenue(prev.venue), round: (prev.round||'').trim() };
+        const prevRaw = prev.raw || prev;
         const diffs = TRACKED_FIELDS
-          .filter(field => prev[field] !== curr[field])
-          .map(field => ({ field: field.charAt(0).toUpperCase() + field.slice(1), from: prev[field], to: curr[field] }));
+          .filter(field => prevNorm[field] !== norm[field])
+          .map(field => ({ field: field.charAt(0).toUpperCase() + field.slice(1), from: prevRaw[field], to: raw[field] }));
         if (diffs.length) {
-          changes.push({ teamA: f.teamA, teamB: f.teamB, county: f.county, competition: f.competition, date: curr.date, diffs });
+          changes.push({ teamA: f.teamA, teamB: f.teamB, county: f.county, competition: f.competition, date: norm.date, diffs });
         }
       }
 
-      newSnapshot[key] = curr;
+      newSnapshot[key] = { norm, raw };
     }
 
     await kv.put(CLUBBER_SNAPSHOT_KV_KEY, JSON.stringify(newSnapshot));
