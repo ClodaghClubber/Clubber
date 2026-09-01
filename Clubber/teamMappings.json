@@ -1766,5 +1766,15 @@
       "id": "501d1450-0434-428e-8402-f281a17ac85c",
       "name": "Blennerville St. Pats"
     }
+  },
+  "Champ": {
+    "Hartpury": {
+      "id": "84634527-8a6d-4497-a530-9b5f65717e6b",
+      "name": "Hartpury RFC"
+    },
+    "Blackheath": {
+      "id": "b493316e-43b2-4447-ac5c-9cbe458133b4",
+      "name": "Blackheath Rugby"
+    }
   }
 }

@@ -1901,7 +1901,7 @@ async function sendTeamsNotification(webhookUrl, changes) {
   });
 }
 
-const TRACKED_FIELDS = ['date', 'time', 'venue', 'round'];
+const TRACKED_FIELDS = ['date', 'time', 'venue'];
 
 export default {
   // Cron handler: runs every hour, fetches all fixtures, diffs against the
