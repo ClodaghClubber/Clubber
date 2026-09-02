@@ -2566,15 +2566,17 @@ function downloadJson(data, filename) {
   // ---- Upload area ----
   const dropZone = document.getElementById('cmpDropZone');
   const fileInput = document.getElementById('compareFileInput');
-  dropZone.addEventListener('click', () => fileInput.click());
-  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor='var(--accent)'; });
-  dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor=''; });
-  dropZone.addEventListener('drop', e => {
-    e.preventDefault(); dropZone.style.borderColor='';
-    const f = e.dataTransfer.files[0];
-    if(f) readCompareFile(f);
-  });
-  fileInput.addEventListener('change', () => { if(fileInput.files[0]) readCompareFile(fileInput.files[0]); });
+  if (dropZone && fileInput) dropZone.addEventListener('click', () => fileInput.click());
+  if (dropZone) {
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor='var(--accent)'; });
+    dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor=''; });
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault(); dropZone.style.borderColor='';
+      const f = e.dataTransfer.files[0];
+      if(f) readCompareFile(f);
+    });
+  }
+  if (fileInput) fileInput.addEventListener('change', () => { if(fileInput.files[0]) readCompareFile(fileInput.files[0]); });
 
   function readCompareFile(file) {
     const reader = new FileReader();
