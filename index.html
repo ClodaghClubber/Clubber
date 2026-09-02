@@ -248,6 +248,27 @@
   .chg-diff-field{color:var(--muted);min-width:90px;font-size:12px;}
   .chg-diff-from{text-decoration:line-through;color:var(--muted);}
   .chg-diff-to{font-weight:600;}
+  /* Videographer view */
+  .vid-date-group{margin-bottom:20px;}
+  .vid-date-hdr{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:4px 0;border-bottom:1px solid var(--border);margin-bottom:8px;}
+  .vid-row{display:grid;grid-template-columns:90px 1fr 1fr 140px 90px 200px 160px auto;gap:8px;align-items:center;padding:8px 12px;border-radius:6px;margin-bottom:4px;font-size:13px;background:var(--row-even);border:1px solid var(--border);}
+  .vid-row:hover{background:var(--hover-bg);}
+  .vid-row.vid-assigned{border-left:3px solid #16a34a;}
+  .vid-row.vid-conflict{border-left:3px solid #dc2626;}
+  .vid-row.vid-nosuggestion{border-left:3px solid var(--border);}
+  .vid-time{font-size:12px;color:var(--muted);}
+  .vid-teams{font-weight:600;font-size:12px;}
+  .vid-venue{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .vid-round{font-size:11px;color:var(--muted);}
+  .vid-suggestion{font-size:12px;}
+  .vid-suggestion strong{font-weight:600;}
+  .vid-reason{font-size:10px;color:var(--muted);margin-top:1px;}
+  .vid-conflict-warn{font-size:10px;color:#dc2626;margin-top:1px;}
+  .vid-assigned-badge{display:inline-block;font-size:10px;font-weight:700;background:#dcfce7;color:#16a34a;border-radius:3px;padding:1px 5px;margin-left:4px;}
+  .vid-sel{font-size:12px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);max-width:150px;}
+  .vid-assign-btn{font-size:11px;padding:4px 10px;background:#7c3aed;color:#fff;border:none;border-radius:4px;cursor:pointer;white-space:nowrap;}
+  .vid-assign-btn:hover{background:#6d28d9;}
+  .vid-assign-btn.assigned{background:#16a34a;}
 </style>
 </head>
 <body>
@@ -302,6 +323,7 @@
     <button class="btn-remove" id="removeBtn" disabled>Remove</button>
     <button class="btn-remove" id="clearChangesBtn" style="display:none;" title="Clear all change markers">Clear changes</button>
     <button class="btn-modal-add" id="addFixtureBtn">+ Add Fixture</button>
+    <button id="vidViewBtn" onclick="toggleVidView()" style="background:#7c3aed;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;">🎥 Videographer</button>
     <div class="col-picker-wrap" style="display:none;">
       <button class="btn-remove" id="assignSocialsBtn" style="background:#7c3aed;" disabled>Socials ▾</button>
       <div id="assignSocialsPanel" style="display:none;"></div>
@@ -442,6 +464,26 @@
 <div class="empty" id="emptyMsg" style="display:none;">No fixtures match the current filters.</div>
 </div>
 <div id="unitConflictToast"></div>
+
+<!-- Videographer Selector View -->
+<div id="vidView" style="display:none;padding:16px 24px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <div>
+      <h2 style="margin:0;font-size:18px;">Videographer Assignments</h2>
+      <p style="margin:4px 0 0;font-size:12px;color:var(--muted);">Suggestions based on venue + county history. Click a row to assign.</p>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <label style="font-size:12px;color:var(--muted);">Show</label>
+      <select id="vidViewFilter" onchange="renderVidView()" style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg);">
+        <option value="upcoming">Upcoming only</option>
+        <option value="all">All fixtures</option>
+        <option value="unassigned">Unassigned only</option>
+      </select>
+      <button onclick="toggleVidView()" style="background:var(--border);color:var(--text);border:none;border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;">← Back to Fixtures</button>
+    </div>
+  </div>
+  <div id="vidViewContent"></div>
+</div>
 
 <!-- Clubber Feedback Modal -->
 <div id="removeConfirmModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;align-items:center;justify-content:center;">
@@ -2243,16 +2285,20 @@ setupColPicker();
 let teamMappings = {};
 let competitionLookup = {};
 let sportsCountiesIndex = {}; // county name (lowercase) → [{id, name, normName}]
+let VID_DATA = null; // loaded from vidData.json
 
 (async () => {
   try {
-    const [tm, cl, sc] = await Promise.all([
+    const [tm, cl, sc, vd] = await Promise.all([
       fetch('Clubber/teamMappings.json?v=' + Date.now()).then(r => r.json()),
       fetch('Clubber/competitionLookup.json').then(r => r.json()),
       fetch('Clubber/sportsCountiesLookup.json').then(r => r.json()),
+      fetch('Clubber/vidData.json?v=' + Date.now()).then(r => r.json()).catch(() => null),
     ]);
     teamMappings = tm;
     competitionLookup = cl;
+    if (vd) { VID_DATA = vd; }
+    if (document.getElementById('vidView').style.display !== 'none') renderVidView();
     // Build flat county→clubs index from sportsCountiesLookup
     for (const sport of (sc.sportList || [])) {
       if (sport.sportType !== 'GAA') continue;
@@ -2713,6 +2759,275 @@ function downloadJson(data, filename) {
       : `<tr><td colspan="4" class="empty" style="text-align:center;color:var(--muted);padding:24px;">No fixtures in this category</td></tr>`;
   }
 })();
+
+// ===== VIDEOGRAPHER SELECTOR =====
+
+let vidViewActive = false;
+
+function toggleVidView() {
+  vidViewActive = !vidViewActive;
+  const vv = document.getElementById('vidView');
+  const container = document.querySelector('.container');
+  const toolbar = document.querySelector('.toolbar');
+  vv.style.display = vidViewActive ? '' : 'none';
+  if (container) container.style.display = vidViewActive ? 'none' : '';
+  if (toolbar) toolbar.style.display = vidViewActive ? 'none' : '';
+  const vidBtn = document.getElementById('vidViewBtn');
+  if (vidBtn) {
+    vidBtn.style.background = vidViewActive ? '#6d28d9' : '#7c3aed';
+    vidBtn.textContent = vidViewActive ? '✕ Close Videographer' : '🎥 Videographer';
+  }
+  // Hide the row-count/action bar below toolbar too
+  const rowCountBar = document.querySelector('div[style*="justify-content:space-between"][style*="padding:6px 24px"]');
+  if (rowCountBar) rowCountBar.style.display = vidViewActive ? 'none' : '';
+  if (vidViewActive) renderVidView();
+}
+
+function normVenueName(v) {
+  return (v || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+function normVidName(n) {
+  return (n || '').toLowerCase().replace(/[^a-z]/g, '');
+}
+
+function matchVenue(venue) {
+  if (!VID_DATA || !venue) return null;
+  const norm = normVenueName(venue);
+  if (!norm) return null;
+  const keys = Object.keys(VID_DATA.venueRankings);
+  let key = keys.find(k => normVenueName(k) === norm);
+  if (!key) {
+    key = keys.find(k => {
+      const kn = normVenueName(k);
+      return kn.length >= 6 && (norm.includes(kn) || kn.includes(norm));
+    });
+  }
+  return key ? VID_DATA.venueRankings[key] : null;
+}
+
+function matchCounty(county) {
+  if (!VID_DATA || !county) return null;
+  const cl = county.toLowerCase();
+  const keys = Object.keys(VID_DATA.countyRankings);
+  let key = keys.find(k => k.toLowerCase() === cl);
+  if (!key) key = keys.find(k => k.toLowerCase().includes(cl) || cl.includes(k.toLowerCase()));
+  return key ? VID_DATA.countyRankings[key] : null;
+}
+
+function getSameDayAssignments(dateStr) {
+  const map = {};
+  for (const f of allFixtures) {
+    if (!f.videographer || !f.date) continue;
+    if (f.date === dateStr) {
+      if (!map[f.videographer]) map[f.videographer] = [];
+      map[f.videographer].push(f);
+    }
+  }
+  return map;
+}
+
+function timeToMins(timeStr) {
+  if (!timeStr) return null;
+  const m = timeStr.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+  if (!m) return null;
+  let h = parseInt(m[1]), mn = parseInt(m[2]);
+  if (m[3] && m[3].toUpperCase() === 'PM' && h < 12) h += 12;
+  if (m[3] && m[3].toUpperCase() === 'AM' && h === 12) h = 0;
+  return h * 60 + mn;
+}
+
+function checkConflict(vidName, fixture, sameDayMap) {
+  const existing = sameDayMap[vidName] || [];
+  const myTime = timeToMins(fixture.time);
+  if (myTime === null) return null;
+  for (const other of existing) {
+    if (other.id === fixture.id) continue;
+    const otherTime = timeToMins(other.time);
+    if (otherTime === null) continue;
+    const gap = Math.abs(myTime - otherTime);
+    if (gap < 120) return { gap, other };
+  }
+  return null;
+}
+
+function suggestVideographers(fixture) {
+  if (!VID_DATA) return [];
+  const sameDayMap = getSameDayAssignments(fixture.date);
+  const venueList = matchVenue(fixture.venue) || [];
+  const countyList = matchCounty(fixture.county) || [];
+  const candidates = {};
+
+  const addCandidate = (vid, src, games) => {
+    const key = normVidName(vid.name);
+    if (!key) return;
+    if (!candidates[key]) {
+      const known = VIDEOGRAPHERS.find(v => normVidName(v.name) === key);
+      candidates[key] = {
+        name: vid.name,
+        email: vid.email || known?.email || null,
+        approved: vid.approved || false,
+        venueGames: 0, countyGames: 0, finals: 0, semis: 0, qfs: 0,
+        conflict: null,
+      };
+      const vdEntry = Object.values(VID_DATA.videographers).find(v => normVidName(v.name) === key);
+      if (vdEntry) {
+        candidates[key].finals = vdEntry.finals || 0;
+        candidates[key].semis = vdEntry.semis || 0;
+        candidates[key].qfs = vdEntry.qfs || 0;
+        if (!candidates[key].email) candidates[key].email = vdEntry.email;
+        if (!candidates[key].approved) candidates[key].approved = vdEntry.approved;
+      }
+    }
+    if (src === 'venue') candidates[key].venueGames = Math.max(candidates[key].venueGames, games);
+    if (src === 'county') candidates[key].countyGames = Math.max(candidates[key].countyGames, games);
+  };
+
+  for (const v of venueList.slice(0, 8)) addCandidate(v, 'venue', v.games);
+  for (const v of countyList.slice(0, 10)) addCandidate(v, 'county', v.games);
+
+  const rnd = (fixture.round || '').toLowerCase();
+  const isBig = /final|semi|sf\b|quarter|qf\b/.test(rnd);
+
+  const scored = Object.values(candidates).map(c => {
+    c.conflict = checkConflict(c.name, fixture, sameDayMap);
+    let score = c.venueGames * 3 + c.countyGames;
+    if (isBig) score += (c.finals * 2 + c.semis);
+    if (c.approved) score += 50;
+    if (c.conflict) score -= 30;
+    c.score = score;
+    return c;
+  });
+
+  scored.sort((a, b) => {
+    const aOk = a.approved && !a.conflict;
+    const bOk = b.approved && !b.conflict;
+    if (aOk !== bOk) return aOk ? -1 : 1;
+    return b.score - a.score;
+  });
+
+  return scored.slice(0, 5);
+}
+
+function renderVidView() {
+  const container = document.getElementById('vidViewContent');
+  if (!container) return;
+  const filter = document.getElementById('vidViewFilter')?.value || 'upcoming';
+  const today = new Date().toISOString().slice(0, 10);
+  let fixtures = [...allFixtures].filter(f => f.date);
+  if (filter === 'upcoming') fixtures = fixtures.filter(f => f.date >= today);
+  if (filter === 'unassigned') fixtures = fixtures.filter(f => !f.videographer && f.date >= today);
+  fixtures.sort((a, b) => {
+    if (a.date !== b.date) return a.date < b.date ? -1 : 1;
+    return (a.time || '') < (b.time || '') ? -1 : 1;
+  });
+  if (!fixtures.length) {
+    container.innerHTML = '<p style="color:var(--muted);padding:24px;text-align:center;">No fixtures to show.</p>';
+    return;
+  }
+  const byDate = {};
+  for (const f of fixtures) {
+    if (!byDate[f.date]) byDate[f.date] = [];
+    byDate[f.date].push(f);
+  }
+  let html = '';
+  for (const [date, group] of Object.entries(byDate)) {
+    const dStr = new Date(date + 'T12:00:00').toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    html += `<div class="vid-date-group"><div class="vid-date-hdr">${dStr} &mdash; ${group.length} fixture${group.length !== 1 ? 's' : ''}</div>`;
+    for (const f of group) {
+      const suggestions = suggestVideographers(f);
+      const top = suggestions[0] || null;
+      const assigned = f.videographer || null;
+      let rowClass = 'vid-row';
+      if (assigned) rowClass += ' vid-assigned';
+      else if (top?.conflict) rowClass += ' vid-conflict';
+      else if (!top) rowClass += ' vid-nosuggestion';
+
+      const rnd = f.round || '';
+      const isFinal = /final/i.test(rnd) && !/semi|quarter/i.test(rnd);
+      const isSemi = /semi|\bsf\b/i.test(rnd);
+      const roundBadge = isFinal
+        ? `<span style="font-size:10px;font-weight:700;background:#fef3c7;color:#b45309;border-radius:3px;padding:1px 5px;">FINAL</span>`
+        : isSemi
+        ? `<span style="font-size:10px;font-weight:700;background:#ede9fe;color:#7c3aed;border-radius:3px;padding:1px 5px;">SEMI</span>`
+        : `<span style="font-size:11px;color:var(--muted);">${rnd}</span>`;
+
+      let suggHtml = '';
+      if (assigned) {
+        const conflict = checkConflict(assigned, f, getSameDayAssignments(f.date));
+        suggHtml = `<div><strong>${assigned}</strong><span class="vid-assigned-badge">Assigned</span>`;
+        if (conflict) suggHtml += `<div class="vid-conflict-warn">⚠ ${conflict.gap}min gap to another fixture</div>`;
+        suggHtml += '</div>';
+      } else if (!VID_DATA) {
+        suggHtml = '<span style="color:var(--muted);font-size:11px;">Loading…</span>';
+      } else if (top) {
+        let reason = '';
+        if (top.venueGames > 0) reason = `${top.venueGames} games at this venue`;
+        else if (top.countyGames > 0) reason = `${top.countyGames} games in ${f.county}`;
+        if (!top.approved) reason += (reason ? '; ' : '') + 'no Clubber account';
+        suggHtml = `<div><strong>${top.name}</strong>${top.approved ? '' : ' <em style="font-size:10px;color:var(--muted);">(no account)</em>'}`;
+        if (top.conflict) suggHtml += `<div class="vid-conflict-warn">⚠ Conflict: ${top.conflict.gap}min gap</div>`;
+        if (reason) suggHtml += `<div class="vid-reason">${reason}</div>`;
+        suggHtml += '</div>';
+      } else {
+        suggHtml = '<span style="color:var(--muted);font-size:11px;">No suggestion</span>';
+      }
+
+      const allOptions = VIDEOGRAPHERS.map(v =>
+        `<option value="${v.name}"${assigned === v.name ? ' selected' : ''}>${v.name}</option>`
+      ).join('');
+
+      const fid = f.id;
+      html += `<div class="${rowClass}">
+        <div><div style="font-weight:600;font-size:12px;">${f.time||'&mdash;'}</div><div style="font-size:10px;color:var(--muted);">${f.county||''}</div></div>
+        <div class="vid-teams">${f.teamA||'?'} v ${f.teamB||'?'}</div>
+        <div class="vid-venue" title="${(f.venue||'').replace(/"/g,'&quot;')}">${f.venue||'&mdash;'}</div>
+        <div>${roundBadge}</div>
+        <div class="vid-suggestion">${suggHtml}</div>
+        <div><select class="vid-sel" id="vidsel_${fid}"><option value="">&#8212; Select &#8212;</option>${allOptions}</select></div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;">
+          <button class="vid-assign-btn${assigned?' assigned':''}" onclick="vidAssign('${fid}')">
+            ${assigned ? '✓ Re-assign' : 'Assign'}
+          </button>
+          ${top && !assigned ? `<button onclick="vidAssignSuggested('${fid}','${top.name.replace(/'/g,"\\'")}')" style="font-size:11px;padding:4px 8px;background:var(--border);color:var(--text);border:none;border-radius:4px;cursor:pointer;white-space:nowrap;">Use suggestion</button>` : ''}
+        </div>
+      </div>`;
+    }
+    html += '</div>';
+  }
+  container.innerHTML = html;
+}
+
+function vidAssign(fid) {
+  const sel = document.getElementById('vidsel_' + fid);
+  if (!sel || !sel.value) { alert('Please select a videographer first.'); return; }
+  vidDoAssign(fid, sel.value);
+}
+
+function vidAssignSuggested(fid, name) {
+  vidDoAssign(fid, name);
+}
+
+function vidDoAssign(fid, name) {
+  const f = allFixtures.find(x => x.id === fid);
+  if (!f) return;
+  const vid = VIDEOGRAPHERS.find(v => v.name === name) || { name, email: '' };
+  f.videographer = name;
+  f.videographerEmail = vid.email || '';
+  const origKey = keyOf(f);
+  const prev = fixtureOverrides[origKey] || {};
+  prev.videographer = name;
+  prev.videographerEmail = vid.email || '';
+  fixtureOverrides[origKey] = prev;
+  saveOverrides();
+  if (!f.manual) syncOverrides([{ key: origKey, fields: { videographer: name, videographerEmail: vid.email || '' } }]);
+  if (f.manual) {
+    const mf = manualFixtures.find(m => m.id === fid);
+    if (mf) { mf.videographer = name; mf.videographerEmail = vid.email || ''; }
+    saveManualFixtures();
+  }
+  renderVidView();
+}
+// ===== END VIDEOGRAPHER SELECTOR =====
 </script>
 </body>
 </html>
