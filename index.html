@@ -414,7 +414,7 @@
       <td></td>
       <td></td>
       <td><select id="qa_county" class="qa-sel" onchange="qaCountyChange()"></select><input type="text" id="qa_countyNew" class="qa-inp qa-new" placeholder="County name"></td>
-      <td><select id="qa_code" class="qa-sel"><option value="">Code…</option><option value="Football">Football</option><option value="Hurling">Hurling</option><option value="Camogie">Camogie</option></select></td>
+      <td><select id="qa_code" class="qa-sel"><option value="">Code…</option><option value="Football">Football</option><option value="Hurling">Hurling</option><option value="Camogie">Camogie</option><option value="Rugby">Rugby</option><option value="Union">Union</option></select></td>
       <td><select id="qa_teamA" class="qa-sel" onchange="qaToggle('qa_teamA','qa_teamANew')"></select><input type="text" id="qa_teamANew" class="qa-inp qa-new" placeholder="Team name"></td>
       <td><select id="qa_teamB" class="qa-sel" onchange="qaToggle('qa_teamB','qa_teamBNew')"></select><input type="text" id="qa_teamBNew" class="qa-inp qa-new" placeholder="Team name"></td>
       <td><div class="picker-wrap"><input type="date" id="qa_date" class="qa-inp" onchange="document.getElementById('qa_day_cell').textContent=this.value?dayName(this.value):''"><button type="button" class="picker-icon" onclick="document.getElementById('qa_date').showPicker()"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1.5" y="2.5" width="13" height="12" rx="1.5"/><path d="M1.5 6.5h13"/><path d="M5 1v3"/><path d="M11 1v3"/><path d="M4.5 9.5h1.5v1.5H4.5z" stroke="none" fill="currentColor"/><path d="M7.25 9.5h1.5v1.5h-1.5z" stroke="none" fill="currentColor"/><path d="M10 9.5h1.5v1.5H10z" stroke="none" fill="currentColor"/></svg></button></div></td>
@@ -637,7 +637,8 @@
               <option value="Football">Football</option>
               <option value="Hurling">Hurling</option>
               <option value="Camogie">Camogie</option>
-              <option value="Camogie">Camogie</option>
+              <option value="Rugby">Rugby</option>
+              <option value="Union">Union</option>
             </select>
           </div>
         </div>
@@ -1221,21 +1222,35 @@ function setupModal(){
       const ex=fixtures.find(f=>f.id===editingId);
       if(ex){
         const origKey=ex._origKey||keyOf(ex);
-        Object.assign(ex,{
-          county:countyVal, teamA:teamAVal, teamB:teamBVal,
-          date:dateVal, day:dayName(dateVal), time:timeVal?to12h(timeVal):'',
-          venue:venueVal||'', competition:compVal||'', round:roundVal,
-          code:codeVal||deriveCode(compVal||'',null)
-        });
+        ex.county=countyVal; ex.teamA=teamAVal; ex.teamB=teamBVal;
+        ex.date=dateVal; ex.day=dayName(dateVal);
+        if(timeVal) ex.time=to12h(timeVal);
+        ex.venue=venueVal||ex.venue||'';
+        ex.competition=compVal||ex.competition||'';
+        ex.round=roundVal||ex.round||'';
+        ex.code=codeVal||ex.code||deriveCode(compVal||'',null);
         if(ex.manual){
           const mf=manualFixtures.find(m=>m.id===editingId);
           if(mf) Object.assign(mf,ex);
           saveManualFixtures();
         } else {
-          const structEdit={county:countyVal,teamA:teamAVal,teamB:teamBVal,date:dateVal,day:dayName(dateVal),time:ex.time,venue:ex.venue,competition:ex.competition,round:ex.round,code:ex.code};
-          fixtureOverrides[origKey]=Object.assign(fixtureOverrides[origKey]||{},structEdit);
-          saveOverrides();
-          syncOverrides([{key:origKey,fields:structEdit}]);
+          // Only save fields that actually changed to avoid clobbering server values
+          const newCode=codeVal||deriveCode(compVal||'',null);
+          const newTime=timeVal?to12h(timeVal):'';
+          const candidate={
+            county:countyVal, teamA:teamAVal, teamB:teamBVal,
+            date:dateVal, day:dayName(dateVal), time:newTime,
+            venue:venueVal||'', competition:compVal||'', round:roundVal, code:newCode
+          };
+          const prev=fixtureOverrides[origKey]||{};
+          const structEdit={};
+          const base={county:ex.county,teamA:ex.teamA,teamB:ex.teamB,date:ex.date,day:ex.day,time:ex.time,venue:ex.venue||'',competition:ex.competition||'',round:ex.round||'',code:ex.code||''};
+          Object.keys(candidate).forEach(k=>{ if(candidate[k]!==base[k]) structEdit[k]=candidate[k]; });
+          if(Object.keys(structEdit).length){
+            fixtureOverrides[origKey]=Object.assign(prev, structEdit);
+            saveOverrides();
+            syncOverrides([{key:origKey,fields:structEdit}]);
+          }
         }
         saveCache(); populateFilterOptions(); render();
       }
