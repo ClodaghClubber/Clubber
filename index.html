@@ -2248,7 +2248,7 @@ let sportsCountiesIndex = {}; // county name (lowercase) → [{id, name, normNam
 (async () => {
   try {
     const [tm, cl, sc] = await Promise.all([
-      fetch('Clubber/teamMappings.json').then(r => r.json()),
+      fetch('Clubber/teamMappings.json?v=' + Date.now()).then(r => r.json()),
       fetch('Clubber/competitionLookup.json').then(r => r.json()),
       fetch('Clubber/sportsCountiesLookup.json').then(r => r.json()),
     ]);
