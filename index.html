@@ -358,13 +358,6 @@
       </svg>
       Json
     </button>
-    <button id="historyBtn" title="Status change history" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px;font-weight:600;">
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="14" cy="14" r="11" stroke="currentColor" stroke-width="1.6"/>
-        <path d="M14 8v6l4 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      History
-    </button>
     <button id="userBtn" title="Set your name for the audit log" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px;font-weight:600;">
       <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="14" cy="10" r="5" stroke="currentColor" stroke-width="1.6"/>
@@ -391,16 +384,6 @@
 <div class="count" id="loadStatus"><div class="spinner" id="loadSpinner"></div><span id="loadStatusText"></span></div>
 <div id="clubberWarning" style="display:none;padding:6px 24px;font-size:12px;color:#92400e;background:#fef3c7;border-top:1px solid #fcd34d;">⚠ <strong>Warning:</strong> This is for tracking purposes only. Verify manually that the fixture exists on the Clubber site!</div>
 
-<!-- History modal -->
-<div id="historyModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;align-items:center;justify-content:center;">
-  <div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;width:min(680px,95vw);max-height:80vh;display:flex;flex-direction:column;overflow:hidden;">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);">
-      <h2 style="margin:0;font-size:15px;font-weight:700;">Status Change History</h2>
-      <button id="historyClose" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:20px;line-height:1;padding:2px 6px;">&times;</button>
-    </div>
-    <div id="historyContent" style="overflow-y:auto;padding:16px 20px;font-size:13px;"></div>
-  </div>
-</div>
 
 <div class="container">
 <table id="fixtureTable">
@@ -900,7 +883,7 @@ function detectChanges(newSnap){
         .map(field=>({field:FIELD_LABELS[field],from:prev[field],to:nf[field]}));
       if(diffs.length){
         if(!fixtureChangelog[sk]) fixtureChangelog[sk]={type:'changed',data:{county:nf.county,teamA:nf.teamA,teamB:nf.teamB,competition:nf.competition,date:nf.date,time:nf.time,venue:nf.venue,round:nf.round,code:nf.code},history:[]};
-        fixtureChangelog[sk].history.push({at:now,diffs});
+        fixtureChangelog[sk].history.push({at:now,who:'Source',diffs});
         fixtureChangelog[sk].data={county:nf.county,teamA:nf.teamA,teamB:nf.teamB,competition:nf.competition,date:nf.date,time:nf.time,venue:nf.venue,round:nf.round,code:nf.code};
         bl.lastKnown={date:nf.date,time:nf.time,venue:nf.venue,round:nf.round};
       }
@@ -929,7 +912,7 @@ function recordStatusChange(f, fromStatus, toStatus){
   if(!fixtureChangelog[sk]){
     fixtureChangelog[sk]={type:'unchanged',data:{county:f.county,teamA:f.teamA,teamB:f.teamB,competition:f.competition,date:f.date,time:f.time,venue:f.venue||'',round:f.round||'',code:f.code||''},history:[]};
   }
-  fixtureChangelog[sk].history.push({at:now,diffs:[{field:'Status',from:fromStatus,to:toStatus}]});
+  fixtureChangelog[sk].history.push({at:now,who:currentUser||'Unknown',diffs:[{field:'Status',from:fromStatus,to:toStatus}]});
   saveChangelog();
 }
 function updateClearChangesBtn(){
@@ -938,39 +921,81 @@ function updateClearChangesBtn(){
   const hasChanges=Object.values(fixtureChangelog).some(c=>c.type==='changed'||c.type==='removed'||c.type==='new');
   btn.style.display='none';
 }
-function openChangeHistoryModal(sk,fid){
+async function openChangeHistoryModal(sk,fid){
   // If opened by fixture id, find the stable key from the fixture
   if(!sk&&fid!==undefined){
     const f=fixtures.find(x=>x.id==fid);
     if(f) sk=stableKeyOf(f);
   }
   let chg=fixtureChangelog[sk];
-  // Allow opening even with no changelog entry yet
   const f2=sk?fixtures.find(x=>stableKeyOf(x)===sk):null;
   if(!chg&&!f2) return;
   if(!chg) chg={type:'unchanged',data:{county:f2.county,teamA:f2.teamA,teamB:f2.teamB,competition:f2.competition},history:[]};
   const d=chg.data||{};
   document.getElementById('changeHistoryTitle').textContent=`${d.teamA||''} v ${d.teamB||''}`;
   document.getElementById('changeHistorySubtitle').textContent=`${d.county||''} · ${d.competition||''}`;
-  const entries=chg.history;
-  const html=entries.length===0
+  document.getElementById('changeHistoryContent').innerHTML='<em style="color:var(--muted)">Loading…</em>';
+  document.getElementById('changeHistoryModal').classList.add('open');
+
+  // Merge local changelog with KV status history for this fixture
+  const localEntries=(chg.history||[]).map(e=>({
+    _ts: (() => { try { return new Date(e.at).getTime(); } catch(_){ return 0; } })(),
+    at: e.at, who: e.who||'', note: e.note||'', diffs: e.diffs||[]
+  }));
+
+  let kvEntries=[];
+  try {
+    const res=await fetch(WORKER_URL+'?history=1',{cache:'no-store'});
+    const json=await res.json();
+    const [skCounty,,skTeamA,skTeamB]=sk.split('|');
+    kvEntries=(json.history||[])
+      .filter(h=>{
+        const [hCounty,hComp,hTeamA,hTeamB]=h.key.split('|');
+        return hCounty===skCounty&&hTeamA===skTeamA&&hTeamB===skTeamB;
+      })
+      .map(h=>({
+        _ts: new Date(h.timestamp).getTime(),
+        at: new Date(h.timestamp).toLocaleString('en-IE'),
+        who: [h.user,h.device].filter(Boolean).join(' · ')||'Unknown',
+        note: '',
+        diffs:[{field:'Status',from:h.previousStatus,to:h.status}]
+      }));
+  } catch(_){}
+
+  // Merge, deduplicate status entries (KV is authoritative, drop matching local ones)
+  const kvTs=new Set(kvEntries.map(e=>e._ts));
+  const filteredLocal=localEntries.filter(e=>
+    !(e.diffs.length===1&&e.diffs[0].field==='Status'&&kvTs.has(e._ts))
+  );
+  const all=[...filteredLocal,...kvEntries].sort((a,b)=>b._ts-a._ts);
+
+  const STATUS_C={Approved:'#4a9e1a',Rejected:'#dc2626',Removed:'#6b7280',Proposed:'#d97706','In Clubber':'#1d4ed8'};
+  const renderDiff=dd=>{
+    const isStatus=dd.field==='Status';
+    const fromCol=isStatus?(STATUS_C[dd.from]||'var(--muted)'):'var(--muted)';
+    const toCol=isStatus?(STATUS_C[dd.to]||'var(--text)'):'var(--text)';
+    return `<div class="chg-diff-row">
+      <span class="chg-diff-field">${dd.field}</span>
+      <span class="chg-diff-from" style="color:${fromCol}">${dd.from||'—'}</span>
+      <span style="color:var(--muted);">→</span>
+      <span class="chg-diff-to" style="color:${toCol};font-weight:${isStatus?700:400}">${dd.to||'—'}</span>
+    </div>`;
+  };
+
+  const html=all.length===0
     ?'<p style="color:var(--muted);font-size:13px;">No history recorded.</p>'
-    :entries.slice().reverse().map((entry,i,arr)=>`
+    :all.map((entry,i,arr)=>`
       <div class="chg-timeline-entry">
-        <div class="chg-timeline-time">${entry.at}</div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">
+          <div class="chg-timeline-time">${entry.at}</div>
+          ${entry.who?`<div style="font-size:11px;color:var(--muted);">${entry.who}</div>`:''}
+        </div>
         ${entry.note
           ?`<div style="font-size:13px;color:var(--muted);">${entry.note}</div>`
-          :entry.diffs.map(dd=>`
-            <div class="chg-diff-row">
-              <span class="chg-diff-field">${dd.field}</span>
-              <span class="chg-diff-from">${dd.from||'—'}</span>
-              <span style="color:var(--muted);">→</span>
-              <span class="chg-diff-to">${dd.to||'—'}</span>
-            </div>`).join('')}
+          :entry.diffs.map(renderDiff).join('')}
       </div>${i<arr.length-1?'<hr style="border:none;border-top:1px solid var(--border);margin:12px 0;">':''}`
     ).join('');
   document.getElementById('changeHistoryContent').innerHTML=html;
-  document.getElementById('changeHistoryModal').classList.add('open');
 }
 function closeChangeHistoryModal(){
   document.getElementById('changeHistoryModal').classList.remove('open');
@@ -1798,47 +1823,7 @@ document.getElementById('userBtn').addEventListener('click', () => {
   updateUserBtn();
 });
 
-// ---- Status history modal ----
-const historyModal = document.getElementById('historyModal');
-const historyContent = document.getElementById('historyContent');
-document.getElementById('historyClose').addEventListener('click', () => { historyModal.style.display = 'none'; });
-historyModal.addEventListener('click', e => { if (e.target === historyModal) historyModal.style.display = 'none'; });
-
-const STATUS_COLOURS = { Approved: '#4a9e1a', Rejected: '#dc2626', Removed: '#6b7280', Proposed: '#d97706' };
-
-document.getElementById('historyBtn').addEventListener('click', async () => {
-  historyModal.style.display = 'flex';
-  historyContent.innerHTML = '<em style="color:var(--muted)">Loading…</em>';
-  try {
-    const res = await fetch(WORKER_URL + '?history=1', { cache: 'no-store' });
-    const json = await res.json();
-    if (!json.ok) throw new Error(json.error || 'Failed');
-    const hist = json.history || [];
-    if (!hist.length) { historyContent.innerHTML = '<em style="color:var(--muted)">No status changes recorded yet.</em>'; return; }
-    const rows = hist.map(h => {
-      const ts = new Date(h.timestamp).toLocaleString();
-      const [county, comp, teamA, teamB, date] = h.key.split('|');
-      const label = `${teamA} v ${teamB}`;
-      const prevCol = STATUS_COLOURS[h.previousStatus] || '#999';
-      const nextCol = STATUS_COLOURS[h.status] || '#999';
-      const who = [h.user, h.device].filter(Boolean).join(' · ') || 'Unknown';
-      return `<div style="border-bottom:1px solid var(--border);padding:10px 0;display:grid;grid-template-columns:1fr auto;gap:4px 12px;">
-        <div style="font-weight:600;">${label}</div>
-        <div style="text-align:right;font-size:11px;color:var(--muted);">${ts}</div>
-        <div style="font-size:12px;color:var(--muted);">${county} · ${comp} · ${date}</div>
-        <div style="text-align:right;font-size:12px;">
-          <span style="color:${prevCol}">${h.previousStatus}</span>
-          <span style="color:var(--muted);margin:0 4px;">→</span>
-          <span style="color:${nextCol};font-weight:700;">${h.status}</span>
-        </div>
-        <div style="font-size:11px;color:var(--muted);grid-column:1/-1;">${who}</div>
-      </div>`;
-    }).join('');
-    historyContent.innerHTML = rows;
-  } catch (err) {
-    historyContent.innerHTML = `<em style="color:#dc2626">Failed to load history: ${err.message}</em>`;
-  }
-});
+// ---- Status history modal (removed — now merged into per-fixture history) ----
 
 // ---- Inline socials editing ----
 document.getElementById('tbody').addEventListener('click',e=>{
