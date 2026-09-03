@@ -2818,7 +2818,7 @@ function matchCounty(county) {
 
 function getSameDayAssignments(dateStr) {
   const map = {};
-  for (const f of allFixtures) {
+  for (const f of fixtures) {
     if (!f.videographer || !f.date) continue;
     if (f.date === dateStr) {
       if (!map[f.videographer]) map[f.videographer] = [];
@@ -2915,7 +2915,7 @@ function renderVidView() {
   if (!container) return;
   const filter = document.getElementById('vidViewFilter')?.value || 'upcoming';
   const today = new Date().toISOString().slice(0, 10);
-  let fixtures = [...allFixtures].filter(f => f.date);
+  let fixtures = [...fixtures].filter(f => f.date);
   if (filter === 'upcoming') fixtures = fixtures.filter(f => f.date >= today);
   if (filter === 'unassigned') fixtures = fixtures.filter(f => !f.videographer && f.date >= today);
   fixtures.sort((a, b) => {
@@ -3010,7 +3010,7 @@ function vidAssignSuggested(fid, name) {
 }
 
 function vidDoAssign(fid, name) {
-  const f = allFixtures.find(x => x.id === fid);
+  const f = fixtures.find(x => x.id === fid);
   if (!f) return;
   const vid = VIDEOGRAPHERS.find(v => v.name === name) || { name, email: '' };
   f.videographer = name;
