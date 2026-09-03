@@ -323,7 +323,7 @@
     <button class="btn-remove" id="removeBtn" disabled>Remove</button>
     <button class="btn-remove" id="clearChangesBtn" style="display:none;" title="Clear all change markers">Clear changes</button>
     <button class="btn-modal-add" id="addFixtureBtn">+ Add Fixture</button>
-    <button id="vidViewBtn" onclick="toggleVidView()" style="background:#7c3aed;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;">🎥 Videographer</button>
+    <button id="vidViewBtn" onclick="toggleVidView()" style="background:#7c3aed;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;">Resources</button>
     <div class="col-picker-wrap" style="display:none;">
       <button class="btn-remove" id="assignSocialsBtn" style="background:#7c3aed;" disabled>Socials ▾</button>
       <div id="assignSocialsPanel" style="display:none;"></div>
@@ -2778,7 +2778,7 @@ function toggleVidView() {
   const vidBtn = document.getElementById('vidViewBtn');
   if (vidBtn) {
     vidBtn.style.background = vidViewActive ? '#6d28d9' : '#7c3aed';
-    vidBtn.textContent = vidViewActive ? '✕ Close Videographer' : '🎥 Videographer';
+    vidBtn.textContent = vidViewActive ? '✕ Close Resources' : 'Resources';
   }
   // Hide the row-count/action bar below toolbar too
   const rowCountBar = document.querySelector('div[style*="justify-content:space-between"][style*="padding:6px 24px"]');
@@ -2840,6 +2840,9 @@ function timeToMins(timeStr) {
 }
 
 function checkConflict(vidName, fixture, sameDayMap) {
+  // A videographer is occupied from their fixture's start time until start + 180 min.
+  // A conflict exists if this fixture's start falls within any other fixture's [start, start+180) window,
+  // OR if another fixture's start falls within this fixture's [start, start+180) window.
   const existing = sameDayMap[vidName] || [];
   const myTime = timeToMins(fixture.time);
   if (myTime === null) return null;
@@ -2847,8 +2850,9 @@ function checkConflict(vidName, fixture, sameDayMap) {
     if (other.id === fixture.id) continue;
     const otherTime = timeToMins(other.time);
     if (otherTime === null) continue;
+    // Conflict if either fixture starts while the other is still running (within 180 min)
     const gap = Math.abs(myTime - otherTime);
-    if (gap < 120) return { gap, other };
+    if (gap < 180) return { gap, other };
   }
   return null;
 }
@@ -2976,8 +2980,9 @@ function renderVidView() {
         suggHtml = '<span style="color:var(--muted);font-size:11px;">No suggestion</span>';
       }
 
+      const preselect = assigned || (top?.approved && !top?.conflict ? top.name : null);
       const allOptions = VIDEOGRAPHERS.map(v =>
-        `<option value="${v.name}"${assigned === v.name ? ' selected' : ''}>${v.name}</option>`
+        `<option value="${v.name}"${preselect === v.name ? ' selected' : ''}>${v.name}</option>`
       ).join('');
 
       const fid = f.id;
