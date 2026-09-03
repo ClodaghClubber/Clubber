@@ -1385,6 +1385,26 @@ const CARLOW_FIXTURES = [];
   ['Grange','O Hanrahans','26 August 2026','20:15','Grange','QF'],
 ].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Junior C Football Championship',r[5])));
 
+// Carlow - Junior A Football Championship SFs (source: carlowgaa.ie Sep 2026)
+[
+  ['Palatine','Asca','11 September 2026','19:00','Netwatch Cullen Park','SF'],
+  ['Naomh Eoin','Kilbride/Cill Bhríde C.L.G.','11 September 2026','20:30','Netwatch Cullen Park','SF'],
+  ['Rathvilly/Rathbhile','Eire Og Clg','16 September 2026','20:00','Pitch 1 Netwatch Centre of Excellence','SF'],
+].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Junior A Football Championship',r[5])));
+
+// Carlow - Junior B Football Championship SFs (source: carlowgaa.ie Sep 2026)
+[
+  ['OldLeighlin','Naomh Eoin','10 September 2026','20:00','Pitch 1 Netwatch Centre of Excellence','SF'],
+  ['Kildavin / Clonegal','Tinryland/Tigh Raoireann','11 September 2026','20:00','Pitch 1 Netwatch Centre of Excellence','SF'],
+  ['Bagenalstown Gaels GAA','Ballinabranna','16 September 2026','19:30','Pitch 2 Netwatch Centre of Excellence','SF'],
+].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Junior B Football Championship',r[5])));
+
+// Carlow - Junior C Football Championship SFs (source: carlowgaa.ie Sep 2026)
+[
+  ['Palatine','Grange','10 September 2026','19:30','Pitch 2 Netwatch Centre of Excellence','SF'],
+  ['St Patricks','O\'Hanrahans/Ó Hanracháin','11 September 2026','19:30','Pitch 2 Netwatch Centre of Excellence','SF'],
+].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Junior C Football Championship',r[5])));
+
 // Carlow - Junior Hurling Championship (source: carlowgaa.ie Sep 2026)
 [
   ['Naomh Eoin','Burren Rangers','4 September 2026','19:00','Netwatch Cullen Park','QF'],
