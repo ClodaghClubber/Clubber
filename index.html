@@ -2817,13 +2817,23 @@ function matchCounty(county) {
   return key ? VID_DATA.countyRankings[key] : null;
 }
 
-function getSameDayAssignments(dateStr) {
+function getSameDayAssignments(dateStr, pendingMap) {
+  // pendingMap: same structure, adds tentative suggestions from current render pass
   const map = {};
   for (const f of fixtures) {
     if (!f.videographer || !f.date) continue;
     if (f.date === dateStr) {
       if (!map[f.videographer]) map[f.videographer] = [];
       map[f.videographer].push(f);
+    }
+  }
+  if (pendingMap) {
+    for (const [vid, entries] of Object.entries(pendingMap)) {
+      for (const entry of entries) {
+        if (entry.date !== dateStr) continue;
+        if (!map[vid]) map[vid] = [];
+        if (!map[vid].find(x => x.id === entry.id)) map[vid].push(entry);
+      }
     }
   }
   return map;
@@ -2857,9 +2867,9 @@ function checkConflict(vidName, fixture, sameDayMap) {
   return null;
 }
 
-function suggestVideographers(fixture) {
+function suggestVideographers(fixture, pendingMap) {
   if (!VID_DATA) return [];
-  const sameDayMap = getSameDayAssignments(fixture.date);
+  const sameDayMap = getSameDayAssignments(fixture.date, pendingMap);
   const venueList = matchVenue(fixture.venue) || [];
   const countyList = matchCounty(fixture.county) || [];
   const candidates = {};
@@ -2937,14 +2947,21 @@ function renderVidView() {
     if (!byDate[f.date]) byDate[f.date] = [];
     byDate[f.date].push(f);
   }
+  // pendingMap: tracks tentative suggestions made this render pass, so same-time fixtures get different picks
+  const pendingMap = {};
   let html = '';
   for (const [date, group] of Object.entries(byDate)) {
     const dStr = new Date(date + 'T12:00:00').toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     html += `<div class="vid-date-group"><div class="vid-date-hdr">${dStr} &mdash; ${group.length} fixture${group.length !== 1 ? 's' : ''}</div>`;
     for (const f of group) {
-      const suggestions = suggestVideographers(f);
+      const suggestions = suggestVideographers(f, pendingMap);
       const top = suggestions[0] || null;
       const assigned = f.videographer || null;
+      // Claim the top suggestion so later fixtures in the same time window get a different pick
+      if (!assigned && top && top.approved && !top.conflict) {
+        if (!pendingMap[top.name]) pendingMap[top.name] = [];
+        pendingMap[top.name].push(f);
+      }
       let rowClass = 'vid-row';
       if (assigned) rowClass += ' vid-assigned';
       else if (top?.conflict) rowClass += ' vid-conflict';
