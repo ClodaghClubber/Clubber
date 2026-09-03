@@ -2915,19 +2915,19 @@ function renderVidView() {
   if (!container) return;
   const filter = document.getElementById('vidViewFilter')?.value || 'upcoming';
   const today = new Date().toISOString().slice(0, 10);
-  let fixtures = [...fixtures].filter(f => f.date);
-  if (filter === 'upcoming') fixtures = fixtures.filter(f => f.date >= today);
-  if (filter === 'unassigned') fixtures = fixtures.filter(f => !f.videographer && f.date >= today);
-  fixtures.sort((a, b) => {
+  let viewFixtures = [...fixtures].filter(f => f.date);
+  if (filter === 'upcoming') viewFixtures = viewFixtures.filter(f => f.date >= today);
+  if (filter === 'unassigned') viewFixtures = viewFixtures.filter(f => !f.videographer && f.date >= today);
+  viewFixtures.sort((a, b) => {
     if (a.date !== b.date) return a.date < b.date ? -1 : 1;
     return (a.time || '') < (b.time || '') ? -1 : 1;
   });
-  if (!fixtures.length) {
+  if (!viewFixtures.length) {
     container.innerHTML = '<p style="color:var(--muted);padding:24px;text-align:center;">No fixtures to show.</p>';
     return;
   }
   const byDate = {};
-  for (const f of fixtures) {
+  for (const f of viewFixtures) {
     if (!byDate[f.date]) byDate[f.date] = [];
     byDate[f.date].push(f);
   }
