@@ -475,7 +475,8 @@
     <div style="display:flex;gap:8px;align-items:center;">
       <label style="font-size:12px;color:var(--muted);">Show</label>
       <select id="vidViewFilter" onchange="renderVidView()" style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg);">
-        <option value="upcoming">Upcoming only</option>
+        <option value="clubber">In Clubber</option>
+        <option value="upcoming">Upcoming (all)</option>
         <option value="all">All fixtures</option>
         <option value="unassigned">Unassigned only</option>
       </select>
@@ -2913,9 +2914,10 @@ function suggestVideographers(fixture) {
 function renderVidView() {
   const container = document.getElementById('vidViewContent');
   if (!container) return;
-  const filter = document.getElementById('vidViewFilter')?.value || 'upcoming';
+  const filter = document.getElementById('vidViewFilter')?.value || 'clubber';
   const today = new Date().toISOString().slice(0, 10);
   let viewFixtures = [...fixtures].filter(f => f.date);
+  if (filter === 'clubber') viewFixtures = viewFixtures.filter(f => f.clubberCreated && f.date >= today);
   if (filter === 'upcoming') viewFixtures = viewFixtures.filter(f => f.date >= today);
   if (filter === 'unassigned') viewFixtures = viewFixtures.filter(f => !f.videographer && f.date >= today);
   viewFixtures.sort((a, b) => {
