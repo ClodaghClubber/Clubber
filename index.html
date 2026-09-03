@@ -248,6 +248,21 @@
   .chg-diff-field{color:var(--muted);min-width:90px;font-size:12px;}
   .chg-diff-from{text-decoration:line-through;color:var(--muted);}
   .chg-diff-to{font-weight:600;}
+  /* Auth */
+  #authOverlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9000;display:flex;align-items:center;justify-content:center;}
+  #authOverlay.hidden{display:none;}
+  .auth-box{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:40px 36px;width:360px;box-shadow:0 8px 40px rgba(0,0,0,.3);}
+  .auth-box h2{margin:0 0 6px;font-size:20px;}
+  .auth-box p{margin:0 0 24px;font-size:13px;color:var(--muted);}
+  .auth-field{margin-bottom:14px;}
+  .auth-field label{display:block;font-size:12px;font-weight:600;margin-bottom:4px;color:var(--muted);}
+  .auth-field input{width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:14px;}
+  .auth-field input:focus{outline:none;border-color:var(--accent);}
+  .auth-submit{width:100%;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;margin-top:8px;}
+  .auth-submit:hover{opacity:.9;}
+  .auth-error{font-size:12px;color:#dc2626;margin-top:10px;min-height:18px;}
+  #logoutBtn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer;}
+  #logoutBtn:hover{color:var(--text);border-color:var(--text);}
   /* Videographer view */
   .vid-date-group{margin-bottom:20px;}
   .vid-date-hdr{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:4px 0;border-bottom:1px solid var(--border);margin-bottom:8px;}
@@ -272,9 +287,56 @@
 </style>
 </head>
 <body>
-<header>
-  <h1>Fixtures Dashboard</h1>
-  <p>Live fixtures from Cork, Waterford, Kerry, Offaly, Laois, Wexford, Kilkenny, Tipperary, Monaghan, Meath, Kildare, Carlow, Louth &amp; Roscommon fetched fresh on page load via a server-side proxy. <strong>Longford</strong> uses static data and may not reflect the latest changes.</p>
+
+<!-- Auth overlay -->
+<div id="authOverlay">
+  <!-- Login panel -->
+  <div class="auth-box" id="loginPanel">
+    <h2>Fixtures Dashboard</h2>
+    <p>Sign in to continue</p>
+    <form id="loginForm" onsubmit="handleLogin(event)">
+      <div class="auth-field">
+        <label>Username</label>
+        <input type="text" id="loginUsername" autocomplete="username" required autofocus>
+      </div>
+      <div class="auth-field">
+        <label>Password</label>
+        <input type="password" id="loginPassword" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="auth-submit" id="loginSubmit">Sign in</button>
+      <div class="auth-error" id="loginError"></div>
+    </form>
+  </div>
+  <!-- Change password panel (shown on first login) -->
+  <div class="auth-box" id="changePasswordPanel" style="display:none;">
+    <h2>Set your password</h2>
+    <p>This is your first login. Please choose a new password.</p>
+    <form id="changePasswordForm" onsubmit="handleChangePassword(event)">
+      <div class="auth-field">
+        <label>New password</label>
+        <input type="password" id="newPassword1" autocomplete="new-password" required minlength="8">
+      </div>
+      <div class="auth-field">
+        <label>Confirm password</label>
+        <input type="password" id="newPassword2" autocomplete="new-password" required minlength="8">
+      </div>
+      <button type="submit" class="auth-submit" id="changePasswordSubmit">Set password</button>
+      <div class="auth-error" id="changePasswordError"></div>
+    </form>
+  </div>
+</div>
+
+<!-- Main dashboard (hidden until authenticated) -->
+<div id="dashboardWrap" style="display:none;">
+<header style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;">
+  <div>
+    <h1>Fixtures Dashboard</h1>
+    <p>Live fixtures from Cork, Waterford, Kerry, Offaly, Laois, Wexford, Kilkenny, Tipperary, Monaghan, Meath, Kildare, Carlow, Louth &amp; Roscommon fetched fresh on page load via a server-side proxy. <strong>Longford</strong> uses static data and may not reflect the latest changes.</p>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;padding-top:8px;white-space:nowrap;">
+    <span id="authUserLabel" style="font-size:12px;color:var(--muted);"></span>
+    <button id="logoutBtn" onclick="handleLogout()">Sign out</button>
+  </div>
 </header>
 
 <div class="toolbar">
@@ -838,8 +900,16 @@ function mk(county,teamA,teamB,date,time,venue,competition,round){
 // browser CORS restrictions) and returns normalized fixture JSON.
 // Replace with your deployed Worker URL after running: wrangler deploy
 const WORKER_URL = 'https://gaa-fixtures-proxy-v2.clodagh-b01.workers.dev/';
-const USER_KEY = 'gaaUserName';
-let currentUser = localStorage.getItem(USER_KEY) || '';
+const USER_KEY    = 'gaaUserName';
+const AUTH_TOKEN_KEY = 'gaaAuthToken';
+let currentUser  = localStorage.getItem(USER_KEY) || '';
+let authToken    = localStorage.getItem(AUTH_TOKEN_KEY) || '';
+
+function authFetch(url, opts = {}) {
+  const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+  if (authToken) headers['Authorization'] = 'Bearer ' + authToken;
+  return fetch(url, { ...opts, headers });
+}
 
 // ---- App state ----
 const CACHE_KEY = 'gaaFixturesCache';
@@ -1653,9 +1723,8 @@ selectAll.addEventListener('change',()=>{
 async function syncStatus(ids,status){
   const keys=fixtures.filter(f=>ids.includes(f.id)).map(f=>f._origKey||keyOf(f));
   try{
-    const res=await fetch(WORKER_URL,{
+    const res=await authFetch(WORKER_URL,{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
       body:JSON.stringify({keys,status,user:currentUser})
     });
     const json=await res.json();
@@ -1793,18 +1862,16 @@ function mergeFixtures(incoming){
 async function syncOverrides(updates){
   if(!updates||!updates.length) return;
   try{
-    await fetch(WORKER_URL,{
+    await authFetch(WORKER_URL,{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
       body:JSON.stringify({action:'setOverrides',updates})
     });
   }catch(e){ console.warn('Override sync failed:',e); }
 }
 
 function syncManualFixtures(){
-  fetch(WORKER_URL,{
+  authFetch(WORKER_URL,{
     method:'POST',
-    headers:{'Content-Type':'application/json'},
     body:JSON.stringify({action:'setManualFixtures',fixtures:manualFixtures})
   }).catch(e=>console.warn('Manual fixture sync failed:',e));
 }
@@ -3077,6 +3144,116 @@ function vidDoAssign(fid, name) {
   renderVidView();
 }
 // ===== END VIDEOGRAPHER SELECTOR =====
+
+// ===== AUTH =====
+async function handleLogin(e) {
+  e.preventDefault();
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  const btn = document.getElementById('loginSubmit');
+  errEl.textContent = '';
+  btn.disabled = true;
+  btn.textContent = 'Signing in…';
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'login', username, password }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Login failed');
+    authToken = data.token;
+    localStorage.setItem(AUTH_TOKEN_KEY, authToken);
+    currentUser = data.username;
+    localStorage.setItem(USER_KEY, currentUser);
+    if (data.mustChangePassword) {
+      document.getElementById('loginPanel').style.display = 'none';
+      document.getElementById('changePasswordPanel').style.display = '';
+    } else {
+      finishAuth(currentUser);
+    }
+  } catch (err) {
+    errEl.textContent = err.message || 'Login failed';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Sign in';
+  }
+}
+
+async function handleChangePassword(e) {
+  e.preventDefault();
+  const p1 = document.getElementById('newPassword1').value;
+  const p2 = document.getElementById('newPassword2').value;
+  const errEl = document.getElementById('changePasswordError');
+  const btn = document.getElementById('changePasswordSubmit');
+  errEl.textContent = '';
+  if (p1 !== p2) { errEl.textContent = 'Passwords do not match'; return; }
+  if (p1.length < 8) { errEl.textContent = 'Password must be at least 8 characters'; return; }
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  try {
+    const res = await authFetch(WORKER_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'changePassword', newPassword: p1 }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Failed to change password');
+    finishAuth(currentUser);
+  } catch (err) {
+    errEl.textContent = err.message || 'Failed to change password';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Set password';
+  }
+}
+
+function finishAuth(username) {
+  document.getElementById('authOverlay').classList.add('hidden');
+  document.getElementById('dashboardWrap').style.display = '';
+  const label = document.getElementById('authUserLabel');
+  if (label) label.textContent = username;
+}
+
+async function handleLogout() {
+  try {
+    await authFetch(WORKER_URL, { method: 'POST', body: JSON.stringify({ action: 'logout', token: authToken }) });
+  } catch (_) {}
+  authToken = '';
+  localStorage.removeItem(AUTH_TOKEN_KEY);
+  document.getElementById('dashboardWrap').style.display = 'none';
+  document.getElementById('authOverlay').classList.remove('hidden');
+  document.getElementById('loginPanel').style.display = '';
+  document.getElementById('changePasswordPanel').style.display = 'none';
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('loginError').textContent = '';
+}
+
+// On load: validate stored session or show login
+(async () => {
+  if (authToken) {
+    try {
+      const res = await authFetch(WORKER_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'validateSession' }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        currentUser = data.username;
+        localStorage.setItem(USER_KEY, currentUser);
+        finishAuth(currentUser);
+        return;
+      }
+    } catch (_) {}
+    // Token invalid — clear and show login
+    authToken = '';
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+  }
+  // Show login
+  document.getElementById('authOverlay').classList.remove('hidden');
+})();
+// ===== END AUTH =====
 </script>
+</div><!-- #dashboardWrap -->
 </body>
 </html>

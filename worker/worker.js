@@ -1625,8 +1625,137 @@ const LOUTH_FIXTURES = [];
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
+
+// ---- Auth helpers ----
+const USERS_KV_KEY    = 'auth_users';
+const SESSION_PREFIX  = 'auth_session:';
+const SESSION_TTL_SEC = 7 * 24 * 60 * 60; // 7 days
+
+function jsonResp(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
+  });
+}
+
+async function pbkdf2Hash(password, saltHex) {
+  const enc = new TextEncoder();
+  const keyMat = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
+  const salt = hexToBytes(saltHex);
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', hash: 'SHA-256', salt, iterations: 100000 },
+    keyMat, 256
+  );
+  return bytesToHex(new Uint8Array(bits));
+}
+
+function randomHex(bytes = 32) {
+  return bytesToHex(crypto.getRandomValues(new Uint8Array(bytes)));
+}
+function bytesToHex(buf) {
+  return Array.from(buf).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+function hexToBytes(hex) {
+  const arr = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < arr.length; i++) arr[i] = parseInt(hex.slice(i*2, i*2+2), 16);
+  return arr;
+}
+
+async function getUsers(kv)   { return JSON.parse(await kv.get(USERS_KV_KEY) || '{}'); }
+async function putUsers(kv, u) { await kv.put(USERS_KV_KEY, JSON.stringify(u)); }
+
+async function validateSession(kv, request) {
+  const auth = request.headers.get('Authorization') || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : null;
+  if (!token) return null;
+  const raw = await kv.get(SESSION_PREFIX + token);
+  if (!raw) return null;
+  const session = JSON.parse(raw);
+  return session.username || null;
+}
+
+async function handleAuth(action, body, kv, request, adminKey) {
+  // ---- login ----
+  if (action === 'login') {
+    const { username, password } = body || {};
+    if (!username || !password) return jsonResp({ ok: false, error: 'Missing credentials' }, 400);
+    const users = await getUsers(kv);
+    const user = users[username.toLowerCase()];
+    if (!user) return jsonResp({ ok: false, error: 'Invalid username or password' }, 401);
+    const hash = await pbkdf2Hash(password, user.salt);
+    if (hash !== user.hash) return jsonResp({ ok: false, error: 'Invalid username or password' }, 401);
+    const token = randomHex(32);
+    await kv.put(SESSION_PREFIX + token, JSON.stringify({ username: username.toLowerCase(), createdAt: new Date().toISOString() }), { expirationTtl: SESSION_TTL_SEC });
+    return jsonResp({ ok: true, token, mustChangePassword: !!user.mustChangePassword, username: username.toLowerCase() });
+  }
+
+  // ---- logout ----
+  if (action === 'logout') {
+    const { token } = body || {};
+    if (token) await kv.delete(SESSION_PREFIX + token);
+    return jsonResp({ ok: true });
+  }
+
+  // ---- validateSession ----
+  if (action === 'validateSession') {
+    const username = await validateSession(kv, request);
+    if (!username) return jsonResp({ ok: false, error: 'Invalid or expired session' }, 401);
+    return jsonResp({ ok: true, username });
+  }
+
+  // ---- changePassword (requires valid session) ----
+  if (action === 'changePassword') {
+    const username = await validateSession(kv, request);
+    if (!username) return jsonResp({ ok: false, error: 'Not authenticated' }, 401);
+    const { newPassword } = body || {};
+    if (!newPassword || newPassword.length < 8) return jsonResp({ ok: false, error: 'Password must be at least 8 characters' }, 400);
+    const users = await getUsers(kv);
+    if (!users[username]) return jsonResp({ ok: false, error: 'User not found' }, 404);
+    const salt = randomHex(16);
+    users[username].salt = salt;
+    users[username].hash = await pbkdf2Hash(newPassword, salt);
+    users[username].mustChangePassword = false;
+    await putUsers(kv, users);
+    return jsonResp({ ok: true });
+  }
+
+  // ---- adminResetPassword (requires ADMIN_KEY secret) ----
+  if (action === 'adminResetPassword') {
+    const { adminKey: ak, username, newPassword } = body || {};
+    if (!adminKey || ak !== adminKey) return jsonResp({ ok: false, error: 'Forbidden' }, 403);
+    if (!username || !newPassword) return jsonResp({ ok: false, error: 'Missing fields' }, 400);
+    const users = await getUsers(kv);
+    const key = username.toLowerCase();
+    const salt = randomHex(16);
+    users[key] = {
+      ...users[key],
+      salt,
+      hash: await pbkdf2Hash(newPassword, salt),
+      mustChangePassword: true,
+      createdAt: users[key]?.createdAt || new Date().toISOString(),
+    };
+    await putUsers(kv, users);
+    return jsonResp({ ok: true });
+  }
+
+  // ---- adminCreateUser (requires ADMIN_KEY secret) ----
+  if (action === 'adminCreateUser') {
+    const { adminKey: ak, username, password } = body || {};
+    if (!adminKey || ak !== adminKey) return jsonResp({ ok: false, error: 'Forbidden' }, 403);
+    if (!username || !password) return jsonResp({ ok: false, error: 'Missing fields' }, 400);
+    const users = await getUsers(kv);
+    const key = username.toLowerCase();
+    if (users[key]) return jsonResp({ ok: false, error: 'User already exists' }, 409);
+    const salt = randomHex(16);
+    users[key] = { salt, hash: await pbkdf2Hash(password, salt), mustChangePassword: true, createdAt: new Date().toISOString() };
+    await putUsers(kv, users);
+    return jsonResp({ ok: true });
+  }
+
+  return null; // not an auth action
+}
 
 // ---- Championship Rugby: static fixtures (all 15 rounds) ----
 // Venue = home team (first listed). Sport = 'Rugby' so dashboard Code column shows 'Rugby'.
@@ -1983,6 +2112,22 @@ export default {
     if (request.method === 'POST') {
       try {
         const body = await request.json();
+
+        // Auth actions (no session required for login/logout/validateSession)
+        const authActions = ['login','logout','validateSession','changePassword','adminResetPassword','adminCreateUser'];
+        if (authActions.includes(body.action)) {
+          if (!kv) return jsonResp({ ok: false, error: 'KV not bound' }, 500);
+          const authResp = await handleAuth(body.action, body, kv, request, env.ADMIN_KEY || '');
+          if (authResp) return authResp;
+        }
+
+        // All other POST actions require a valid session
+        const authedActions = ['setManualFixtures','setOverrides'];
+        if (authedActions.includes(body.action)) {
+          if (!kv) return jsonResp({ ok: false, error: 'KV not bound' }, 500);
+          const username = await validateSession(kv, request);
+          if (!username) return jsonResp({ ok: false, error: 'Not authenticated' }, 401);
+        }
 
         // Manual fixture sync
         if (body.action === 'setManualFixtures') {
