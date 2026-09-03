@@ -1178,6 +1178,7 @@ async function fetchCarlowFixtures() {
     }
     return fixtures;
   } catch (e) {
+    console.error('fetchCarlowFixtures failed:', e);
     return [];
   }
 }
@@ -1338,12 +1339,26 @@ const CARLOW_FIXTURES = [];
   ['Eire Og','Palatine','27 August 2026','20:30','Netwatch Cullen Park','QF'],
 ].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Senior Football Championship',r[5])));
 
+// Carlow - Senior Football Championship SFs (source: carlowgaa.ie Sep 2026)
+[
+  ['Fenagh','Mt Leinster Rangers','9 September 2026','20:30','Netwatch Cullen Park','SF'],
+  ['Palatine','Grange','12 September 2026','19:00','Netwatch Cullen Park','SF'],
+  ['Old Leighlin','Bagenalstown Gaels GAA','13 September 2026','16:00','Netwatch Cullen Park','SF'],
+].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Senior Football Championship',r[5])));
+
 // Carlow - Intermediate Football Championship QFs (source: carlowgaa.ie Aug 2026)
 [
   ['Eire Og','Tinryland','25 August 2026','19:00','Netwatch Cullen Park','QF'],
   ['Ballinabranna','Clonmore','26 August 2026','19:00','Netwatch Cullen Park','QF'],
   ['Kildavin/Clonegal','Ballon','27 August 2026','19:30','Netwatch Cullen Park','QF'],
   ['Fighting Cocks','St Patricks','27 August 2026','20:15','Fr Ryan Park','QF'],
+].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Intermediate Football Championship',r[5])));
+
+// Carlow - Intermediate Football Championship SFs (source: carlowgaa.ie Sep 2026)
+[
+  ['Ballinabranna','Clonmore','9 September 2026','19:00','Netwatch Cullen Park','SF'],
+  ['Kildavin / Clonegal','Eire Og','12 September 2026','17:15','Netwatch Cullen Park','SF'],
+  ['Fighting Cocks','Ballon GFC','13 September 2026','14:15','Netwatch Cullen Park','SF'],
 ].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Intermediate Football Championship',r[5])));
 
 // Carlow - Junior A Football Championship QFs (source: carlowgaa.ie Aug 2026)

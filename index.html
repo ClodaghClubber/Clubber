@@ -1334,32 +1334,31 @@ function setupModal(){
       const ex=fixtures.find(f=>f.id===editingId);
       if(ex){
         const origKey=ex._origKey||keyOf(ex);
+        // Capture original values BEFORE mutating ex
+        const base={county:ex.county,teamA:ex.teamA,teamB:ex.teamB,date:ex.date,day:ex.day,
+          time:ex.time,venue:ex.venue||'',competition:ex.competition||'',round:ex.round||'',code:ex.code||''};
+        const newCode=codeVal||ex.code||deriveCode(compVal||'',null);
+        const newTime=timeVal?to12h(timeVal):ex.time;
+        const newVenue=venueVal||ex.venue||'';
+        const newComp=compVal||ex.competition||'';
+        const newRound=roundVal!==undefined?roundVal:ex.round||'';
+        // Apply to in-memory fixture
         ex.county=countyVal; ex.teamA=teamAVal; ex.teamB=teamBVal;
         ex.date=dateVal; ex.day=dayName(dateVal);
-        if(timeVal) ex.time=to12h(timeVal);
-        ex.venue=venueVal||ex.venue||'';
-        ex.competition=compVal||ex.competition||'';
-        ex.round=roundVal||ex.round||'';
-        ex.code=codeVal||ex.code||deriveCode(compVal||'',null);
+        ex.time=newTime; ex.venue=newVenue; ex.competition=newComp;
+        ex.round=newRound; ex.code=newCode;
         if(ex.manual){
           const mf=manualFixtures.find(m=>m.id===editingId);
           if(mf) Object.assign(mf,ex);
           saveManualFixtures();
         } else {
-          // Only save fields that actually changed to avoid clobbering server values
-          const newCode=codeVal||deriveCode(compVal||'',null);
-          const newTime=timeVal?to12h(timeVal):'';
-          const candidate={
-            county:countyVal, teamA:teamAVal, teamB:teamBVal,
-            date:dateVal, day:dayName(dateVal), time:newTime,
-            venue:venueVal||'', competition:compVal||'', round:roundVal, code:newCode
-          };
-          const prev=fixtureOverrides[origKey]||{};
+          // Only persist fields that actually changed
+          const candidate={county:countyVal,teamA:teamAVal,teamB:teamBVal,date:dateVal,
+            day:dayName(dateVal),time:newTime,venue:newVenue,competition:newComp,round:newRound,code:newCode};
           const structEdit={};
-          const base={county:ex.county,teamA:ex.teamA,teamB:ex.teamB,date:ex.date,day:ex.day,time:ex.time,venue:ex.venue||'',competition:ex.competition||'',round:ex.round||'',code:ex.code||''};
           Object.keys(candidate).forEach(k=>{ if(candidate[k]!==base[k]) structEdit[k]=candidate[k]; });
           if(Object.keys(structEdit).length){
-            fixtureOverrides[origKey]=Object.assign(prev, structEdit);
+            fixtureOverrides[origKey]=Object.assign(fixtureOverrides[origKey]||{}, structEdit);
             saveOverrides();
             syncOverrides([{key:origKey,fields:structEdit}]);
           }
