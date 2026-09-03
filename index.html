@@ -2786,6 +2786,27 @@ function toggleVidView() {
   if (vidViewActive) renderVidView();
 }
 
+// Canonical name aliases — maps short/variant names to the name in VIDEOGRAPHERS[]
+const VID_ALIASES = {
+  'james':          'James Fitzgerald',
+  'jc':             "JC O'Shea",
+  'cian o halloran':"Cian O'Halloran",
+  'calum nolan':    'Callum Nolan',   // spelling variant in data
+  'molly':          'Molly Hyland',
+  'willie':         "Willie O'Mahony",
+  'willie o\'mahony':"Willie O'Mahony",
+  'paidi kelly':    'Paidí Kelly',
+  'owen':           "Owen O'Brien",
+  'kevin':          'Kevin Kelleher',
+  'niall':          'Niall Creery',
+};
+
+function resolveVidName(raw) {
+  if (!raw) return raw;
+  const key = raw.trim().toLowerCase();
+  return VID_ALIASES[key] || raw.trim();
+}
+
 function normVenueName(v) {
   return (v || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }
@@ -2823,8 +2844,9 @@ function getSameDayAssignments(dateStr, pendingMap) {
   for (const f of fixtures) {
     if (!f.videographer || !f.date) continue;
     if (f.date === dateStr) {
-      if (!map[f.videographer]) map[f.videographer] = [];
-      map[f.videographer].push(f);
+      const vid = resolveVidName(f.videographer);
+      if (!map[vid]) map[vid] = [];
+      map[vid].push(f);
     }
   }
   if (pendingMap) {
@@ -2875,12 +2897,13 @@ function suggestVideographers(fixture, pendingMap) {
   const candidates = {};
 
   const addCandidate = (vid, src, games) => {
-    const key = normVidName(vid.name);
+    const resolvedName = resolveVidName(vid.name);
+    const key = normVidName(resolvedName);
     if (!key) return;
     if (!candidates[key]) {
       const known = VIDEOGRAPHERS.find(v => normVidName(v.name) === key);
       candidates[key] = {
-        name: vid.name,
+        name: known?.name || resolvedName,
         email: vid.email || known?.email || null,
         approved: vid.approved || false,
         venueGames: 0, countyGames: 0, finals: 0, semis: 0, qfs: 0,
