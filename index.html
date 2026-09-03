@@ -249,7 +249,7 @@
   .chg-diff-from{text-decoration:line-through;color:var(--muted);}
   .chg-diff-to{font-weight:600;}
   /* Auth */
-  #authOverlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9000;display:flex;align-items:center;justify-content:center;}
+  #authOverlay{display:none!important;}
   #authOverlay.hidden{display:none;}
   .auth-box{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:40px 36px;width:360px;box-shadow:0 8px 40px rgba(0,0,0,.3);}
   .auth-box h2{margin:0 0 6px;font-size:20px;}
@@ -327,7 +327,7 @@
 </div>
 
 <!-- Main dashboard (hidden until authenticated) -->
-<div id="dashboardWrap" style="display:none;">
+<div id="dashboardWrap">
 <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;">
   <div>
     <h1>Fixtures Dashboard</h1>
@@ -3229,29 +3229,8 @@ async function handleLogout() {
   document.getElementById('loginError').textContent = '';
 }
 
-// On load: validate stored session or show login
-(async () => {
-  if (authToken) {
-    try {
-      const res = await authFetch(WORKER_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'validateSession' }),
-      });
-      const data = await res.json();
-      if (data.ok) {
-        currentUser = data.username;
-        localStorage.setItem(USER_KEY, currentUser);
-        finishAuth(currentUser);
-        return;
-      }
-    } catch (_) {}
-    // Token invalid — clear and show login
-    authToken = '';
-    localStorage.removeItem(AUTH_TOKEN_KEY);
-  }
-  // Show login
-  document.getElementById('authOverlay').classList.remove('hidden');
-})();
+// Auth disabled — bypass login
+(async () => { finishAuth('guest'); })();
 // ===== END AUTH =====
 </script>
 </div><!-- #dashboardWrap -->
