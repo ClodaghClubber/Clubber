@@ -1377,9 +1377,9 @@ const CARLOW_FIXTURES = [];
 
 // Carlow - Senior Football Championship SFs (source: carlowgaa.ie Sep 2026)
 [
-  ['Fenagh','Mt Leinster Rangers','9 September 2026','20:30','Netwatch Cullen Park','SF'],
-  ['Palatine','Grange','12 September 2026','19:00','Netwatch Cullen Park','SF'],
-  ['Old Leighlin','Bagenalstown Gaels GAA','13 September 2026','16:00','Netwatch Cullen Park','SF'],
+  ['Fenagh','Mt Leinster Rangers','9 September 2026','20:30','Netwatch Cullen Park','Relegation Final'],
+  ['Palatine','Grange','12 September 2026','19:00','Netwatch Cullen Park','QF'],
+  ['Old Leighlin','Bagenalstown Gaels GAA','13 September 2026','16:00','Netwatch Cullen Park','QF'],
 ].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Senior Football Championship',r[5])));
 
 // Carlow - Intermediate Football Championship QFs (source: carlowgaa.ie Aug 2026)
@@ -1392,9 +1392,9 @@ const CARLOW_FIXTURES = [];
 
 // Carlow - Intermediate Football Championship SFs (source: carlowgaa.ie Sep 2026)
 [
-  ['Ballinabranna','Clonmore','9 September 2026','19:00','Netwatch Cullen Park','SF'],
-  ['Kildavin / Clonegal','Eire Og','12 September 2026','17:15','Netwatch Cullen Park','SF'],
-  ['Fighting Cocks','Ballon GFC','13 September 2026','14:15','Netwatch Cullen Park','SF'],
+  ['Ballinabranna','Clonmore','9 September 2026','19:00','Netwatch Cullen Park','Relegation Final'],
+  ['Kildavin / Clonegal','Eire Og','12 September 2026','17:15','Netwatch Cullen Park','QF'],
+  ['Fighting Cocks','Ballon GFC','13 September 2026','14:15','Netwatch Cullen Park','QF'],
 ].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Intermediate Football Championship',r[5])));
 
 // Carlow - Junior A Football Championship QFs (source: carlowgaa.ie Aug 2026)
@@ -1423,22 +1423,22 @@ const CARLOW_FIXTURES = [];
 
 // Carlow - Junior A Football Championship SFs (source: carlowgaa.ie Sep 2026)
 [
-  ['Palatine','Asca','11 September 2026','19:00','Netwatch Cullen Park','SF'],
-  ['Naomh Eoin','Kilbride/Cill Bhríde C.L.G.','11 September 2026','20:30','Netwatch Cullen Park','SF'],
-  ['Rathvilly/Rathbhile','Eire Og Clg','16 September 2026','20:00','Pitch 1 Netwatch Centre of Excellence','SF'],
+  ['Palatine','Asca','11 September 2026','19:00','Netwatch Cullen Park','QF'],
+  ['Naomh Eoin','Kilbride/Cill Bhríde C.L.G.','11 September 2026','20:30','Netwatch Cullen Park','QF'],
+  ['Rathvilly/Rathbhile','Eire Og Clg','16 September 2026','20:00','Pitch 1 Netwatch Centre of Excellence','Relegation Final'],
 ].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Junior A Football Championship',r[5])));
 
 // Carlow - Junior B Football Championship SFs (source: carlowgaa.ie Sep 2026)
 [
-  ['OldLeighlin','Naomh Eoin','10 September 2026','20:00','Pitch 1 Netwatch Centre of Excellence','SF'],
-  ['Kildavin / Clonegal','Tinryland/Tigh Raoireann','11 September 2026','20:00','Pitch 1 Netwatch Centre of Excellence','SF'],
-  ['Bagenalstown Gaels GAA','Ballinabranna','16 September 2026','19:30','Pitch 2 Netwatch Centre of Excellence','SF'],
+  ['OldLeighlin','Naomh Eoin','10 September 2026','20:00','Pitch 1 Netwatch Centre of Excellence','QF'],
+  ['Kildavin / Clonegal','Tinryland/Tigh Raoireann','11 September 2026','20:00','Pitch 1 Netwatch Centre of Excellence','QF'],
+  ['Bagenalstown Gaels GAA','Ballinabranna','16 September 2026','19:30','Pitch 2 Netwatch Centre of Excellence','Relegation Final'],
 ].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Junior B Football Championship',r[5])));
 
 // Carlow - Junior C Football Championship SFs (source: carlowgaa.ie Sep 2026)
 [
-  ['Palatine','Grange','10 September 2026','19:30','Pitch 2 Netwatch Centre of Excellence','SF'],
-  ['St Patricks','O\'Hanrahans/Ó Hanracháin','11 September 2026','19:30','Pitch 2 Netwatch Centre of Excellence','SF'],
+  ['Palatine','Grange','10 September 2026','19:30','Pitch 2 Netwatch Centre of Excellence','QF'],
+  ['St Patricks','O\'Hanrahans/Ó Hanracháin','11 September 2026','19:30','Pitch 2 Netwatch Centre of Excellence','QF'],
 ].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Junior C Football Championship',r[5])));
 
 // Carlow - Junior Hurling Championship (source: carlowgaa.ie Sep 2026)
