@@ -902,7 +902,16 @@ function mk(county,teamA,teamB,date,time,venue,competition,round){
 const WORKER_URL = 'https://gaa-fixtures-proxy-v2.clodagh-b01.workers.dev/';
 const USER_KEY    = 'gaaUserName';
 const AUTH_TOKEN_KEY = 'gaaAuthToken';
-let currentUser  = localStorage.getItem(USER_KEY) || '';
+function getUserCookie() {
+  const m = document.cookie.match(/(?:^|;\s*)gaaUserName=([^;]*)/);
+  return m ? decodeURIComponent(m[1]) : '';
+}
+function setUserCookie(name) {
+  const exp = new Date();
+  exp.setFullYear(exp.getFullYear() + 1);
+  document.cookie = 'gaaUserName=' + encodeURIComponent(name) + '; expires=' + exp.toUTCString() + '; path=/; SameSite=Lax';
+}
+let currentUser  = getUserCookie() || localStorage.getItem(USER_KEY) || '';
 let authToken    = localStorage.getItem(AUTH_TOKEN_KEY) || '';
 
 function authFetch(url, opts = {}) {
@@ -1941,8 +1950,8 @@ document.getElementById('userBtn').addEventListener('click', () => {
   const name = prompt('Enter your name for the status change audit log (leave blank to clear):', currentUser);
   if (name === null) return;
   currentUser = name.trim().slice(0, 60);
-  if (currentUser) localStorage.setItem(USER_KEY, currentUser);
-  else localStorage.removeItem(USER_KEY);
+  if (currentUser) { localStorage.setItem(USER_KEY, currentUser); setUserCookie(currentUser); }
+  else { localStorage.removeItem(USER_KEY); document.cookie = 'gaaUserName=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'; }
   updateUserBtn();
 });
 
@@ -3166,6 +3175,7 @@ async function handleLogin(e) {
     localStorage.setItem(AUTH_TOKEN_KEY, authToken);
     currentUser = data.username;
     localStorage.setItem(USER_KEY, currentUser);
+    setUserCookie(currentUser);
     if (data.mustChangePassword) {
       document.getElementById('loginPanel').style.display = 'none';
       document.getElementById('changePasswordPanel').style.display = '';
