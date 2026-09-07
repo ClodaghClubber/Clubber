@@ -1097,6 +1097,42 @@ const LONGFORD_FIXTURES = [];
   ['Cashel','Mostrim','28 August 2026','','Leo Casey Park','Round 3'],
 ].forEach(r=>LONGFORD_FIXTURES.push(mkStatic('Longford',r[0],r[1],r[2],r[3],r[4],'Intermediate Football Championship Group B',r[5])));
 
+// Longford - Senior Football Championship KO Quarter Finals (source: longfordgaa.ie Sep 2026)
+[
+  ['St. Mary\'s Granard','Killoe Young Emmets','12 September 2026','16:00','','QF'],
+  ['Abbeylara','Longford Slashers','12 September 2026','18:00','','QF'],
+  ['Dromard','Colmcille','13 September 2026','14:15','','QF'],
+  ['Clonguish','Ardagh Moydow GAA','13 September 2026','16:15','','QF'],
+].forEach(r=>LONGFORD_FIXTURES.push(mkStatic('Longford',r[0],r[1],r[2],r[3],r[4],'Senior Football Championship',r[5])));
+
+// Longford - Senior Football Championship Relegation (source: longfordgaa.ie Sep 2026)
+[
+  ['Mullinalaghta St. Columba\'s','Rathcline','11 September 2026','20:00','','Round 1'],
+  ['Carrickedmond','Mullinalaghta St. Columba\'s','18 September 2026','20:00','','Round 3'],
+].forEach(r=>LONGFORD_FIXTURES.push(mkStatic('Longford',r[0],r[1],r[2],r[3],r[4],'Senior Football Championship Relegation',r[5])));
+
+// Longford - Intermediate Football Championship Relegation (source: longfordgaa.ie Sep 2026)
+[
+  ['Fr Manning Gaels','Cashel','11 September 2026','20:00','','Round 1'],
+  ['Killoe Young Emmets','St. Brigid\'s Killashee','11 September 2026','20:00','','Round 1'],
+  ['St. Brigid\'s Killashee','Fr Manning Gaels','18 September 2026','20:00','','Round 2'],
+  ['Cashel','Killoe Young Emmets','18 September 2026','20:00','','Round 2'],
+  ['Killoe Young Emmets','Fr Manning Gaels','25 September 2026','20:00','','Round 3'],
+  ['Cashel','St. Brigid\'s Killashee','25 September 2026','20:00','','Round 3'],
+].forEach(r=>LONGFORD_FIXTURES.push(mkStatic('Longford',r[0],r[1],r[2],r[3],r[4],'Intermediate Football Championship Relegation',r[5])));
+
+// Longford - Junior A Football Championship Round 5 (source: longfordgaa.ie Sep 2026)
+[
+  ['Kenagh G.A.A','Clonguish','13 September 2026','12:00','','Round 5'],
+  ['Legan Sarsfields','Longford Slashers','13 September 2026','18:00','','Round 5'],
+].forEach(r=>LONGFORD_FIXTURES.push(mkStatic('Longford',r[0],r[1],r[2],r[3],r[4],'Junior A Football Championship',r[5])));
+
+// Longford - Junior C Football Championship KO Semi Finals (source: longfordgaa.ie Sep 2026)
+[
+  ['Ardagh Moydow GAA','Fr Manning Gaels','12 September 2026','20:15','','SF'],
+  ['Mostrim','Cashel','13 September 2026','12:00','','SF'],
+].forEach(r=>LONGFORD_FIXTURES.push(mkStatic('Longford',r[0],r[1],r[2],r[3],r[4],'Junior C Football Championship',r[5])));
+
 // ---- Kildare: static data ----
 // Kildare's fixtures aren't published on a scrapable website; they were
 // manually transcribed from official Cill Dara CCC fixture-sheet images
