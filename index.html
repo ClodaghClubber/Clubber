@@ -1472,7 +1472,7 @@ function msInit(id,opts,onChange){
 }
 function msGetValues(id){return [...(_msSelected[id]||new Set())];}
 const msCounty=msInit('countyFilter',[],()=>{populateCompOptions();render();});
-const msCode=msInit('codeFilter',['Football','Hurling','Camogie'],render);
+const msCode=msInit('codeFilter',['Football','Hurling','Camogie','Rugby'],render);
 const msComp=msInit('compFilter',[],render);
 const msStatus=msInit('statusFilter',['Proposed','Approved','Rejected'],render);
 const dateFrom=document.getElementById('dateFrom');
