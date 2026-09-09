@@ -2421,6 +2421,9 @@ function deriveGrade(county, competition) {
     return 'Intermediate 1';
   }
 
+  // Minor / U20 / U21
+  if (/Minor|U20|U21/i.test(c)) return 'Minor';
+
   // Junior
   if (/Premier\s+Junior/i.test(c)) return 'Junior 1';
   if (/Junior\s+B\b/i.test(c)) return 'Junior 2';

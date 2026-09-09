@@ -1664,6 +1664,8 @@
     }
   },
   "Kerry": {
+    "St Brendans Board": {"id": "83e33440-332d-44ad-85c3-9d64a2f936b9", "name": "St. Brendan's Board"},
+    "North Kerry": {"id": "b06eef57-d35b-4a57-91ae-1434725004eb", "name": "North Kerry"},
     "CLG Lios Póil": {
       "id": "dec3a809-1694-437e-8578-6825ecf87080",
       "name": "Lispole"
