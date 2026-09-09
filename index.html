@@ -2517,7 +2517,7 @@ function buildGamePayload(f) {
   if (!teamBResult) errors.push(`Club not found for "${normB}" (${f.county}) — add to teamMappings.json`);
   else if (teamBResult.autoMatched) warnings.push(`"${normB}" auto-matched to "${teamBResult.matchedName}" — verify this is correct`);
 
-  const isRugby = (f.county === 'Champ' || (f.code || '').toLowerCase() === 'rugby');
+  const isRugby = (f.county === 'Champ' || f.county === 'BUCS' || (f.code || '').toLowerCase() === 'rugby');
 
   const grade = isRugby ? '' : deriveGrade(f.county, f.competition);
   if (!isRugby && !grade) errors.push(`grade could not be derived from competition "${f.competition}"`);

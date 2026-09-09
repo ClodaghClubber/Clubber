@@ -508,6 +508,12 @@ const KERRY_COMPETITIONS = [
   },
 ];
 
+// Kerry Minor Football Championship Semi-Finals (from kerrygaa.ie, Sep 2026)
+const KERRY_STATIC_FIXTURES = [
+  mkStatic('Kerry','East Kerry','Dr. Crokes','10 September 2026','18:00','Fitzgerald Stadium, Killarney','Minor Football Championship','SF'),
+  mkStatic('Kerry','St Brendans Board','North Kerry','10 September 2026','19:00','Austin Stack Park, Tralee','Minor Football Championship','SF'),
+];
+
 const CORK_NAME_FIX = {
   'ODonovan Rossa': 'O Donovan Rossa',
   'BéalÁtha\'n Ghaorthaidh': 'Béal Átha\'n Ghaorthaidh',
@@ -582,6 +588,11 @@ const OFFALY_COMPETITIONS = [
     grade: 'intermediate',
     name: 'Intermediate Football Championship',
   },
+];
+
+// Offaly U20 Hurling Championship Semi-Final Replay (from offaly.gaa.ie, Sep 2026)
+const OFFALY_STATIC_FIXTURES = [
+  mkStatic('Offaly','St Rynaghs','SBK','10 September 2026','19:30','Coolderry','U20 Hurling Championship','SF'),
 ];
 
 const TIPPERARY_COMPETITIONS = [
@@ -835,6 +846,9 @@ const ROSCOMMON_FOOTBALL_STATIC = [
   mkStatic('Roscommon','St Brigids','Kilbride','29 August 2026','19:00',"St Brigid's GAA, Kiltoom",'Junior A Football Championship','Round 3'),
   mkStatic('Roscommon','St Aidan\'s','Ballinameen','30 August 2026','13:00','Ballyforan','Junior A Football Championship','Round 3'),
   mkStatic('Roscommon','Boyle','St. Dominic\'s G.A.A. Club','30 August 2026','13:00','Abbey Park','Junior A Football Championship','Round 3'),
+  // Minor Football Championship Finals (from gaaroscommon.ie, Sep 2026)
+  mkStatic('Roscommon','Pádraig Pearses GAA','Roscommon Gaels','11 September 2026','18:30','Ballyforan','Minor A Football Championship','Final'),
+  mkStatic('Roscommon','St Brigids','Boyle','13 September 2026','15:00','Enfield','Minor B Football Championship','Final'),
 ];
 
 async function fetchKildare(cacDebug) {
@@ -1165,6 +1179,23 @@ const TIPPERARY_FIXTURES = [];
   ['Borrisokane','Newport','9 August 2026','14:15','Nenagh','Round 2'],
   ['Ballybacon Grange','Moyle Rovers','8 August 2026','18:00','Cahir','Round 2'],
 ].forEach(r=>TIPPERARY_FIXTURES.push(mkStatic('Tipperary',r[0],r[1],r[2],r[3],r[4],'Intermediate Hurling Championship Group 4',r[5])));
+
+// Tipperary Minor Football Championship Finals (from tipperary.gaa.ie, Sep 2026)
+[
+  ['Cappawhite GAA','Cashel King Cormacs','8 September 2026','18:00','Pairc Ciocaim, Dundrum','Final'],
+].forEach(r=>TIPPERARY_FIXTURES.push(mkStatic('Tipperary',r[0],r[1],r[2],r[3],r[4],'West Tipperary Minor A Football Championship',r[5])));
+
+[
+  ['Lattin Cullen Gaels','Golden-Kilfeacle','9 September 2026','18:00','Bansha','Final'],
+].forEach(r=>TIPPERARY_FIXTURES.push(mkStatic('Tipperary',r[0],r[1],r[2],r[3],r[4],'West Tipperary Minor B Football Championship',r[5])));
+
+[
+  ['St Mary\'s','Mullinahone','10 September 2026','19:30','Fethard Town Park','Final'],
+].forEach(r=>TIPPERARY_FIXTURES.push(mkStatic('Tipperary',r[0],r[1],r[2],r[3],r[4],'Minor A Hurling Championship',r[5])));
+
+[
+  ['Ballybacon Grange','Carrick Swan','10 September 2026','19:30','Fethard Town Park','Final'],
+].forEach(r=>TIPPERARY_FIXTURES.push(mkStatic('Tipperary',r[0],r[1],r[2],r[3],r[4],'Minor B Hurling Championship',r[5])));
 
 // Kildare fixtures are fetched live from kildaregaa.ie via fetchKildare().
 const KILDARE_FIXTURES = [];
@@ -1964,6 +1995,145 @@ const RUGBY_FIXTURES = [];
   add('Round 15','Caldy','Nottingham','23 January 2027','13:00');
 })();
 
+// BUCS Super Rugby 2026-27
+(function() {
+  const bucsAdd = (competition, round, teamA, teamB, date) => {
+    const f = mkStatic('BUCS', teamA, teamB, date, 'TBC', teamA, competition, round);
+    f.sport = 'Rugby';
+    RUGBY_FIXTURES.push(f);
+  };
+  const W = "Women's BUCS Super Rugby";
+  const M = "Men's BUCS Super Rugby";
+
+  // Women's fixtures
+  bucsAdd(W,'Round 1','Brunel','Exeter','14 October 2026');
+  bucsAdd(W,'Round 1','Cardiff','Surrey','14 October 2026');
+  bucsAdd(W,'Round 1','Edinburgh','Cardiff Met','14 October 2026');
+  bucsAdd(W,'Round 1','Hartpury','Loughborough','4 November 2026'); // moved from 14 Oct
+  bucsAdd(W,'Round 2','Cardiff Met','Brunel','21 October 2026');
+  bucsAdd(W,'Round 2','Loughborough','Cardiff','21 October 2026');
+  bucsAdd(W,'Round 2','Exeter','Edinburgh','21 October 2026');
+  bucsAdd(W,'Round 2','Surrey','Hartpury','21 October 2026');
+  bucsAdd(W,'Round 3','Cardiff','Brunel','28 October 2026');
+  bucsAdd(W,'Round 3','Surrey','Cardiff Met','28 October 2026');
+  bucsAdd(W,'Round 3','Edinburgh','Loughborough','28 October 2026');
+  bucsAdd(W,'Round 3','Hartpury','Exeter','28 October 2026');
+  bucsAdd(W,'Round 4','Brunel','Edinburgh','11 November 2026');
+  bucsAdd(W,'Round 4','Hartpury','Cardiff','11 November 2026');
+  bucsAdd(W,'Round 4','Exeter','Cardiff Met','11 November 2026');
+  bucsAdd(W,'Round 4','Loughborough','Surrey','11 November 2026');
+  bucsAdd(W,'Round 5','Brunel','Loughborough','18 November 2026');
+  bucsAdd(W,'Round 5','Cardiff','Exeter','18 November 2026');
+  bucsAdd(W,'Round 5','Cardiff Met','Hartpury','18 November 2026');
+  bucsAdd(W,'Round 5','Edinburgh','Surrey','18 November 2026');
+  bucsAdd(W,'Round 6','Hartpury','Brunel','25 November 2026');
+  bucsAdd(W,'Round 6','Cardiff','Edinburgh','25 November 2026');
+  bucsAdd(W,'Round 6','Loughborough','Cardiff Met','25 November 2026');
+  bucsAdd(W,'Round 6','Surrey','Exeter','25 November 2026');
+  bucsAdd(W,'Round 7','Surrey','Brunel','2 December 2026');
+  bucsAdd(W,'Round 7','Edinburgh','Hartpury','2 December 2026');
+  bucsAdd(W,'Round 7','Exeter','Loughborough','2 December 2026');
+  bucsAdd(W,'Round 8','Cardiff Met','Cardiff','9 December 2026');
+  bucsAdd(W,'QF','TBD','TBD','24 February 2027');
+  bucsAdd(W,'SF','TBD','TBD','3 March 2027');
+  bucsAdd(W,'Final','TBD','TBD','17 March 2027');
+
+  // Men's fixtures
+  bucsAdd(M,'Round 1','Nottingham','Exeter','23 September 2026');
+  bucsAdd(M,'Round 1','Cardiff','Hartpury','23 September 2026');
+  bucsAdd(M,'Round 1','Cardiff Met','Brunel','23 September 2026');
+  bucsAdd(M,'Round 1','Bath','Loughborough','23 September 2026');
+  bucsAdd(M,'Round 1','Leeds Beckett','Durham','23 September 2026');
+  bucsAdd(M,'Round 2','Brunel','Bath','30 September 2026');
+  bucsAdd(M,'Round 2','Durham','Cardiff','30 September 2026');
+  bucsAdd(M,'Round 2','Hartpury','Cardiff Met','30 September 2026');
+  bucsAdd(M,'Round 2','Leeds Beckett','Exeter','30 September 2026');
+  bucsAdd(M,'Round 2','Loughborough','Nottingham','30 September 2026');
+  bucsAdd(M,'Round 3','Hartpury','Bath','7 October 2026');
+  bucsAdd(M,'Round 3','Nottingham','Brunel','7 October 2026');
+  bucsAdd(M,'Round 3','Cardiff','Cardiff Met','7 October 2026');
+  bucsAdd(M,'Round 3','Exeter','Durham','7 October 2026');
+  bucsAdd(M,'Round 3','Loughborough','Leeds Beckett','7 October 2026');
+  bucsAdd(M,'Round 4','Bath','Exeter','14 October 2026');
+  bucsAdd(M,'Round 4','Brunel','Cardiff','14 October 2026');
+  bucsAdd(M,'Round 4','Cardiff Met','Loughborough','14 October 2026');
+  bucsAdd(M,'Round 4','Durham','Hartpury','14 October 2026');
+  bucsAdd(M,'Round 4','Nottingham','Leeds Beckett','14 October 2026');
+  bucsAdd(M,'Round 5','Bath','Cardiff Met','21 October 2026');
+  bucsAdd(M,'Round 5','Brunel','Exeter','28 October 2026');
+  bucsAdd(M,'Round 5','Cardiff','Nottingham','28 October 2026');
+  bucsAdd(M,'Round 5','Loughborough','Durham','28 October 2026');
+  bucsAdd(M,'Round 5','Leeds Beckett','Hartpury','28 October 2026');
+  bucsAdd(M,'Round 6','Nottingham','Bath','4 November 2026');
+  bucsAdd(M,'Round 6','Durham','Brunel','4 November 2026');
+  bucsAdd(M,'Round 6','Exeter','Cardiff','4 November 2026');
+  bucsAdd(M,'Round 6','Leeds Beckett','Cardiff Met','4 November 2026');
+  bucsAdd(M,'Round 6','Hartpury','Loughborough','4 November 2026');
+  bucsAdd(M,'Round 7','Durham','Bath','11 November 2026');
+  bucsAdd(M,'Round 7','Brunel','Loughborough','11 November 2026');
+  bucsAdd(M,'Round 7','Cardiff','Leeds Beckett','11 November 2026');
+  bucsAdd(M,'Round 7','Cardiff Met','Nottingham','11 November 2026');
+  bucsAdd(M,'Round 7','Exeter','Hartpury','11 November 2026');
+  bucsAdd(M,'Round 8','Bath','Leeds Beckett','18 November 2026');
+  bucsAdd(M,'Round 8','Brunel','Hartpury','18 November 2026');
+  bucsAdd(M,'Round 8','Loughborough','Cardiff','18 November 2026');
+  bucsAdd(M,'Round 8','Cardiff Met','Exeter','18 November 2026');
+  bucsAdd(M,'Round 8','Nottingham','Durham','18 November 2026');
+  bucsAdd(M,'Round 9','Cardiff','Bath','2 December 2026');
+  bucsAdd(M,'Round 9','Leeds Beckett','Brunel','2 December 2026');
+  bucsAdd(M,'Round 9','Durham','Cardiff Met','2 December 2026');
+  bucsAdd(M,'Round 9','Exeter','Loughborough','2 December 2026');
+  bucsAdd(M,'Round 9','Hartpury','Nottingham','2 December 2026');
+  bucsAdd(M,'Round 10','Bath','Durham','9 December 2026');
+  bucsAdd(M,'Round 10','Loughborough','Brunel','9 December 2026');
+  bucsAdd(M,'Round 10','Cardiff Met','Cardiff','9 December 2026');
+  bucsAdd(M,'Round 10','Exeter','Nottingham','9 December 2026');
+  bucsAdd(M,'Round 10','Hartpury','Leeds Beckett','9 December 2026');
+  bucsAdd(M,'Round 11','Bath','Hartpury','16 December 2026');
+  bucsAdd(M,'Round 11','Brunel','Leeds Beckett','16 December 2026');
+  bucsAdd(M,'Round 11','Cardiff','Loughborough','16 December 2026');
+  bucsAdd(M,'Round 11','Exeter','Cardiff Met','16 December 2026');
+  bucsAdd(M,'Round 11','Durham','Nottingham','16 December 2026');
+  bucsAdd(M,'Round 12','Bath','Brunel','20 January 2027');
+  bucsAdd(M,'Round 12','Leeds Beckett','Cardiff','20 January 2027');
+  bucsAdd(M,'Round 12','Loughborough','Cardiff Met','20 January 2027');
+  bucsAdd(M,'Round 12','Durham','Exeter','20 January 2027');
+  bucsAdd(M,'Round 12','Nottingham','Hartpury','20 January 2027');
+  bucsAdd(M,'Round 13','Leeds Beckett','Bath','27 January 2027');
+  bucsAdd(M,'Round 13','Exeter','Brunel','27 January 2027');
+  bucsAdd(M,'Round 13','Hartpury','Cardiff','27 January 2027');
+  bucsAdd(M,'Round 13','Cardiff Met','Durham','27 January 2027');
+  bucsAdd(M,'Round 13','Nottingham','Loughborough','27 January 2027');
+  bucsAdd(M,'Round 14','Bath','Nottingham','3 February 2027');
+  bucsAdd(M,'Round 14','Brunel','Cardiff Met','3 February 2027');
+  bucsAdd(M,'Round 14','Cardiff','Exeter','3 February 2027');
+  bucsAdd(M,'Round 14','Durham','Leeds Beckett','3 February 2027');
+  bucsAdd(M,'Round 14','Loughborough','Hartpury','3 February 2027');
+  bucsAdd(M,'Round 15','Cardiff Met','Bath','10 February 2027');
+  bucsAdd(M,'Round 15','Brunel','Durham','10 February 2027');
+  bucsAdd(M,'Round 15','Nottingham','Cardiff','10 February 2027');
+  bucsAdd(M,'Round 15','Hartpury','Exeter','10 February 2027');
+  bucsAdd(M,'Round 15','Leeds Beckett','Loughborough','10 February 2027');
+  bucsAdd(M,'Round 16','Exeter','Bath','24 February 2027');
+  bucsAdd(M,'Round 16','Cardiff','Brunel','24 February 2027');
+  bucsAdd(M,'Round 16','Cardiff Met','Hartpury','24 February 2027');
+  bucsAdd(M,'Round 16','Durham','Loughborough','24 February 2027');
+  bucsAdd(M,'Round 16','Leeds Beckett','Nottingham','24 February 2027');
+  bucsAdd(M,'Round 17','Bath','Cardiff','3 March 2027');
+  bucsAdd(M,'Round 17','Brunel','Nottingham','3 March 2027');
+  bucsAdd(M,'Round 17','Cardiff Met','Leeds Beckett','3 March 2027');
+  bucsAdd(M,'Round 17','Hartpury','Durham','3 March 2027');
+  bucsAdd(M,'Round 17','Loughborough','Exeter','3 March 2027');
+  bucsAdd(M,'Round 18','Loughborough','Bath','10 March 2027');
+  bucsAdd(M,'Round 18','Hartpury','Brunel','10 March 2027');
+  bucsAdd(M,'Round 18','Cardiff','Durham','10 March 2027');
+  bucsAdd(M,'Round 18','Nottingham','Cardiff Met','10 March 2027');
+  bucsAdd(M,'Round 18','Exeter','Leeds Beckett','10 March 2027');
+  bucsAdd(M,'QF','TBD','TBD','31 March 2027');
+  bucsAdd(M,'SF','TBD','TBD','7 April 2027');
+  bucsAdd(M,'Final','TBD','TBD','21 April 2027');
+})();
+
 const VALID_STATUSES = ['Proposed', 'Approved', 'Rejected', 'Removed'];
 const STATUS_KV_KEY = 'statuses';
 const OVERRIDES_KV_KEY = 'overrides';
@@ -2340,6 +2510,8 @@ export default {
         ...LONGFORD_FIXTURES,
         ...TIPPERARY_FIXTURES,
         ...KILDARE_FIXTURES,
+        ...KERRY_STATIC_FIXTURES,
+        ...OFFALY_STATIC_FIXTURES,
         ...carlowLiveResults,
         ...CARLOW_FIXTURES,
         ...(louthLiveResults.length > 0 ? louthLiveResults : LOUTH_FIXTURES.filter(f => !/^Winner|^Loser/i.test(f.teamA) && !/^Winner|^Loser/i.test(f.teamB))),
