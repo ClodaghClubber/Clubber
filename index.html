@@ -1075,11 +1075,13 @@ async function openChangeHistoryModal(sk,fid){
   try {
     const res=await fetch(WORKER_URL+'?history=1',{cache:'no-store'});
     const json=await res.json();
-    const [skCounty,,skTeamA,skTeamB]=sk.split('|');
+    // stableKeyOf = county|teamA|teamB|competition
+    // keyOf (KV key) = county|competition|teamA|teamB|date
+    const [skCounty,skTeamA,skTeamB,skComp]=sk.split('|');
     kvEntries=(json.history||[])
       .filter(h=>{
         const [hCounty,hComp,hTeamA,hTeamB]=h.key.split('|');
-        return hCounty===skCounty&&hTeamA===skTeamA&&hTeamB===skTeamB;
+        return hCounty===skCounty&&hComp===skComp&&hTeamA===skTeamA&&hTeamB===skTeamB;
       })
       .map(h=>({
         _ts: new Date(h.timestamp).getTime(),
