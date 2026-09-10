@@ -463,6 +463,8 @@ const MEATH_COMPETITIONS = [
   { path: '/fixtures-results/football/club/intermediate/2026-ifc-gr-b-meade-farm/f395ac08-91fe-4c4f-ba54-940187674cb7/', uuid: 'f395ac08-91fe-4c4f-ba54-940187674cb7', sport: 'football', level: 'club', grade: 'intermediate', name: 'Intermediate Football Championship' },
   { path: '/fixtures-results/football/club/intermediate/2026-ifc-gr-c-meade-farm/ec52c8c0-58e7-4d73-9b0d-7e66247e21ce/', uuid: 'ec52c8c0-58e7-4d73-9b0d-7e66247e21ce', sport: 'football', level: 'club', grade: 'intermediate', name: 'Intermediate Football Championship' },
   { path: '/fixtures-results/football/club/intermediate/2026-ifc-gr-d-meade-farm/78bce439-10c8-4e7b-958f-58839f72a93f/', uuid: '78bce439-10c8-4e7b-958f-58839f72a93f', sport: 'football', level: 'club', grade: 'intermediate', name: 'Intermediate Football Championship' },
+  // Relegation cup
+  { path: '/fixtures-results/hurling/club/junior/2026-corn-donal-o-loingsigh/8bcf6906-a025-4e58-be13-aba961d8212a/', uuid: '8bcf6906-a025-4e58-be13-aba961d8212a', sport: 'hurling', level: 'club', grade: 'junior', name: 'Corn Donal O Loingsigh (Hurling Relegation)' },
 ];
 
 const KERRY_COMPETITIONS = [
@@ -691,6 +693,55 @@ const TIPPERARY_COMPETITIONS = [
     level: 'club',
     grade: 'senior',
     name: 'West Tipperary Crosco Cup',
+  },
+  // Relegation cups
+  {
+    path: '/fixtures-results/hurling/club/senior/fbd-insurance-tipperary-senior-hurling-relegation/93a8b7d4-70f5-490c-808a-2ec90d01c19b/',
+    uuid: '93a8b7d4-70f5-490c-808a-2ec90d01c19b',
+    sport: 'hurling',
+    level: 'club',
+    grade: 'senior',
+    name: 'Tipperary Senior Hurling Relegation',
+  },
+  {
+    path: '/fixtures-results/hurling/club/intermediate/fbd-insurance-tipperary-intermediate-hurling-relegation/db30a39e-7b27-4923-a1f7-c3252203815e/',
+    uuid: 'db30a39e-7b27-4923-a1f7-c3252203815e',
+    sport: 'hurling',
+    level: 'club',
+    grade: 'intermediate',
+    name: 'Tipperary Intermediate Hurling Relegation',
+  },
+  {
+    path: '/fixtures-results/hurling/club/intermediate/fbd-insurance-tipperary-premier-intermediate-hurling-relegation/a98f9390-2a6e-4e61-8734-3b75eef6dbf7/',
+    uuid: 'a98f9390-2a6e-4e61-8734-3b75eef6dbf7',
+    sport: 'hurling',
+    level: 'club',
+    grade: 'intermediate',
+    name: 'Tipperary Premier Intermediate Hurling Relegation',
+  },
+  {
+    path: '/fixtures-results/football/club/senior/fbd-insurance-tipperary-senior-football-relegation/2d4f603a-e06c-48db-8ade-f0147e08b63b/',
+    uuid: '2d4f603a-e06c-48db-8ade-f0147e08b63b',
+    sport: 'football',
+    level: 'club',
+    grade: 'senior',
+    name: 'Tipperary Senior Football Relegation',
+  },
+  {
+    path: '/fixtures-results/football/club/intermediate/fbd-insurance-county-tipperary-intermediate-football-relegation/201cd3f9-bd85-49de-baaf-d6ebb6a95a2e/',
+    uuid: '201cd3f9-bd85-49de-baaf-d6ebb6a95a2e',
+    sport: 'football',
+    level: 'club',
+    grade: 'intermediate',
+    name: 'Tipperary Intermediate Football Relegation',
+  },
+  {
+    path: '/fixtures-results/football/club/junior/fbd-insurance-county-tipperary-premier-junior-football-relegation/55d24c49-ca8e-47c8-95cb-1077af2e9249/',
+    uuid: '55d24c49-ca8e-47c8-95cb-1077af2e9249',
+    sport: 'football',
+    level: 'club',
+    grade: 'junior',
+    name: 'Tipperary Premier Junior Football Relegation',
   },
 ];
 
@@ -2520,6 +2571,25 @@ export default {
         ...kilkennyCamogieResults.flat().map(f => ({ ...fixNames(f), sport: 'Camogie' })),
         ...RUGBY_FIXTURES,
       ];
+
+      // Global dedup: normalise time case so "7:00 pm" and "7:00 PM" collapse to one record.
+      // When two records share the same identity key, keep the richer one (has round > longer venue).
+      {
+        const globalSeen = new Map();
+        for (const f of fixtures) {
+          const key = `${f.county}|${f.competition}|${f.teamA}|${f.teamB}|${toIsoDate(f.date)}|${(f.time || '').toLowerCase().trim()}`;
+          if (!globalSeen.has(key)) {
+            globalSeen.set(key, f);
+          } else {
+            const existing = globalSeen.get(key);
+            // Prefer whichever has a round, then longer venue string
+            const existingScore = (existing.round ? 2 : 0) + (existing.venue || '').length;
+            const newScore = (f.round ? 2 : 0) + (f.venue || '').length;
+            if (newScore > existingScore) globalSeen.set(key, f);
+          }
+        }
+        fixtures = [...globalSeen.values()];
+      }
 
       const fetchedAt = new Date().toISOString();
 

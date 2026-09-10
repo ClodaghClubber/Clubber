@@ -19,11 +19,15 @@
   .ms-wrap{position:relative;min-width:120px;}
   .ms-trigger{width:100%;text-align:left;padding:6px 24px 6px 10px;font-size:13px;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative;}
   .ms-trigger::after{content:'▾';position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:10px;pointer-events:none;color:var(--muted);}
-  .ms-panel{position:absolute;top:calc(100% + 3px);left:0;min-width:100%;max-height:220px;overflow-y:auto;background:var(--panel);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,.18);z-index:300;padding:4px 0;}
+  .ms-panel{position:absolute;top:calc(100% + 3px);left:0;min-width:100%;background:var(--panel);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,.18);z-index:300;display:flex;flex-direction:column;}
+  .ms-list{max-height:220px;overflow-y:auto;padding:4px 0;}
   .ms-option{display:flex;align-items:center;gap:8px;padding:5px 12px;cursor:pointer;font-size:13px;white-space:nowrap;user-select:none;}
   .ms-option:hover{background:var(--row-hover);}
   .ms-option input{cursor:pointer;accent-color:#2d6cdf;}
   .ms-sep{border:none;border-top:1px solid var(--border);margin:3px 0;}
+  .ms-footer{padding:6px 8px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;}
+  .ms-apply{padding:4px 14px;font-size:12px;font-weight:600;background:#2d6cdf;color:#fff;border:none;border-radius:4px;cursor:pointer;}
+  .ms-apply:hover{background:#1a56c4;}
   .actions{display:flex;gap:8px;margin-left:auto;}
   button{cursor:pointer;border:none;border-radius:6px;padding:8px 16px;font-size:13px;font-weight:600;color:#fff;}
   button:disabled{opacity:0.35;cursor:not-allowed;}
@@ -1423,49 +1427,76 @@ function msInit(id,opts,onChange){
   const trigger=wrap.querySelector('.ms-trigger');
   const panel=wrap.querySelector('.ms-panel');
   _msSelected[id]=new Set();
+  // Pending set — tracks checkbox state before Apply is clicked
+  let _pending=new Set();
+
+  // Build inner structure: scrollable list + sticky footer with Apply
+  const list=document.createElement('div');list.className='ms-list';
+  const footer=document.createElement('div');footer.className='ms-footer';
+  const applyBtn=document.createElement('button');applyBtn.className='ms-apply';applyBtn.textContent='Apply';
+  footer.appendChild(applyBtn);
+  panel.appendChild(list);panel.appendChild(footer);
+
   function rebuild(options){
-    const prev=new Set(_msSelected[id]); // preserve selections across rebuilds
+    const prev=new Set(_msSelected[id]); // preserve committed selections across rebuilds
     _msSelected[id].clear();
-    panel.innerHTML='';
+    _pending=new Set();
+    list.innerHTML='';
     const allLbl=document.createElement('label');
     allLbl.className='ms-option';
     const allCb=document.createElement('input');
     allCb.type='checkbox';allCb.dataset.all='1';allCb.checked=true;
     allLbl.append(allCb,' All');
-    panel.appendChild(allLbl);
-    const hr=document.createElement('hr');hr.className='ms-sep';panel.appendChild(hr);
+    list.appendChild(allLbl);
+    const hr=document.createElement('hr');hr.className='ms-sep';list.appendChild(hr);
     options.forEach(v=>{
       const lbl=document.createElement('label');lbl.className='ms-option';
       const cb=document.createElement('input');cb.type='checkbox';cb.value=v;
-      if(prev.has(v)){ cb.checked=true; _msSelected[id].add(v); }
-      lbl.append(cb,' '+v);panel.appendChild(lbl);
+      if(prev.has(v)){ cb.checked=true; _pending.add(v); }
+      lbl.append(cb,' '+v);list.appendChild(lbl);
     });
-    if(_msSelected[id].size>0) allCb.checked=false;
+    if(_pending.size>0) allCb.checked=false;
     updateLabel();
   }
   function updateLabel(){
     const sel=_msSelected[id];
     trigger.querySelector('.ms-label').textContent=sel.size===0?'All':[...sel].join(', ');
   }
-  panel.addEventListener('change',e=>{
+  // Checkbox changes only update the pending set — no filter applied yet
+  list.addEventListener('change',e=>{
     const cb=e.target;
-    const sel=_msSelected[id];
     if(cb.dataset.all){
-      sel.clear();
-      panel.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=cb.checked);
+      _pending.clear();
+      list.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=cb.checked);
     } else {
-      if(cb.checked)sel.add(cb.value);else sel.delete(cb.value);
-      panel.querySelector('[data-all]').checked=sel.size===0;
+      if(cb.checked)_pending.add(cb.value);else _pending.delete(cb.value);
+      list.querySelector('[data-all]').checked=_pending.size===0;
     }
-    updateLabel();onChange();
+  });
+  // Apply commits pending → selected, updates label, fires onChange, closes panel
+  applyBtn.addEventListener('click',e=>{
+    e.stopPropagation();
+    _msSelected[id]=new Set(_pending);
+    updateLabel();
+    onChange();
     panel.hidden=true;
   });
   trigger.addEventListener('click',e=>{
     e.stopPropagation();
     const wasOpen=!panel.hidden;
     document.querySelectorAll('.ms-panel').forEach(p=>{p.hidden=true;});
-    panel.hidden=wasOpen;
+    if(!wasOpen){
+      // Sync pending checkboxes to current committed selection when opening
+      _pending=new Set(_msSelected[id]);
+      list.querySelectorAll('input[type=checkbox]:not([data-all])').forEach(cb=>{
+        cb.checked=_pending.has(cb.value);
+      });
+      const allCb=list.querySelector('[data-all]');
+      if(allCb) allCb.checked=_pending.size===0;
+      panel.hidden=false;
+    }
   });
+  // Clicking outside closes panel and discards pending changes (no Apply = no change)
   document.addEventListener('click',()=>{panel.hidden=true;});
   panel.addEventListener('click',e=>e.stopPropagation());
   if(opts)rebuild(opts);
