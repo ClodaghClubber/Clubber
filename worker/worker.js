@@ -334,6 +334,15 @@ function parseCacHtmlDirect(html, out, county, competitionName) {
           const parts = compStr.split(' - ');
           if (parts.length > 1) round = parts[parts.length - 1].trim();
         }
+        // If this is a relegation competition, prefix the stage with "Rel"
+        // and abbreviate the knockout stage (e.g. "Rel SF", "Rel F", "Rel QF").
+        if (/relegation/i.test(compStr) || /relegation/i.test(competition)) {
+          const stageAbbr = round
+            .replace(/quarter[\s-]?final/i, 'QF')
+            .replace(/semi[\s-]?final/i, 'SF')
+            .replace(/\bfinal\b/i, 'F');
+          round = `Rel${stageAbbr ? ' ' + stageAbbr : ''}`.trim();
+        }
         out.push({
           county,
           teamA: buf.home,
