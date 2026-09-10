@@ -2141,6 +2141,7 @@ const MANUAL_KV_KEY = 'manualFixtures';
 const STATUS_HISTORY_KV_KEY = 'statusHistory';
 const STATUS_HISTORY_MAX = 500;
 const CLUBBER_SNAPSHOT_KV_KEY = 'clubberSnapshot';
+const FIXTURE_CACHE_KV_KEY = 'fixtureCache';
 
 // Same composite key the dashboard uses client-side to match a fixture
 // across reloads (county|competition|teamA|teamB|date), so Approve/Reject/
@@ -2347,7 +2348,7 @@ export default {
     }
   },
 
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: CORS_HEADERS });
     }
@@ -2465,25 +2466,25 @@ export default {
     try {
       const cacDebug = [];
       const [corkResults, waterfordResults, laoisResults, wexfordResults, kerryResults, offalyResults, tipperaryResults, tipperaryFootballResults, kildareResults, roscommonFootballResults, roscommonHurlingResults, kilkennyResults, monaghanResults, meathResults, longfordResults, carlowLiveResults, louthLiveResults, tipperaryCamogieResults, kilkennyCamogieResults] = await Promise.all([
-        Promise.all(CORK_COMPETITIONS.map(fetchCorkCompetition)),
-        Promise.all(WATERFORD_COMPETITIONS.map(fetchWaterfordCompetition)),
-        Promise.all(LAOIS_COMPETITIONS.map((c) => fetchCacDirectCompetition('Laois', 'laoisgaa.ie', c, cacDebug))),
-        Promise.all(WEXFORD_COMPETITIONS.map((c) => fetchCacDirectCompetition('Wexford', 'wexford.clubandcounty.com', c, cacDebug))),
-        Promise.all(KERRY_COMPETITIONS.map((c) => fetchCacDirectCompetition('Kerry', 'www.kerrygaa.ie', c, cacDebug))),
-        Promise.all(OFFALY_COMPETITIONS.map((c) => fetchCacDirectCompetition('Offaly', 'offaly.gaa.ie', c, cacDebug))),
-        Promise.all(TIPPERARY_COMPETITIONS.map((c) => fetchCacDirectCompetition('Tipperary', 'tipperary.gaa.ie', c, cacDebug))),
-        fetchTipperaryFootball(cacDebug),
-        fetchKildare(cacDebug),
-        fetchRoscommonFootball(),
-        fetchRoscommonSport('hurling'),
-        Promise.all(KILKENNY_COMPETITIONS.map((c) => fetchCacDirectCompetition('Kilkenny', 'kilkennygaa.ie', c, cacDebug))),
-        Promise.all(MONAGHAN_COMPETITIONS.map((c) => fetchCacDirectCompetition('Monaghan', 'www.monaghangaa.ie', c, cacDebug))),
-        Promise.all(MEATH_COMPETITIONS.map((c) => fetchCacDirectCompetition('Meath', 'meath.gaa.ie', c, cacDebug))),
-        fetchLongford(env.FOIREANN_API_KEY),
-        fetchCarlowFixtures(),
-        fetchLouthFixtures(),
-        fetchTipperaryCamogieFixtures(),
-        Promise.all(KILKENNY_CAMOGIE_COMPETITIONS.map((c) => fetchCacDirectCompetition('Kilkenny', 'kilkennycamogie.ie', c, cacDebug))),
+        Promise.all(CORK_COMPETITIONS.map(fetchCorkCompetition)).catch(() => []),
+        Promise.all(WATERFORD_COMPETITIONS.map(fetchWaterfordCompetition)).catch(() => []),
+        Promise.all(LAOIS_COMPETITIONS.map((c) => fetchCacDirectCompetition('Laois', 'laoisgaa.ie', c, cacDebug))).catch(() => []),
+        Promise.all(WEXFORD_COMPETITIONS.map((c) => fetchCacDirectCompetition('Wexford', 'wexford.clubandcounty.com', c, cacDebug))).catch(() => []),
+        Promise.all(KERRY_COMPETITIONS.map((c) => fetchCacDirectCompetition('Kerry', 'www.kerrygaa.ie', c, cacDebug))).catch(() => []),
+        Promise.all(OFFALY_COMPETITIONS.map((c) => fetchCacDirectCompetition('Offaly', 'offaly.gaa.ie', c, cacDebug))).catch(() => []),
+        Promise.all(TIPPERARY_COMPETITIONS.map((c) => fetchCacDirectCompetition('Tipperary', 'tipperary.gaa.ie', c, cacDebug))).catch(() => []),
+        fetchTipperaryFootball(cacDebug).catch(() => []),
+        fetchKildare(cacDebug).catch(() => []),
+        fetchRoscommonFootball().catch(() => []),
+        fetchRoscommonSport('hurling').catch(() => []),
+        Promise.all(KILKENNY_COMPETITIONS.map((c) => fetchCacDirectCompetition('Kilkenny', 'kilkennygaa.ie', c, cacDebug))).catch(() => []),
+        Promise.all(MONAGHAN_COMPETITIONS.map((c) => fetchCacDirectCompetition('Monaghan', 'www.monaghangaa.ie', c, cacDebug))).catch(() => []),
+        Promise.all(MEATH_COMPETITIONS.map((c) => fetchCacDirectCompetition('Meath', 'meath.gaa.ie', c, cacDebug))).catch(() => []),
+        fetchLongford(env.FOIREANN_API_KEY).catch(() => []),
+        fetchCarlowFixtures().catch(() => []),
+        fetchLouthFixtures().catch(() => []),
+        fetchTipperaryCamogieFixtures().catch(() => []),
+        Promise.all(KILKENNY_CAMOGIE_COMPETITIONS.map((c) => fetchCacDirectCompetition('Kilkenny', 'kilkennycamogie.ie', c, cacDebug))).catch(() => []),
       ]);
 
       const fixCamel = s => s
@@ -2520,6 +2521,14 @@ export default {
         ...RUGBY_FIXTURES,
       ];
 
+      const fetchedAt = new Date().toISOString();
+
+      // Save base fixtures (before status/override application) as last-known-good cache.
+      // Fire-and-forget so it doesn't add latency to the response.
+      if (kv && ctx) {
+        ctx.waitUntil(kv.put(FIXTURE_CACHE_KV_KEY, JSON.stringify({ cachedAt: fetchedAt, fixtures })));
+      }
+
       const [statusMap, overridesMap, kvManualFixtures] = await Promise.all([getStatusMap(kv), getOverridesMap(kv), getManualFixtures(kv)]);
       fixtures = fixtures
         .map((f) => {
@@ -2533,7 +2542,7 @@ export default {
 
       return new Response(
         JSON.stringify({
-          fetchedAt: new Date().toISOString(),
+          fetchedAt,
           fixtures,
           overrides: overridesMap,
           manualFixtures: kvManualFixtures,
@@ -2547,6 +2556,37 @@ export default {
         }
       );
     } catch (err) {
+      // Attempt to serve last-known-good cached fixtures with fresh statuses applied.
+      if (kv) {
+        try {
+          const cached = await kv.get(FIXTURE_CACHE_KV_KEY);
+          if (cached) {
+            const { cachedAt, fixtures: baseFixtures } = JSON.parse(cached);
+            const [statusMap, overridesMap, kvManualFixtures] = await Promise.all([
+              getStatusMap(kv), getOverridesMap(kv), getManualFixtures(kv),
+            ]);
+            const fixtures = baseFixtures
+              .map((f) => {
+                const key = fixtureKey(f);
+                const ov = overridesMap[key];
+                return { ...f, ...(ov || {}), status: statusMap[key] || 'Proposed' };
+              })
+              .filter((f) => f.status !== 'Removed');
+            return new Response(
+              JSON.stringify({
+                fetchedAt: cachedAt,
+                fromCache: true,
+                fixtures,
+                overrides: overridesMap,
+                manualFixtures: kvManualFixtures,
+              }),
+              { headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } }
+            );
+          }
+        } catch (cacheErr) {
+          console.error('Cache fallback failed', cacheErr);
+        }
+      }
       return new Response(
         JSON.stringify({ error: String(err && err.message ? err.message : err) }),
         { status: 502, headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } }

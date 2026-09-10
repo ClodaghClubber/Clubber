@@ -467,6 +467,7 @@
 </div>
 <div class="count" id="loadStatus"><div class="spinner" id="loadSpinner"></div><span id="loadStatusText"></span></div>
 <div id="clubberWarning" style="display:none;padding:6px 24px;font-size:12px;color:#92400e;background:#fef3c7;border-top:1px solid #fcd34d;">⚠ <strong>Warning:</strong> This is for tracking purposes only. Verify manually that the fixture exists on the Clubber site!</div>
+<div id="cacheWarning" hidden style="padding:6px 24px;font-size:12px;color:#7c2d12;background:#fee2e2;border-top:1px solid #fca5a5;">⚠ <strong>Live data could not be fetched.</strong> Showing last known good data — fixture times/venues may be outdated. Status changes you make here are still saved.</div>
 
 
 <div class="container">
@@ -1910,6 +1911,8 @@ async function loadFixtures(isRefresh){
     updateClearChangesBtn();
     const fetchedAt=json.fetchedAt?new Date(json.fetchedAt).toLocaleString():new Date().toLocaleString();
     loadStatus.textContent=`Loaded ${incoming.length} fixtures · last updated ${fetchedAt}`;
+    const cacheWarning=document.getElementById('cacheWarning');
+    if(cacheWarning) cacheWarning.hidden=!json.fromCache;
   }catch(err){
     loadStatus.textContent=`Could not load live fixtures (${err.message}). Click Refresh to retry.`;
   }
