@@ -23,6 +23,10 @@ const WATERFORD_COMPETITIONS = [
   { id: '214354', name: 'Premier Intermediate HC Group B' },
   { id: '218650', name: 'Junior A Hurling Championship' },
   { id: '218649', name: 'Junior C Hurling Championship' },
+  { id: '214349', name: 'Senior FC Group A' },
+  { id: '214348', name: 'Senior FC Group B' },
+  { id: '214351', name: 'Premier Intermediate FC Group A' },
+  { id: '214350', name: 'Premier Intermediate FC Group B' },
 ];
 
 const LAOIS_COMPETITIONS = [
@@ -147,7 +151,7 @@ async function fetchWaterfordCompetition(comp) {
     time: r.time,
     venue: r.venue,
     competition: comp.name,
-    round: (r.comment || '').replace(/^Round(\d+)$/i, 'Round $1'),
+    round: (r.comment || '').replace(/^(?:Round|Rd\.?)\s*(\d+)$/i, 'R$1'),
   }));
 }
 
