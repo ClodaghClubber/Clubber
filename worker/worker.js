@@ -12,8 +12,15 @@ const CORK_COMPETITIONS = [
   { id: '215987', name: 'Senior A HC' },
   { id: '215994', name: 'Premier Intermediate HC' },
   { id: '215995', name: 'Intermediate A HC' },
+  { id: '215996', name: 'Premier Junior HC' },
+  { id: '215997', name: 'Junior A HC' },
+  { id: '215998', name: 'Junior B HC' },
   { id: '215999', name: 'Premier Senior FC' },
   { id: '216000', name: 'Senior A FC' },
+  { id: '216005', name: 'Premier Intermediate FC' },
+  { id: '216006', name: 'Intermediate A FC' },
+  { id: '216007', name: 'Premier Junior FC' },
+  { id: '216008', name: 'Junior A FC' },
 ];
 
 const WATERFORD_COMPETITIONS = [
@@ -27,6 +34,9 @@ const WATERFORD_COMPETITIONS = [
   { id: '214348', name: 'Senior FC Group B' },
   { id: '214351', name: 'Premier Intermediate FC Group A' },
   { id: '214350', name: 'Premier Intermediate FC Group B' },
+  { id: '218915', name: 'Intermediate FC' },
+  { id: '219169', name: 'Junior B/C HC' },
+  { id: '219171', name: 'Junior B/C HC Cup' },
 ];
 
 const LAOIS_COMPETITIONS = [
@@ -35,6 +45,10 @@ const LAOIS_COMPETITIONS = [
   { path: '/fixtures-results/hurling/club/senior/senior-hurling-championship/45807eed-e83d-4556-b993-09377bea07bf/', uuid: '45807eed-e83d-4556-b993-09377bea07bf', sport: 'hurling', level: 'club', grade: 'senior', name: 'Senior Hurling Championship' },
   { path: '/fixtures-results/hurling/club/intermediate/premier-intermediate-hurling-championship/927f09db-237e-41a9-b085-183cb42aabdc/', uuid: '927f09db-237e-41a9-b085-183cb42aabdc', sport: 'hurling', level: 'club', grade: 'intermediate', name: 'Premier Intermediate Hurling Championship' },
   { path: '/fixtures-results/hurling/club/intermediate/intermediate-hurling-championship/4636a85b-fd62-48e6-a848-235546e99d42/', uuid: '4636a85b-fd62-48e6-a848-235546e99d42', sport: 'hurling', level: 'club', grade: 'intermediate', name: 'Intermediate Hurling Championship' },
+  { path: '/fixtures-results/hurling/club/junior/junior-hurling-championship/a5190d7d-355b-467a-88e4-3761e6e8cd2b/', uuid: 'a5190d7d-355b-467a-88e4-3761e6e8cd2b', sport: 'hurling', level: 'club', grade: 'junior', name: 'Junior Hurling Championship' },
+  { path: '/fixtures-results/hurling/club/junior/junior-b-hurling-championship/9071c776-2e05-4e90-bb77-944639492f04/', uuid: '9071c776-2e05-4e90-bb77-944639492f04', sport: 'hurling', level: 'club', grade: 'junior', name: 'Junior B Hurling Championship' },
+  { path: '/fixtures-results/football/club/junior/junior-football-championship/f1d36b4e-02fd-48bd-873b-5bf1d4292665/', uuid: 'f1d36b4e-02fd-48bd-873b-5bf1d4292665', sport: 'football', level: 'club', grade: 'junior', name: 'Junior Football Championship' },
+  { path: '/fixtures-results/football/club/junior/junior-c-football-championship/5992caa7-279b-49aa-9c7f-e04d45e585c7/', uuid: '5992caa7-279b-49aa-9c7f-e04d45e585c7', sport: 'football', level: 'club', grade: 'junior', name: 'Junior C Football Championship' },
 ];
 
 const WEXFORD_COMPETITIONS = [
@@ -44,6 +58,8 @@ const WEXFORD_COMPETITIONS = [
   { path: '/fixtures-results/football/club/senior/dominic-smith-expert-electrical-senior-football-championship/892924d0-b2fb-40f8-8244-50324f3822c2/', uuid: '892924d0-b2fb-40f8-8244-50324f3822c2', sport: 'football', level: 'club', grade: 'senior', name: 'Senior Football Championship' },
   { path: '/fixtures-results/football/club/intermediate/amber-springs-and-ashdown-park-hotels-intermediate-football-championship/0d8a8195-b0db-4583-9426-86f5c37d9d5d/', uuid: '0d8a8195-b0db-4583-9426-86f5c37d9d5d', sport: 'football', level: 'club', grade: 'intermediate', name: 'Intermediate Football Championship' },
   { path: '/fixtures-results/football/club/intermediate/whizzy-internet-intermediate-a-football-championship/2e8cc25f-84e5-430a-9a25-435f02e5e459/', uuid: '2e8cc25f-84e5-430a-9a25-435f02e5e459', sport: 'football', level: 'club', grade: 'intermediate', name: 'Intermediate A Football Championship' },
+  { path: '/fixtures-results/football/club/junior/enniscorthy-farm-systems-junior-a-football-championship/ecad2027-bcc6-47be-8ea2-c14243647ea4/', uuid: 'ecad2027-bcc6-47be-8ea2-c14243647ea4', sport: 'football', level: 'club', grade: 'junior', name: 'Junior A Football Championship' },
+  { path: '/fixtures-results/hurling/club/junior/kavanagh-meats-junior-hurling-championship/d1a5bd31-ed21-4f58-8dcd-1ea914574579/', uuid: 'd1a5bd31-ed21-4f58-8dcd-1ea914574579', sport: 'hurling', level: 'club', grade: 'junior', name: 'Junior Hurling Championship' },
 ];
 
 const MONTHS = {
@@ -545,6 +561,14 @@ const KERRY_COMPETITIONS = [
     grade: 'junior',
     name: 'Junior Football Championship',
   },
+  {
+    path: '/fixtures-results/football/club/junior/kerry-petroleum-novice-football-club-championship/0a802380-c9c7-454c-92d5-3465335c70b1/',
+    uuid: '0a802380-c9c7-454c-92d5-3465335c70b1',
+    sport: 'football',
+    level: 'club',
+    grade: 'junior',
+    name: 'Novice Football Championship',
+  },
 ];
 
 // Kerry Minor Football Championship Semi-Finals (from kerrygaa.ie, Sep 2026)
@@ -627,6 +651,11 @@ const OFFALY_COMPETITIONS = [
     grade: 'intermediate',
     name: 'Intermediate Football Championship',
   },
+  { path: '/fixtures-results/football/club/junior/2026-junior-a-football-championship/49b658c2-54e0-4807-a1c6-d36e292a1a58/', uuid: '49b658c2-54e0-4807-a1c6-d36e292a1a58', sport: 'football', level: 'club', grade: 'junior', name: 'Junior A Football Championship' },
+  { path: '/fixtures-results/football/club/junior/2026-junior-c-football-championship/e4053741-b169-4c4f-9a89-998c3dda70cb/', uuid: 'e4053741-b169-4c4f-9a89-998c3dda70cb', sport: 'football', level: 'club', grade: 'junior', name: 'Junior C Football Championship' },
+  { path: '/fixtures-results/hurling/club/junior/2026-junior-a-hurling-championship/d81c1c3f-44e4-438b-9e24-a6c540a05c32/', uuid: 'd81c1c3f-44e4-438b-9e24-a6c540a05c32', sport: 'hurling', level: 'club', grade: 'junior', name: 'Junior A Hurling Championship' },
+  { path: '/fixtures-results/hurling/club/junior/junior-b-hurling-championship/bd740ba1-87e1-4085-ac83-51acbadc7798/', uuid: 'bd740ba1-87e1-4085-ac83-51acbadc7798', sport: 'hurling', level: 'club', grade: 'junior', name: 'Junior B Hurling Championship' },
+  { path: '/fixtures-results/hurling/club/junior/junior-c-hurling-championship/8f59ecee-9c26-40be-b981-b3a3eb112daa/', uuid: '8f59ecee-9c26-40be-b981-b3a3eb112daa', sport: 'hurling', level: 'club', grade: 'junior', name: 'Junior C Hurling Championship' },
 ];
 
 // Offaly U20 Hurling Championship Semi-Final Replay (from offaly.gaa.ie, Sep 2026)
@@ -780,6 +809,15 @@ const TIPPERARY_COMPETITIONS = [
     grade: 'junior',
     name: 'Tipperary Premier Junior Football Relegation',
   },
+  // Football main championships
+  { path: '/fixtures-results/football/club/senior/fbd-insurance-county-tipperary-senior-football-championship-philly-ryan-cup/766c95bf-01ee-44e1-a05e-e61d236c794f/', uuid: '766c95bf-01ee-44e1-a05e-e61d236c794f', sport: 'football', level: 'club', grade: 'senior', name: 'Tipperary Senior Football Championship' },
+  { path: '/fixtures-results/football/club/intermediate/fbd-insurance-county-tipperary-intermediate-football-championship-barrett-cup/74ad46d9-8294-490b-9100-1a0249b5ed9e/', uuid: '74ad46d9-8294-490b-9100-1a0249b5ed9e', sport: 'football', level: 'club', grade: 'intermediate', name: 'Tipperary Intermediate Football Championship' },
+  { path: '/fixtures-results/football/club/junior/fbd-insurance-county-tipperary-premier-junior-football-championship-odwyer-cup/15271131-b3e1-4c0e-9ff6-164e8f4e6779/', uuid: '15271131-b3e1-4c0e-9ff6-164e8f4e6779', sport: 'football', level: 'club', grade: 'junior', name: 'Tipperary Premier Junior Football Championship' },
+  // Junior hurling championships
+  { path: '/fixtures-results/hurling/club/junior/fbd-insurance-county-tipperary-junior-a-hurling-championship/936dbecd-5587-48e8-88f0-b4a552dd67ce/', uuid: '936dbecd-5587-48e8-88f0-b4a552dd67ce', sport: 'hurling', level: 'club', grade: 'junior', name: 'Tipperary Junior A Hurling Championship' },
+  { path: '/fixtures-results/hurling/club/junior/premier-credit-union-mid-junior-a-hurling-championship/40ad8ba1-8de4-4704-8e90-01e00582e9da/', uuid: '40ad8ba1-8de4-4704-8e90-01e00582e9da', sport: 'hurling', level: 'club', grade: 'junior', name: 'Mid Tipperary Junior A Hurling Championship' },
+  { path: '/fixtures-results/hurling/club/junior/west-tipperary-junior-a-hurling-championship/cd2793a3-e96f-460f-a24c-58123ced2345/', uuid: 'cd2793a3-e96f-460f-a24c-58123ced2345', sport: 'hurling', level: 'club', grade: 'junior', name: 'West Tipperary Junior A Hurling Championship' },
+  { path: '/fixtures-results/hurling/club/junior/south-tipperary-junior-a-hurling-championship/c74df8de-00a9-4e9c-ab67-1462c6fd6bbf/', uuid: 'c74df8de-00a9-4e9c-ab67-1462c6fd6bbf', sport: 'hurling', level: 'club', grade: 'junior', name: 'South Tipperary Junior A Hurling Championship' },
 ];
 
 // ---- Roscommon: custom WordPress site (gaaroscommon.ie) ----
