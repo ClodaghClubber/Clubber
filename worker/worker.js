@@ -485,8 +485,23 @@ const MEATH_COMPETITIONS = [
   { path: '/fixtures-results/football/club/intermediate/2026-ifc-gr-b-meade-farm/f395ac08-91fe-4c4f-ba54-940187674cb7/', uuid: 'f395ac08-91fe-4c4f-ba54-940187674cb7', sport: 'football', level: 'club', grade: 'intermediate', name: 'Intermediate Football Championship' },
   { path: '/fixtures-results/football/club/intermediate/2026-ifc-gr-c-meade-farm/ec52c8c0-58e7-4d73-9b0d-7e66247e21ce/', uuid: 'ec52c8c0-58e7-4d73-9b0d-7e66247e21ce', sport: 'football', level: 'club', grade: 'intermediate', name: 'Intermediate Football Championship' },
   { path: '/fixtures-results/football/club/intermediate/2026-ifc-gr-d-meade-farm/78bce439-10c8-4e7b-958f-58839f72a93f/', uuid: '78bce439-10c8-4e7b-958f-58839f72a93f', sport: 'football', level: 'club', grade: 'intermediate', name: 'Intermediate Football Championship' },
+  // Hurling: missing grades
+  { path: '/fixtures-results/hurling/club/senior/2026-shc-b-loman-dempsey-property-consultants/aab21a16-e475-429c-8aad-8239041e779b/', uuid: 'aab21a16-e475-429c-8aad-8239041e779b', sport: 'hurling', level: 'club', grade: 'senior', name: 'Senior Hurling Championship B' },
+  { path: '/fixtures-results/hurling/club/junior/2026-jhc-k-windows-doors/050f3a24-335b-4932-a3f8-59bce6d02376/', uuid: '050f3a24-335b-4932-a3f8-59bce6d02376', sport: 'hurling', level: 'club', grade: 'junior', name: 'Junior Hurling Championship' },
   // Relegation cup
   { path: '/fixtures-results/hurling/club/junior/2026-corn-donal-o-loingsigh/8bcf6906-a025-4e58-be13-aba961d8212a/', uuid: '8bcf6906-a025-4e58-be13-aba961d8212a', sport: 'hurling', level: 'club', grade: 'junior', name: 'Corn Donal O Loingsigh (Hurling Relegation)' },
+  // Football: IFC knockout + Corn na Bóinne + Junior grades
+  { path: '/fixtures-results/football/club/intermediate/2026-ifc-meade-farm/d4103129-88fb-43aa-8642-4f3f74032c66/', uuid: 'd4103129-88fb-43aa-8642-4f3f74032c66', sport: 'football', level: 'club', grade: 'intermediate', name: 'Intermediate Football Championship' },
+  { path: '/fixtures-results/football/club/intermediate/2026-gaelic-games-equipment-corn-na-boinne/45c1e9db-d97d-476b-80bb-d76ca0c71190/', uuid: '45c1e9db-d97d-476b-80bb-d76ca0c71190', sport: 'football', level: 'club', grade: 'intermediate', name: 'Corn na Boinne (IFC Cup)' },
+  { path: '/fixtures-results/football/club/junior/2026-jacfc-div-1-meath-cleaning-supplies/5d13b902-0d71-4795-ab1a-fcc2ce10f5bb/', uuid: '5d13b902-0d71-4795-ab1a-fcc2ce10f5bb', sport: 'football', level: 'club', grade: 'junior', name: 'Junior A Football Championship Div 1' },
+  { path: '/fixtures-results/football/club/junior/2026-jacfc-div-2-meath-cleaning-supplies/3e04ee84-34bb-40ed-83da-91fe7332588e/', uuid: '3e04ee84-34bb-40ed-83da-91fe7332588e', sport: 'football', level: 'club', grade: 'junior', name: 'Junior A Football Championship Div 2' },
+  { path: '/fixtures-results/football/club/junior/2026-jacfc-div-3-meath-cleaning-supplies/592c4832-fb13-41ca-b06f-5db5568d981e/', uuid: '592c4832-fb13-41ca-b06f-5db5568d981e', sport: 'football', level: 'club', grade: 'junior', name: 'Junior A Football Championship Div 3' },
+  { path: '/fixtures-results/football/club/junior/2026-jacfc-div-4-meath-cleaning-supplies/85762bd5-bcc4-4d6b-98d7-ea7621d3d63a/', uuid: '85762bd5-bcc4-4d6b-98d7-ea7621d3d63a', sport: 'football', level: 'club', grade: 'junior', name: 'Junior A Football Championship Div 4' },
+  { path: '/fixtures-results/football/club/junior/2026-jacfc-div-5-meath-cleaning-supplies/51477063-1004-45e8-9766-8f35d8f6a22e/', uuid: '51477063-1004-45e8-9766-8f35d8f6a22e', sport: 'football', level: 'club', grade: 'junior', name: 'Junior A Football Championship Div 5' },
+  { path: '/fixtures-results/football/club/junior/2026-jacfc-div-6-meath-cleaning-supplies/7d3ea908-28a8-42cf-bcbf-adaa45180c4c/', uuid: '7d3ea908-28a8-42cf-bcbf-adaa45180c4c', sport: 'football', level: 'club', grade: 'junior', name: 'Junior A Football Championship Div 6' },
+  { path: '/fixtures-results/football/club/junior/2026-jacfc-div-7-meath-cleaning-supplies/e6958d69-90a7-4d82-986c-bba08bb875d0/', uuid: 'e6958d69-90a7-4d82-986c-bba08bb875d0', sport: 'football', level: 'club', grade: 'junior', name: 'Junior A Football Championship Div 7' },
+  { path: '/fixtures-results/football/club/junior/2026-jbfc-coolrite/75a67535-326c-49e2-a885-6ae5b39d2101/', uuid: '75a67535-326c-49e2-a885-6ae5b39d2101', sport: 'football', level: 'club', grade: 'junior', name: 'Junior B Football Championship' },
+  { path: '/fixtures-results/football/club/junior/2026-jfc-balreask-bar-restaurant-guest-accommodation/6facc47c-e383-4452-b247-42989e2ca459/', uuid: '6facc47c-e383-4452-b247-42989e2ca459', sport: 'football', level: 'club', grade: 'junior', name: 'Junior Football Championship' },
 ];
 
 const KERRY_COMPETITIONS = [
@@ -851,12 +866,21 @@ async function fetchRoscommonSport(sport) {
 }
 
 // Maps website competition title (sponsor-prefixed) to the user-facing short name.
-// Returns null for non-championship competitions (underage etc.) which are skipped.
+// Returns null only for underage/minor competitions which should be skipped.
 function roscommonFootballCompName(raw) {
   if (/Junior A Football Championship/i.test(raw)) return 'Junior A Football Championship';
   if (/Intermediate Football Championship/i.test(raw)) return 'Intermediate Football Championship';
   if (/Senior Football Championship/i.test(raw)) return 'Senior Football Championship';
-  return null;
+  // Skip underage/minor only
+  if (/\b(minor|under.?\d+|u\d+|u-\d+|feile|bainne|primary)\b/i.test(raw)) return null;
+  // Strip leading sponsor prefix (first ' - ' segment if present) and trailing round suffix
+  const parts = raw.split(' - ');
+  // Heuristic: if first part looks like a sponsor (no 'championship'/'league'/'cup'), drop it
+  const start = parts.length > 1 && !/championship|league|cup/i.test(parts[0]) ? 1 : 0;
+  // Drop trailing round segment (Round N / Rd N)
+  const end = parts.length > 1 && /^(?:Round|Rd\.?)\s*\d+$/i.test(parts[parts.length - 1])
+    ? parts.length - 1 : parts.length;
+  return parts.slice(start, end).join(' - ').trim() || raw.trim();
 }
 
 // Static fixture data from the 2026 Roscommon GAA Championship Fixtures spreadsheet.
