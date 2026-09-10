@@ -163,8 +163,8 @@ function classifyCacComp(compRaw, targets) {
       let competition = t.name;
       const groupMatch = compRaw.match(/Group\s+([AB])/);
       if (groupMatch) competition += ` Group ${groupMatch[1]}`;
-      const roundMatch = compRaw.match(/Round\s+(\d+)/);
-      const round = roundMatch ? `Round ${roundMatch[1]}` : '';
+      const roundMatch = compRaw.match(/(?:Round|Rd\.?)\s+(\d+)/i);
+      const round = roundMatch ? `R${roundMatch[1]}` : '';
       return { competition, round };
     }
   }
@@ -326,8 +326,8 @@ function parseCacHtmlDirect(html, out, county, competitionName) {
         const compStr = curComp || '';
         const groupMatch = compStr.match(/(?:Group|Division)\s+(\w+)/i);
         if (groupMatch) competition += ` Group ${groupMatch[1]}`;
-        const roundMatch = compStr.match(/Round\s+(\d+)/i);
-        let round = roundMatch ? `Round ${roundMatch[1]}` : '';
+        const roundMatch = compStr.match(/(?:Round|Rd\.?)\s+(\d+)/i);
+        let round = roundMatch ? `R${roundMatch[1]}` : '';
         if (!round) {
           // Fallback: use whatever follows the last " - " separator as the
           // stage label (e.g. "Quarter Final 2", "Semi-Final", "Final").
