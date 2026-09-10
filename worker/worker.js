@@ -405,6 +405,7 @@ async function fetchCacDirectCompetition(county, baseDomain, comp, debug) {
 
 const KILKENNY_COMPETITIONS = [
   { path: '/fixtures-results/hurling/club/senior/st-canices-credit-union-senior-hurling-league/bf2fc916-357c-402a-be39-e5c119d1fea9/', uuid: 'bf2fc916-357c-402a-be39-e5c119d1fea9', sport: 'hurling', level: 'club', grade: 'senior', name: 'Senior Hurling League' },
+  { path: '/fixtures-results/hurling/club/senior/st-canices-credit-union-senior-hurling-league/846dd489-2158-45b4-974c-b97f63ab6501/', uuid: '846dd489-2158-45b4-974c-b97f63ab6501', sport: 'hurling', level: 'club', grade: 'senior', name: 'Senior Hurling League Shield' },
   { path: '/fixtures-results/hurling/club/intermediate/michael-lyng-motors-hyundai-intermediate-league/1518a925-dc42-4ac2-8e0c-686876f0b28c/', uuid: '1518a925-dc42-4ac2-8e0c-686876f0b28c', sport: 'hurling', level: 'club', grade: 'intermediate', name: 'Intermediate Hurling League' },
   { path: '/fixtures-results/hurling/club/intermediate/michael-lyng-motors-hyundai-intermediate-hurling/beef3f3e-84b5-4bfe-af1a-4ed2d210b399/', uuid: 'beef3f3e-84b5-4bfe-af1a-4ed2d210b399', sport: 'hurling', level: 'club', grade: 'intermediate', name: 'Intermediate Hurling Championship' },
   { path: '/fixtures-results/hurling/club/intermediate/michael-lyng-motors-hyundai-hurling-league/93433332-340a-4ce6-b97e-c3cc53a28580/', uuid: '93433332-340a-4ce6-b97e-c3cc53a28580', sport: 'hurling', level: 'club', grade: 'intermediate', name: 'Hurling League Cup Division 1' },
