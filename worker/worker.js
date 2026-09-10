@@ -1633,7 +1633,7 @@ const CARLOW_FIXTURES = [];
 ].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Senior Hurling Championship',r[5])));
 
 // ---- Louth: live scraper ----
-// Scrapes louthgaa.ie/fixtures-results/?countyBoardID=20&fixturesOnly=Y&daysAfter=21
+// Scrapes louthgaa.ie/fixtures-results/?countyBoardID=20&fixturesOnly=Y&daysAfter=60
 // for Senior Championship (Football), Intermediate Championship (Football), Senior Hurling.
 // Falls back to empty array if the fetch fails.
 async function fetchLouthFixtures() {
@@ -1645,7 +1645,7 @@ async function fetchLouthFixtures() {
   ];
   try {
     const res = await fetch(
-      'https://louthgaa.ie/fixtures-results/?countyBoardID=20&fixturesOnly=Y&daysAfter=21',
+      'https://louthgaa.ie/fixtures-results/?countyBoardID=20&fixturesOnly=Y&daysAfter=60',
       { headers: { 'User-Agent': UA } }
     );
     if (!res.ok) return [];
