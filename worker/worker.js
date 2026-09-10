@@ -1634,15 +1634,10 @@ const CARLOW_FIXTURES = [];
 
 // ---- Louth: live scraper ----
 // Scrapes louthgaa.ie/fixtures-results/?countyBoardID=20&fixturesOnly=Y&daysAfter=60
-// for Senior Championship (Football), Intermediate Championship (Football), Senior Hurling.
+// Imports all adult competitions; strips sponsor prefixes from comp names; excludes underage.
 // Falls back to empty array if the fetch fails.
 async function fetchLouthFixtures() {
-  const TARGET_COMPS = [
-    { pattern: /anchor tours senior championship/i, name: 'Senior Football Championship', code: 'Football' },
-    { pattern: /cti.*intermediate championship|intermediate championship/i, name: 'Intermediate Football Championship', code: 'Football' },
-    { pattern: /dkit.*junior championship|junior championship/i, name: 'Junior Football Championship', code: 'Football' },
-    { pattern: /senior hurling/i, name: 'Senior Hurling Championship', code: 'Hurling' },
-  ];
+  const UNDERAGE_RE = /\bU\d+\b|\bMinor\b|\bJuvenile\b|\bYouth\b|\bUnder[ -]?\d+\b|\bCoiste na n[Óó]g\b/i;
   try {
     const res = await fetch(
       'https://louthgaa.ie/fixtures-results/?countyBoardID=20&fixturesOnly=Y&daysAfter=60',
@@ -1707,8 +1702,12 @@ async function fetchLouthFixtures() {
         const chm = compHeadRe.exec(seg.content);
         if (chm) {
           const compText = decEnt(stripTags(chm[1])).trim();
-          const compMatch = TARGET_COMPS.find(c => c.pattern.test(compText));
-          currentComp = compMatch || null; // reset to null if not a tracked comp
+          if (UNDERAGE_RE.test(compText)) {
+            currentComp = null; // skip underage
+          } else {
+            const code = /hurling/i.test(compText) ? 'Hurling' : 'Football';
+            currentComp = { name: compText, code };
+          }
         }
       } else {
         // Only parse fixture tables
@@ -1733,7 +1732,8 @@ async function fetchLouthFixtures() {
           const venue = cells[5] || '';
           const round = cells[7] || '';
           if (!teamA || !teamB || /^Winner|^Loser/i.test(teamA) || /^Winner|^Loser/i.test(teamB)) continue;
-          const f = mkStatic('Louth', teamA, teamB, currentDate, time24, venue, currentComp.name, round);
+          const compName = currentComp.name.replace(/^(?:Anchor Tours|CTI Business Solutions|DKIT Sport|LMFM)\s+/i, '').trim();
+          const f = mkStatic('Louth', teamA, teamB, currentDate, time24, venue, compName, round);
           f.code = currentComp.code;
           fixtures.push(f);
         }
