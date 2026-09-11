@@ -1907,7 +1907,7 @@ async function syncOverrides(updates){
   try{
     await authFetch(WORKER_URL,{
       method:'POST',
-      body:JSON.stringify({action:'setOverrides',updates})
+      body:JSON.stringify({action:'setOverrides',updates,user:currentUser||''})
     });
   }catch(e){ console.warn('Override sync failed:',e); }
 }

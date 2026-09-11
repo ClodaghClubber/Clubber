@@ -2534,12 +2534,30 @@ export default {
             );
           }
           const overridesMap = await getOverridesMap(kv);
+          const clubberUpdates = [];
           for (const { key, fields } of updates) {
             if (key && fields && typeof fields === 'object') {
-              overridesMap[key] = Object.assign(overridesMap[key] || {}, fields);
+              const prev = overridesMap[key] || {};
+              overridesMap[key] = Object.assign(prev, fields);
+              // Track when a fixture is marked as created in Clubber for the first time
+              if (fields.clubberCreated && !prev.clubberCreated) {
+                clubberUpdates.push(key);
+              }
             }
           }
-          await kv.put(OVERRIDES_KV_KEY, JSON.stringify(overridesMap));
+          const saves = [kv.put(OVERRIDES_KV_KEY, JSON.stringify(overridesMap))];
+          if (clubberUpdates.length) {
+            const history = await getStatusHistory(kv);
+            const timestamp = new Date().toISOString();
+            const user = typeof body.user === 'string' ? body.user.slice(0, 60) : '';
+            const device = parseDevice(request.headers.get('User-Agent') || '');
+            for (const key of clubberUpdates) {
+              history.push({ key, status: 'Clubber', previousStatus: 'Approved', timestamp, user, device });
+            }
+            if (history.length > STATUS_HISTORY_MAX) history.splice(0, history.length - STATUS_HISTORY_MAX);
+            saves.push(kv.put(STATUS_HISTORY_KV_KEY, JSON.stringify(history)));
+          }
+          await Promise.all(saves);
           return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } });
         }
 
