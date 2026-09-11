@@ -919,6 +919,7 @@ function unitBadge(f){
 function deriveCode(competition, sport) {
   if (sport) return sport;
   const c = competition.toLowerCase();
+  if (c.includes('camogie')) return 'Camogie';
   if (c.includes('hurling') || / hc\b/i.test(competition)) return 'Hurling';
   if (c.includes('football') || / fc\b/i.test(competition)) return 'Football';
   return '';
@@ -1478,7 +1479,7 @@ const statusFilter=document.getElementById('statusFilter');
 
 // ---- Multi-select widget ----
 const _msSelected={};
-function msInit(id,opts,onChange){
+function msInit(id,opts,onChange,autoApply=false){
   const wrap=document.getElementById(id);
   const trigger=wrap.querySelector('.ms-trigger');
   const panel=wrap.querySelector('.ms-panel');
@@ -1508,7 +1509,9 @@ function msInit(id,opts,onChange){
     options.forEach(v=>{
       const lbl=document.createElement('label');lbl.className='ms-option';
       const cb=document.createElement('input');cb.type='checkbox';cb.value=v;
-      if(prev.has(v)){ cb.checked=true; _pending.add(v); }
+      // All selected (empty prev) means every individual item is checked
+      if(prev.size===0 || prev.has(v)){ cb.checked=true; }
+      if(prev.has(v)) _pending.add(v);
       lbl.append(cb,' '+v);list.appendChild(lbl);
     });
     if(_pending.size>0) allCb.checked=false;
@@ -1518,7 +1521,7 @@ function msInit(id,opts,onChange){
     const sel=_msSelected[id];
     trigger.querySelector('.ms-label').textContent=sel.size===0?'All':[...sel].join(', ');
   }
-  // Checkbox changes only update the pending set — no filter applied yet
+  // Checkbox changes update the pending set; autoApply also commits immediately
   list.addEventListener('change',e=>{
     const cb=e.target;
     if(cb.dataset.all){
@@ -1527,7 +1530,14 @@ function msInit(id,opts,onChange){
     } else {
       if(cb.checked)_pending.add(cb.value);else _pending.delete(cb.value);
       list.querySelector('[data-all]').checked=_pending.size===0;
+      // When unchecking an individual while "All" was active, mark all others as pending
+      if(_pending.size===1){
+        list.querySelectorAll('input[type=checkbox]:not([data-all])').forEach(c=>{
+          if(c.checked) _pending.add(c.value);
+        });
+      }
     }
+    if(autoApply){ _msSelected[id]=new Set(_pending); updateLabel(); onChange(); }
   });
   // Apply commits pending → selected, updates label, fires onChange, closes panel
   applyBtn.addEventListener('click',e=>{
@@ -1544,11 +1554,12 @@ function msInit(id,opts,onChange){
     if(!wasOpen){
       // Sync pending checkboxes to current committed selection when opening
       _pending=new Set(_msSelected[id]);
+      const allIsActive=_pending.size===0;
       list.querySelectorAll('input[type=checkbox]:not([data-all])').forEach(cb=>{
-        cb.checked=_pending.has(cb.value);
+        cb.checked=allIsActive || _pending.has(cb.value);
       });
       const allCb=list.querySelector('[data-all]');
-      if(allCb) allCb.checked=_pending.size===0;
+      if(allCb) allCb.checked=allIsActive;
       panel.hidden=false;
     }
   });
@@ -1560,7 +1571,7 @@ function msInit(id,opts,onChange){
 }
 function msGetValues(id){return [...(_msSelected[id]||new Set())];}
 const msCounty=msInit('countyFilter',[],()=>{populateCompOptions();render();});
-const msCode=msInit('codeFilter',['Football','Hurling','Camogie','Rugby'],render);
+const msCode=msInit('codeFilter',['Football','Hurling','Camogie','Rugby'],render,true);
 const msComp=msInit('compFilter',[],render);
 const msStatus=msInit('statusFilter',['Proposed','Approved','Rejected'],render);
 const dateFrom=document.getElementById('dateFrom');
