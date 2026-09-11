@@ -2570,6 +2570,22 @@ function buildGamePayload(f) {
       );
 
   const roundNorm = (f.round || '').trim().toLowerCase();
+
+  // Map our internal round labels to Clubber's accepted values.
+  // Anything that doesn't map cleanly is left blank (Clubber field is optional).
+  function toClubberRound(r) {
+    const s = (r || '').trim().toLowerCase();
+    if (!s) return '';
+    if (/quarter.?final|^\bqf\b/.test(s)) return 'quarter-finals';
+    if (/semi.?final|^\bsf\b/.test(s)) return 'semi-finals';
+    if (/\bfinal\b/.test(s)) return 'final'; // catches Final, Relegation Final, etc.
+    const m = s.match(/\bround\s*(\d+)\b/);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      if (n >= 1 && n <= 5) return `Round ${n}`;
+    }
+    return ''; // Group Stage, Relegation Round, etc. — leave blank
+  }
   const isCamogie = (f.competition || '').toLowerCase().includes('camogie');
   let price = isRugby ? 9.99 : 14.99;
   if (!isRugby && !isCamogie) {
@@ -2591,7 +2607,7 @@ function buildGamePayload(f) {
     grade: isRugby ? 'Senior 1' : grade,
     championsType,
     season: 'Season 26',
-    round: f.round || '',
+    round: toClubberRound(f.round),
     title: '',
     competitorClubName: teamBResult?.matchedName || normB,
     competitorClubId: teamBResult?.clubId || '',
