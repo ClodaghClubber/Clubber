@@ -442,27 +442,33 @@
       </svg>
       Excel
     </button>
-    <button id="clubberBtn" disabled title="Export to Clubber JSON" style="background:none;border:none;cursor:pointer;padding:4px;opacity:.9;display:flex;align-items:center;gap:6px;color:#1a6fa8;font-size:12px;font-weight:600;">
+    <button id="clubberIeBtn" disabled title="Export IE (GAA) fixtures to Clubber JSON" style="background:none;border:none;cursor:pointer;padding:4px;opacity:.9;display:flex;align-items:center;gap:6px;color:#1a6fa8;font-size:12px;font-weight:600;">
       <svg width="28" height="32" viewBox="0 0 28 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <!-- File body -->
         <path d="M2 2.5A1.5 1.5 0 0 1 3.5 1H18l8 8v20.5A1.5 1.5 0 0 1 24.5 31h-21A1.5 1.5 0 0 1 2 29.5V2.5z" fill="white" stroke="#29ABE2" stroke-width="1.6"/>
-        <!-- Fold -->
         <path d="M18 1l8 8h-6.5A1.5 1.5 0 0 1 18 7.5V1z" fill="#D6EEFB" stroke="#29ABE2" stroke-width="1.6"/>
-        <!-- Bottom banner -->
         <path d="M2 22h24v7.5A1.5 1.5 0 0 1 24.5 31h-21A1.5 1.5 0 0 1 2 29.5V22z" fill="#D6EEFB"/>
         <line x1="2" y1="22" x2="26" y2="22" stroke="#29ABE2" stroke-width="1.4"/>
-        <!-- JSON text -->
-        <text x="14" y="29.5" text-anchor="middle" font-size="6.5" font-weight="800" font-family="Arial,sans-serif" fill="#29ABE2" letter-spacing="0.8">JSON</text>
-        <!-- Left brace -->
+        <text x="14" y="29.5" text-anchor="middle" font-size="6.5" font-weight="800" font-family="Arial,sans-serif" fill="#29ABE2" letter-spacing="0.8">IE</text>
         <path d="M7.5 10.5 C6.5 10.5 6 11 6 12 L6 13 C6 13.8 5.5 14 5 14 C5.5 14 6 14.2 6 15 L6 16 C6 17 6.5 17.5 7.5 17.5" stroke="#29ABE2" stroke-width="1.4" stroke-linecap="round" fill="none"/>
-        <!-- Right brace -->
         <path d="M20.5 10.5 C21.5 10.5 22 11 22 12 L22 13 C22 13.8 22.5 14 23 14 C22.5 14 22 14.2 22 15 L22 16 C22 17 21.5 17.5 20.5 17.5" stroke="#29ABE2" stroke-width="1.4" stroke-linecap="round" fill="none"/>
-        <!-- i dot -->
         <circle cx="14" cy="12.8" r="0.9" fill="#29ABE2"/>
-        <!-- i stem -->
         <line x1="14" y1="14.5" x2="14" y2="17" stroke="#29ABE2" stroke-width="1.4" stroke-linecap="round"/>
       </svg>
-      Json
+      IE (GAA)
+    </button>
+    <button id="clubberUkBtn" disabled title="Export UK (Rugby) fixtures to Clubber JSON" style="background:none;border:none;cursor:pointer;padding:4px;opacity:.9;display:flex;align-items:center;gap:6px;color:#1a6fa8;font-size:12px;font-weight:600;">
+      <svg width="28" height="32" viewBox="0 0 28 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2 2.5A1.5 1.5 0 0 1 3.5 1H18l8 8v20.5A1.5 1.5 0 0 1 24.5 31h-21A1.5 1.5 0 0 1 2 29.5V2.5z" fill="white" stroke="#29ABE2" stroke-width="1.6"/>
+        <path d="M18 1l8 8h-6.5A1.5 1.5 0 0 1 18 7.5V1z" fill="#D6EEFB" stroke="#29ABE2" stroke-width="1.6"/>
+        <path d="M2 22h24v7.5A1.5 1.5 0 0 1 24.5 31h-21A1.5 1.5 0 0 1 2 29.5V22z" fill="#D6EEFB"/>
+        <line x1="2" y1="22" x2="26" y2="22" stroke="#29ABE2" stroke-width="1.4"/>
+        <text x="14" y="29.5" text-anchor="middle" font-size="6.5" font-weight="800" font-family="Arial,sans-serif" fill="#29ABE2" letter-spacing="0.8">UK</text>
+        <path d="M7.5 10.5 C6.5 10.5 6 11 6 12 L6 13 C6 13.8 5.5 14 5 14 C5.5 14 6 14.2 6 15 L6 16 C6 17 6.5 17.5 7.5 17.5" stroke="#29ABE2" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+        <path d="M20.5 10.5 C21.5 10.5 22 11 22 12 L22 13 C22 13.8 22.5 14 23 14 C22.5 14 22 14.2 22 15 L22 16 C22 17 21.5 17.5 20.5 17.5" stroke="#29ABE2" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+        <circle cx="14" cy="12.8" r="0.9" fill="#29ABE2"/>
+        <line x1="14" y1="14.5" x2="14" y2="17" stroke="#29ABE2" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+      UK (Rugby)
     </button>
     <button id="userBtn" title="Set your name for the audit log" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px;font-weight:600;">
       <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1567,7 +1573,9 @@ const emptyMsg=document.getElementById('emptyMsg');
 const rowCount=document.getElementById('rowCount');
 const exportBtn=document.getElementById('exportBtn');
 const markClubberBtn=document.getElementById('markClubberBtn');
-const clubberBtn=document.getElementById('clubberBtn');
+const clubberIeBtn=document.getElementById('clubberIeBtn');
+const clubberUkBtn=document.getElementById('clubberUkBtn');
+function isRugbyFixture(f){ return f.sport==='Rugby' || f.county==='BUCS' || f.county==='Champ'; }
 const loadStatusText=document.getElementById('loadStatusText');
 const loadSpinner=document.getElementById('loadSpinner');
 const loadStatus={
@@ -1735,7 +1743,9 @@ function updateActionButtons(){
   removeBtn.disabled = selFixtures.length===0 || !selFixtures.every(f=>f.status==='Rejected');
   exportBtn.disabled = selFixtures.length===0;
   markClubberBtn.disabled = selFixtures.length===0;
-  clubberBtn.disabled = !selFixtures.some(f=>f.status==='Approved');
+  const approvedSel = selFixtures.filter(f=>f.status==='Approved');
+  clubberIeBtn.disabled = !approvedSel.some(f=>!isRugbyFixture(f));
+  clubberUkBtn.disabled = !approvedSel.some(f=>isRugbyFixture(f));
   assignSocialsBtn.disabled = selFixtures.length===0;
   assignSupport2Btn.disabled = selFixtures.length===0;
 }
@@ -1767,11 +1777,11 @@ function exportSelectedToExcel(){
 exportBtn.addEventListener('click',()=>{ exportSelectedToExcel(); selected.clear(); render(); });
 // Holds the current set of build results while the confirm modal is open
 let _pendingClubberResults = [];
+let _pendingClubberSite = '';
 
-clubberBtn.addEventListener('click',()=>{
-  const visibleIds=new Set(getFiltered().map(f=>f.id));
-  const selFixtures=fixtures.filter(f=>selected.has(f.id)&&visibleIds.has(f.id));
+function openClubberConfirm(selFixtures, site) {
   if(!selFixtures.length) return;
+  _pendingClubberSite = site;
 
   const results=selFixtures.map(f=>{
     if(f.status!=='Approved') return{fixture:f,payload:null,errors:['Not Approved'],warnings:[],ok:false,skipped:true};
@@ -1780,6 +1790,11 @@ clubberBtn.addEventListener('click',()=>{
   });
 
   _pendingClubberResults = results;
+
+  const siteLabel = site==='IE' ? 'IE — GAA (Football, Hurling & Camogie)' : 'UK — Rugby';
+  document.querySelector('#clubberConfirmModal h2').textContent = `Review Before Export · ${siteLabel}`;
+  document.querySelector('#clubberConfirmModal .confirm-subtitle').textContent =
+    `Check each fixture below. Edit prices if needed, then click Confirm & Download. Exporting to ${site} Clubber site.`;
 
   // Populate confirmation table
   const tbody = document.getElementById('clubberConfirmBody');
@@ -1809,6 +1824,18 @@ clubberBtn.addEventListener('click',()=>{
   }).join('');
 
   document.getElementById('clubberConfirmModal').classList.add('open');
+}
+
+clubberIeBtn.addEventListener('click',()=>{
+  const visibleIds=new Set(getFiltered().map(f=>f.id));
+  const sel=fixtures.filter(f=>selected.has(f.id)&&visibleIds.has(f.id)&&!isRugbyFixture(f));
+  openClubberConfirm(sel,'IE');
+});
+
+clubberUkBtn.addEventListener('click',()=>{
+  const visibleIds=new Set(getFiltered().map(f=>f.id));
+  const sel=fixtures.filter(f=>selected.has(f.id)&&visibleIds.has(f.id)&&isRugbyFixture(f));
+  openClubberConfirm(sel,'UK');
 });
 
 document.getElementById('clubberConfirmDownloadBtn').addEventListener('click', ()=>{
@@ -1842,9 +1869,10 @@ document.getElementById('clubberConfirmDownloadBtn').addEventListener('click', (
   const batches=[];
   for(let i=0;i<eligible.length;i+=BATCH_SIZE) batches.push(eligible.slice(i,i+BATCH_SIZE));
   const stamp=new Date().toISOString().slice(0,10);
+  const sitePrefix = _pendingClubberSite ? `clubber-${_pendingClubberSite.toLowerCase()}-fixtures` : 'clubber-fixtures';
   batches.forEach((batch,idx)=>{
     const suffix=batches.length>1?`-batch-${idx+1}-of-${batches.length}`:'';
-    setTimeout(()=>downloadJson(batch.map(r=>r.payload),`clubber-fixtures${suffix}-${stamp}.json`),idx*300);
+    setTimeout(()=>downloadJson(batch.map(r=>r.payload),`${sitePrefix}${suffix}-${stamp}.json`),idx*300);
   });
 
   const okCount=results.filter(r=>r.ok).length;
