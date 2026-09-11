@@ -223,6 +223,22 @@
   #clubberModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;align-items:flex-start;justify-content:center;padding-top:40px;}
   #clubberModal.open{display:flex;}
   #clubberModal .modal-box{width:680px;}
+  #clubberConfirmModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1001;align-items:flex-start;justify-content:center;padding:30px 16px;overflow-y:auto;}
+  #clubberConfirmModal.open{display:flex;}
+  #clubberConfirmModal .modal-box{width:min(1100px,96vw);max-height:calc(100vh - 60px);display:flex;flex-direction:column;}
+  #clubberConfirmModal .modal-box h2{margin:0 0 4px;}
+  #clubberConfirmModal .modal-box .confirm-subtitle{font-size:12px;color:var(--muted);margin:0 0 12px;}
+  .confirm-table-wrap{overflow:auto;flex:1;min-height:0;}
+  .confirm-table{width:100%;border-collapse:collapse;font-size:12px;}
+  .confirm-table th{position:sticky;top:0;background:var(--panel);padding:7px 10px;text-align:left;border-bottom:2px solid var(--border);color:var(--muted);text-transform:uppercase;font-size:11px;letter-spacing:.04em;white-space:nowrap;}
+  .confirm-table td{padding:6px 10px;border-bottom:1px solid var(--border);vertical-align:top;}
+  .confirm-table tr.has-error td{background:rgba(192,57,43,.04);}
+  .confirm-table tr.has-warn td{background:rgba(217,119,6,.04);}
+  .confirm-table .err-badge{color:var(--reject);font-size:11px;}
+  .confirm-table .warn-badge{color:#d97706;font-size:11px;}
+  .confirm-table input.price-edit{width:62px;padding:2px 6px;border:1px solid var(--border);border-radius:4px;background:var(--panel);color:var(--text);font-size:12px;text-align:right;}
+  .confirm-table .team-names{font-weight:600;}
+  .confirm-table .sub-detail{color:var(--muted);font-size:11px;}
   .clubber-summary{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px;}
   .clubber-result-list{max-height:380px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;}
   .clubber-result-item{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:6px;font-size:12px;border:1px solid var(--border);}
@@ -565,6 +581,36 @@
     </div>
   </div>
 </div>
+<!-- Clubber pre-export confirmation modal -->
+<div id="clubberConfirmModal">
+  <div class="modal-box">
+    <h2>Review Before Export</h2>
+    <p class="confirm-subtitle">Check each fixture below. Edit prices if needed, then click Confirm &amp; Download.</p>
+    <div class="confirm-table-wrap">
+      <table class="confirm-table">
+        <thead>
+          <tr>
+            <th>Fixture</th>
+            <th>Date</th>
+            <th>County</th>
+            <th>Code</th>
+            <th>Grade</th>
+            <th>Round</th>
+            <th>Season</th>
+            <th>Price (€)</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody id="clubberConfirmBody"></tbody>
+      </table>
+    </div>
+    <div class="modal-actions" style="margin-top:12px;">
+      <button class="btn-modal-cancel" onclick="document.getElementById('clubberConfirmModal').classList.remove('open')">Cancel</button>
+      <button id="clubberConfirmDownloadBtn" class="btn-approve" style="margin-left:8px;">Confirm &amp; Download</button>
+    </div>
+  </div>
+</div>
+
 <div id="clubberModal">
   <div class="modal-box">
     <h2>Create in Clubber</h2>
@@ -1718,15 +1764,66 @@ function exportSelectedToExcel(){
 }
 
 exportBtn.addEventListener('click',()=>{ exportSelectedToExcel(); selected.clear(); render(); });
+// Holds the current set of build results while the confirm modal is open
+let _pendingClubberResults = [];
+
 clubberBtn.addEventListener('click',()=>{
   const visibleIds=new Set(getFiltered().map(f=>f.id));
   const selFixtures=fixtures.filter(f=>selected.has(f.id)&&visibleIds.has(f.id));
   if(!selFixtures.length) return;
+
   const results=selFixtures.map(f=>{
     if(f.status!=='Approved') return{fixture:f,payload:null,errors:['Not Approved'],warnings:[],ok:false,skipped:true};
     const{payload,errors,warnings}=buildGamePayload(f);
     return{fixture:f,payload,errors,warnings,ok:errors.length===0,skipped:false};
   });
+
+  _pendingClubberResults = results;
+
+  // Populate confirmation table
+  const tbody = document.getElementById('clubberConfirmBody');
+  tbody.innerHTML = results.map((r,i) => {
+    const f = r.fixture;
+    const p = r.payload;
+    const hasError = !r.ok && !r.skipped;
+    const hasWarn = r.ok && r.warnings && r.warnings.length > 0;
+    const rowCls = hasError ? 'has-error' : (hasWarn ? 'has-warn' : '');
+    const notes = [
+      ...(r.errors||[]).map(e=>`<div class="err-badge">✗ ${e}</div>`),
+      ...(r.warnings||[]).map(w=>`<div class="warn-badge">⚠ ${w}</div>`),
+      r.skipped ? '<div class="err-badge">✗ Not Approved — skipped</div>' : '',
+    ].join('');
+    const price = p ? p.price : '';
+    return `<tr class="${rowCls}" data-idx="${i}">
+      <td><div class="team-names">${f.teamA} v ${f.teamB}</div><div class="sub-detail">${p ? p.club+' v '+p.competitorClubName : ''}</div></td>
+      <td style="white-space:nowrap">${f.date}<div class="sub-detail">${f.time||''}</div></td>
+      <td>${p ? p.county : f.county}</td>
+      <td>${p ? p.code : (f.code||'')}</td>
+      <td>${p ? p.grade : ''}</td>
+      <td>${p ? p.round : ''}</td>
+      <td>${p ? p.season : ''}</td>
+      <td>${p ? `<input class="price-edit" type="number" min="0" step="0.01" value="${price}" data-idx="${i}">` : '—'}</td>
+      <td>${notes}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('clubberConfirmModal').classList.add('open');
+});
+
+document.getElementById('clubberConfirmDownloadBtn').addEventListener('click', ()=>{
+  const results = _pendingClubberResults;
+
+  // Read any edited prices back into the payloads
+  document.querySelectorAll('#clubberConfirmBody input.price-edit').forEach(inp=>{
+    const idx = parseInt(inp.dataset.idx, 10);
+    const val = parseFloat(inp.value);
+    if (!isNaN(val) && results[idx] && results[idx].payload) {
+      results[idx].payload.price = val;
+    }
+  });
+
+  document.getElementById('clubberConfirmModal').classList.remove('open');
+
   const BATCH_SIZE=10;
   const eligible=results.filter(r=>!r.skipped);
   const batches=[];
@@ -1736,6 +1833,7 @@ clubberBtn.addEventListener('click',()=>{
     const suffix=batches.length>1?`-batch-${idx+1}-of-${batches.length}`:'';
     setTimeout(()=>downloadJson(batch.map(r=>r.payload),`clubber-fixtures${suffix}-${stamp}.json`),idx*300);
   });
+
   const okCount=results.filter(r=>r.ok).length;
   const summary=document.getElementById('clubberSummary');
   summary.innerHTML=`<strong>${okCount} of ${results.length} fixture${results.length!==1?'s':''} mapped successfully.</strong> ${batches.length} JSON file${batches.length!==1?'s':''} downloaded.${okCount<results.length?`<br><span style="color:var(--reject)">${results.length-okCount} had mapping errors.</span>`:''}`;
