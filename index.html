@@ -174,8 +174,14 @@
   #fixtureTable.hide-replay      th:nth-child(16),#fixtureTable.hide-replay      td:nth-child(16){display:none;}
   .replay-cell{text-align:center;cursor:pointer;font-size:16px;user-select:none;}
   .replay-cell:hover{opacity:.7;}
-  #fixtureTable.hide-videographer th:nth-child(17),#fixtureTable.hide-videographer td:nth-child(17){display:none;}
-  #fixtureTable.hide-unit          th:nth-child(18),#fixtureTable.hide-unit          td:nth-child(18){display:none;}
+  .badge-pick{display:inline-block;background:#f59e0b;color:#000;font-size:10px;font-weight:700;padding:1px 5px;border-radius:3px;letter-spacing:.3px;vertical-align:middle;}
+  .badge-hero{display:inline-block;background:#dc2626;color:#fff;font-size:10px;font-weight:700;padding:1px 5px;border-radius:3px;letter-spacing:.3px;vertical-align:middle;}
+  .pick-cell,.hero-cell{text-align:center;cursor:pointer;font-size:15px;user-select:none;}
+  .pick-cell:hover,.hero-cell:hover{opacity:.7;}
+  #fixtureTable.hide-pick          th:nth-child(17),#fixtureTable.hide-pick          td:nth-child(17){display:none;}
+  #fixtureTable.hide-hero          th:nth-child(18),#fixtureTable.hide-hero          td:nth-child(18){display:none;}
+  #fixtureTable.hide-videographer th:nth-child(19),#fixtureTable.hide-videographer td:nth-child(19){display:none;}
+  #fixtureTable.hide-unit          th:nth-child(20),#fixtureTable.hide-unit          td:nth-child(20){display:none;}
   .vid-cell,.unit-cell{cursor:pointer;white-space:nowrap;}
   .vid-cell:hover,.unit-cell:hover{opacity:.7;}
   #unitConflictToast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#c2410c;color:#fff;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;}
@@ -387,6 +393,22 @@
     </select>
   </div>
   <div>
+    <label for="pickFilter">Pick</label>
+    <select id="pickFilter">
+      <option value="">All</option>
+      <option value="yes">Clubber Pick</option>
+      <option value="no">Not a Pick</option>
+    </select>
+  </div>
+  <div>
+    <label for="heroFilter">Hero</label>
+    <select id="heroFilter">
+      <option value="">All</option>
+      <option value="yes">Hero</option>
+      <option value="no">Not a Hero</option>
+    </select>
+  </div>
+  <div>
     <label for="dateFrom">From date</label>
     <input type="date" id="dateFrom">
   </div>
@@ -518,6 +540,8 @@
       <th data-key="socials">Socials</th>
       <th data-key="support2">2nd Support</th>
       <th data-key="replay">Replay</th>
+      <th data-key="clubberPick">Pick</th>
+      <th data-key="hero">Hero</th>
       <th data-key="videographer">Videographer</th>
       <th data-key="unit">Unit</th>
     </tr>
@@ -544,6 +568,8 @@
       <td><select id="qa_socials" class="qa-sel"><option value="">—</option></select></td>
       <td><select id="qa_support2" class="qa-sel"><option value="">—</option></select></td>
       <td style="text-align:center;"><input type="checkbox" id="qa_replay"></td>
+      <td></td>
+      <td></td>
       <td><select id="qa_videographer" class="qa-sel" onchange="qaVideographerChange()"><option value="">—</option></select></td>
       <td>
         <select id="qa_unitSys" class="qa-sel" onchange="qaUnitSysChange()" style="margin-bottom:2px;"><option value="">System…</option><option value="Videon">Videon</option><option value="LiveU">Live U</option></select>
@@ -993,6 +1019,8 @@ let fixtureBaseline = {}; // stableKey -> { original:{date,time,venue,round}, la
 let fixtureChangelog = {}; // stableKey -> { type:'unchanged'|'changed'|'removed', data:{county,teamA,teamB,competition}, history:[{at,note?,diffs}] }
 let changesOnlyFilter = false;
 let clubberFilterVal = '';
+let pickFilterVal = '';
+let heroFilterVal = '';
 
 function saveManualFixtures(noSync){
   try{ localStorage.setItem(MANUAL_KEY, JSON.stringify(manualFixtures)); }catch(e){}
@@ -1215,6 +1243,8 @@ function applyOverrides(){
     if(ov.unitSystem!==undefined){f.unitSystem=ov.unitSystem;}
     if(ov.unit!==undefined){f.unit=ov.unit;}
     if(ov.clubberCreated!==undefined){f.clubberCreated=ov.clubberCreated;}
+    if(ov.clubberPick!==undefined){f.clubberPick=ov.clubberPick;}
+    if(ov.hero!==undefined){f.hero=ov.hero;}
   });
 }
 
@@ -1634,6 +1664,10 @@ function getFiltered(){
     if(changesOnlyFilter){const _c=fixtureChangelog[stableKeyOf(f)];if(!_c||(_c.type!=='changed'&&_c.type!=='removed'&&_c.type!=='new')) return false;}
     if(clubberFilterVal==='yes' && !f.clubberCreated) return false;
     if(clubberFilterVal==='no' && f.clubberCreated) return false;
+    if(pickFilterVal==='yes' && !f.clubberPick) return false;
+    if(pickFilterVal==='no' && f.clubberPick) return false;
+    if(heroFilterVal==='yes' && !f.hero) return false;
+    if(heroFilterVal==='no' && f.hero) return false;
     return true;
   });
   list.sort((a,b)=>{
@@ -1693,6 +1727,8 @@ function render(){
       <td class="socials-cell" data-socials-id="${f.id}" title="Click to assign socials" style="cursor:pointer;color:${f.socials?'inherit':'var(--muted)'};">${f.socials||'—'}</td>
       <td class="socials-cell" data-support2-id="${f.id}" title="Click to assign 2nd support" style="cursor:pointer;color:${f.support2?'inherit':'var(--muted)'};">${f.support2||'—'}</td>
       <td class="replay-cell" data-replay-id="${f.id}" title="Click to toggle replay">${f.replay?'✔':'—'}</td>
+      <td class="pick-cell" data-pick-id="${f.id}" title="Click to toggle Clubber Pick">${f.clubberPick?'<span class="badge-pick">PICK</span>':'—'}</td>
+      <td class="hero-cell" data-hero-id="${f.id}" title="Click to toggle Hero">${f.hero?'<span class="badge-hero">HERO</span>':'—'}</td>
       <td class="vid-cell" data-vid-id="${f.id}" title="Click to assign videographer" style="color:${f.videographer?'inherit':'var(--muted)'};">${f.videographer||'—'}</td>
       <td class="unit-cell" data-unit-id="${f.id}" title="Click to assign unit">${unitBadge(f)}</td>
     `;
@@ -2000,6 +2036,8 @@ dateFrom.addEventListener('change',()=>{ dateTo.value=dateFrom.value; render(); 
 dateTo.addEventListener('change',render);
 document.getElementById('changesFilter').addEventListener('change',e=>{changesOnlyFilter=e.target.value==='changes';render();});
 document.getElementById('clubberFilter').addEventListener('change',e=>{clubberFilterVal=e.target.value;render();});
+document.getElementById('pickFilter').addEventListener('change',e=>{pickFilterVal=e.target.value;render();});
+document.getElementById('heroFilter').addEventListener('change',e=>{heroFilterVal=e.target.value;render();});
 document.getElementById('clearChangesBtn').addEventListener('click',()=>{
   fixtureChangelog={};saveChangelog();
   fixtureBaseline={};saveBaseline();
@@ -2160,6 +2198,40 @@ document.getElementById('tbody').addEventListener('click',e=>{
       saveOverrides();
       if(!f.manual) syncOverrides([{key:keyOf(f),fields:{replay:f.replay}}]);
       if(f.manual){const mf=manualFixtures.find(m=>m.id===id);if(mf)mf.replay=f.replay;saveManualFixtures();}
+      saveCache(); render();
+    }
+    return;
+  }
+  // Pick cell
+  const pickTd=e.target.closest('td[data-pick-id]');
+  if(pickTd){
+    const id=+pickTd.dataset.pickId;
+    const f=fixtures.find(fx=>fx.id===id);
+    if(f){
+      f.clubberPick=!f.clubberPick;
+      const fk=f._origKey||keyOf(f);
+      const ov=fixtureOverrides[fk]||{};
+      ov.clubberPick=f.clubberPick; fixtureOverrides[fk]=ov;
+      saveOverrides();
+      if(!f.manual) syncOverrides([{key:fk,fields:{clubberPick:f.clubberPick}}]);
+      if(f.manual){const mf=manualFixtures.find(m=>m.id===id);if(mf)mf.clubberPick=f.clubberPick;saveManualFixtures();}
+      saveCache(); render();
+    }
+    return;
+  }
+  // Hero cell
+  const heroTd=e.target.closest('td[data-hero-id]');
+  if(heroTd){
+    const id=+heroTd.dataset.heroId;
+    const f=fixtures.find(fx=>fx.id===id);
+    if(f){
+      f.hero=!f.hero;
+      const fk=f._origKey||keyOf(f);
+      const ov=fixtureOverrides[fk]||{};
+      ov.hero=f.hero; fixtureOverrides[fk]=ov;
+      saveOverrides();
+      if(!f.manual) syncOverrides([{key:fk,fields:{hero:f.hero}}]);
+      if(f.manual){const mf=manualFixtures.find(m=>m.id===id);if(mf)mf.hero=f.hero;saveManualFixtures();}
       saveCache(); render();
     }
     return;
@@ -2764,6 +2836,8 @@ function buildGamePayload(f) {
     competitorClubId: teamBResult?.clubId || '',
     competitorClubCounty: isRugby ? 'UK' : (teamBResult?.county || ''),
     price,
+    ...(f.clubberPick ? { trendingUpcoming: true } : {}),
+    ...(f.hero ? { heroSection: true } : {}),
   };
 
   return { payload, errors, warnings };
