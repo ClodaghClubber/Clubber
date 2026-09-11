@@ -2674,8 +2674,8 @@ function buildGamePayload(f) {
   function toClubberRound(r) {
     const s = (r || '').trim().toLowerCase();
     if (!s) return '';
-    if (/quarter.?final|^\bqf\b/.test(s)) return 'quarter-finals';
-    if (/semi.?final|^\bsf\b/.test(s)) return 'semi-finals';
+    if (/quarter.?final|^\bqf\b|^q\/f$/.test(s)) return 'quarter-finals';
+    if (/semi.?final|^\bsf\b|^s\/f$/.test(s)) return 'semi-finals';
     if (/\bfinal\b/.test(s)) return 'final'; // catches Final, Relegation Final, etc.
     const m = s.match(/\bround\s*(\d+)\b/);
     if (m) {
