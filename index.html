@@ -1528,14 +1528,15 @@ function msInit(id,opts,onChange,autoApply=false){
       _pending.clear();
       list.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=cb.checked);
     } else {
-      if(cb.checked)_pending.add(cb.value);else _pending.delete(cb.value);
-      list.querySelector('[data-all]').checked=_pending.size===0;
-      // When unchecking an individual while "All" was active, mark all others as pending
-      if(_pending.size===1){
+      // If we were in "All" mode (pending empty), populate pending from all currently
+      // checked boxes before making any change — otherwise delete on an empty set is a no-op
+      if(_pending.size===0){
         list.querySelectorAll('input[type=checkbox]:not([data-all])').forEach(c=>{
           if(c.checked) _pending.add(c.value);
         });
       }
+      if(cb.checked)_pending.add(cb.value);else _pending.delete(cb.value);
+      list.querySelector('[data-all]').checked=_pending.size===0;
     }
     if(autoApply){ _msSelected[id]=new Set(_pending); updateLabel(); onChange(); }
   });
