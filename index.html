@@ -237,6 +237,7 @@
   .confirm-table .err-badge{color:var(--reject);font-size:11px;}
   .confirm-table .warn-badge{color:#d97706;font-size:11px;}
   .confirm-table input.price-edit{width:62px;padding:2px 6px;border:1px solid var(--border);border-radius:4px;background:var(--panel);color:var(--text);font-size:12px;text-align:right;}
+  .confirm-table select.grade-edit,.confirm-table select.round-edit{padding:2px 4px;border:1px solid var(--border);border-radius:4px;background:var(--panel);color:var(--text);font-size:12px;}
   .confirm-table .team-names{font-weight:600;}
   .confirm-table .sub-detail{color:var(--muted);font-size:11px;}
   .clubber-summary{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px;}
@@ -1799,8 +1800,8 @@ clubberBtn.addEventListener('click',()=>{
       <td style="white-space:nowrap">${f.date}<div class="sub-detail">${f.time||''}</div></td>
       <td>${p ? p.county : f.county}</td>
       <td>${p ? p.code : (f.code||'')}</td>
-      <td>${p ? p.grade : ''}</td>
-      <td>${p ? p.round : ''}</td>
+      <td>${p ? `<select class="grade-edit" data-idx="${i}"><option value="">—</option><option value="Senior 1"${p.grade==='Senior 1'?' selected':''}>Senior 1</option><option value="Senior 2"${p.grade==='Senior 2'?' selected':''}>Senior 2</option><option value="Intermediate 1"${p.grade==='Intermediate 1'?' selected':''}>Intermediate 1</option><option value="Intermediate 2"${p.grade==='Intermediate 2'?' selected':''}>Intermediate 2</option><option value="Junior 1"${p.grade==='Junior 1'?' selected':''}>Junior 1</option><option value="Junior 2"${p.grade==='Junior 2'?' selected':''}>Junior 2</option><option value="Minor"${p.grade==='Minor'?' selected':''}>Minor</option></select>` : '—'}</td>
+      <td>${p ? `<select class="round-edit" data-idx="${i}"><option value="">—</option><option value="quarter-finals"${p.round==='quarter-finals'?' selected':''}>quarter-finals</option><option value="semi-finals"${p.round==='semi-finals'?' selected':''}>semi-finals</option><option value="final"${p.round==='final'?' selected':''}>final</option><option value="Round 1"${p.round==='Round 1'?' selected':''}>Round 1</option><option value="Round 2"${p.round==='Round 2'?' selected':''}>Round 2</option><option value="Round 3"${p.round==='Round 3'?' selected':''}>Round 3</option><option value="Round 4"${p.round==='Round 4'?' selected':''}>Round 4</option><option value="Round 5"${p.round==='Round 5'?' selected':''}>Round 5</option></select>` : '—'}</td>
       <td>${p ? p.season : ''}</td>
       <td>${p ? `<input class="price-edit" type="number" min="0" step="0.01" value="${price}" data-idx="${i}">` : '—'}</td>
       <td>${notes}</td>
@@ -1813,12 +1814,24 @@ clubberBtn.addEventListener('click',()=>{
 document.getElementById('clubberConfirmDownloadBtn').addEventListener('click', ()=>{
   const results = _pendingClubberResults;
 
-  // Read any edited prices back into the payloads
+  // Read any edited prices, grades, and rounds back into the payloads
   document.querySelectorAll('#clubberConfirmBody input.price-edit').forEach(inp=>{
     const idx = parseInt(inp.dataset.idx, 10);
     const val = parseFloat(inp.value);
     if (!isNaN(val) && results[idx] && results[idx].payload) {
       results[idx].payload.price = val;
+    }
+  });
+  document.querySelectorAll('#clubberConfirmBody select.grade-edit').forEach(sel=>{
+    const idx = parseInt(sel.dataset.idx, 10);
+    if (results[idx] && results[idx].payload) {
+      results[idx].payload.grade = sel.value;
+    }
+  });
+  document.querySelectorAll('#clubberConfirmBody select.round-edit').forEach(sel=>{
+    const idx = parseInt(sel.dataset.idx, 10);
+    if (results[idx] && results[idx].payload) {
+      results[idx].payload.round = sel.value;
     }
   });
 
