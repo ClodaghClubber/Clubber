@@ -921,6 +921,9 @@
     }
   },
   "Meath": {
+    "St Vincent's": {"id": "0f72963f-676c-412e-917b-34c9886d2aa2", "name": "St. Vincent's"},
+    "St Ultan's": {"id": "da5011a7-4003-486a-af00-27c8d4e55a9d", "name": "St. Ultan's"},
+    "Bhulf Tón": {"id": "15f04b68-46e9-480a-a2ee-40e46576f31c", "name": "Wolfe Tones"},
     "Clann na n Gael": {
       "id": "0794bcc2-7674-4eff-9364-2016bfb8207d",
       "name": "Clann na nGael"
