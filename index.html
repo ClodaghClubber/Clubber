@@ -2718,7 +2718,7 @@ function buildGamePayload(f) {
     if (/quarter.?final|^\bqf\b|^q\/f$/.test(s)) return 'quarter-finals';
     if (/semi.?final|^\bsf\b|^s\/f$/.test(s)) return 'semi-finals';
     if (/\bfinal\b/.test(s)) return 'final'; // catches Final, Relegation Final, etc.
-    const m = s.match(/\bround\s*(\d+)\b/);
+    const m = s.match(/\bround\s*(\d+)\b/) || s.match(/^r(\d+)$/);
     if (m) {
       const n = parseInt(m[1], 10);
       if (n >= 1 && n <= 5) return `Round ${n}`;
