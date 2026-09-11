@@ -366,10 +366,6 @@
       "id": "4cc5e320-7def-434e-8faf-a40f8d9d1b9f",
       "name": "Carrig & Riverstown"
     },
-    "Carrig Riverstown and St. Cillian’s": {
-      "id": "4cc5e320-7def-434e-8faf-a40f8d9d1b9f",
-      "name": "Carrig & Riverstown"
-    },
     "Pairc de Grás/Gracefield": {
       "id": "911ed5f7-999d-4bb1-aa1e-293dc327bc2e",
       "name": "Gracefield"
@@ -1014,7 +1010,7 @@
       "id": "12c8a813-09f6-4266-888b-f22b86fe69cc",
       "name": "St. Brigid’s"
     },
-    "St. Colmcille’s": {
+    "St. Colmcille's": {
       "id": "84ee8698-e223-4635-a4d4-6497d6dda3ee",
       "name": "St. Colmcille’s"
     },
@@ -1088,7 +1084,7 @@
       "id": "0381c001-cb60-49ac-adf5-c881c91eb76f",
       "name": "St. Patrick’s"
     },
-    "St Colmcille’s": {
+    "St Colmcille's": {
       "id": "84ee8698-e223-4635-a4d4-6497d6dda3ee",
       "name": "St. Colmcille’s"
     }
