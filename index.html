@@ -393,20 +393,8 @@
     </select>
   </div>
   <div>
-    <label for="pickFilter">Pick</label>
-    <select id="pickFilter">
-      <option value="">All</option>
-      <option value="yes">Clubber Pick</option>
-      <option value="no">Not a Pick</option>
-    </select>
-  </div>
-  <div>
-    <label for="heroFilter">Hero</label>
-    <select id="heroFilter">
-      <option value="">All</option>
-      <option value="yes">Hero</option>
-      <option value="no">Not a Hero</option>
-    </select>
+    <label>Highlight</label>
+    <div id="highlightFilter" class="ms-wrap"></div>
   </div>
   <div>
     <label for="dateFrom">From date</label>
@@ -1019,8 +1007,6 @@ let fixtureBaseline = {}; // stableKey -> { original:{date,time,venue,round}, la
 let fixtureChangelog = {}; // stableKey -> { type:'unchanged'|'changed'|'removed', data:{county,teamA,teamB,competition}, history:[{at,note?,diffs}] }
 let changesOnlyFilter = false;
 let clubberFilterVal = '';
-let pickFilterVal = '';
-let heroFilterVal = '';
 
 function saveManualFixtures(noSync){
   try{ localStorage.setItem(MANUAL_KEY, JSON.stringify(manualFixtures)); }catch(e){}
@@ -1664,10 +1650,11 @@ function getFiltered(){
     if(changesOnlyFilter){const _c=fixtureChangelog[stableKeyOf(f)];if(!_c||(_c.type!=='changed'&&_c.type!=='removed'&&_c.type!=='new')) return false;}
     if(clubberFilterVal==='yes' && !f.clubberCreated) return false;
     if(clubberFilterVal==='no' && f.clubberCreated) return false;
-    if(pickFilterVal==='yes' && !f.clubberPick) return false;
-    if(pickFilterVal==='no' && f.clubberPick) return false;
-    if(heroFilterVal==='yes' && !f.hero) return false;
-    if(heroFilterVal==='no' && f.hero) return false;
+    const selHighlights=msGetValues('highlightFilter');
+    if(selHighlights.length){
+      const match=selHighlights.some(v=>(v==='Clubber Pick'&&f.clubberPick)||(v==='Hero Section'&&f.hero));
+      if(!match) return false;
+    }
     return true;
   });
   list.sort((a,b)=>{
@@ -2036,8 +2023,7 @@ dateFrom.addEventListener('change',()=>{ dateTo.value=dateFrom.value; render(); 
 dateTo.addEventListener('change',render);
 document.getElementById('changesFilter').addEventListener('change',e=>{changesOnlyFilter=e.target.value==='changes';render();});
 document.getElementById('clubberFilter').addEventListener('change',e=>{clubberFilterVal=e.target.value;render();});
-document.getElementById('pickFilter').addEventListener('change',e=>{pickFilterVal=e.target.value;render();});
-document.getElementById('heroFilter').addEventListener('change',e=>{heroFilterVal=e.target.value;render();});
+const msHighlight=msInit('highlightFilter',['Clubber Pick','Hero Section'],render,true);
 document.getElementById('clearChangesBtn').addEventListener('click',()=>{
   fixtureChangelog={};saveChangelog();
   fixtureBaseline={};saveBaseline();
