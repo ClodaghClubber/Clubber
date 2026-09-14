@@ -2698,9 +2698,10 @@ function deriveGrade(county, competition) {
 
 function lookupTeam(teamName, preferredCounty) {
   const name = teamName.replace(/\s+/g, ' ').trim();
+  const normApos = s => (s || '').replace(/[‘’]/g, "'");
   const resolve = (county, val) => {
-    if (typeof val === 'object') return { county, clubId: val.id, matchedName: val.name };
-    return { county, clubId: val, matchedName: name };
+    if (typeof val === 'object') return { county, clubId: val.id, matchedName: normApos(val.name) };
+    return { county, clubId: val, matchedName: normApos(name) };
   };
   // 1. Exact match in teamMappings (preferred county first)
   if (teamMappings[preferredCounty]?.[name])

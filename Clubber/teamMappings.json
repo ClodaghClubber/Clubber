@@ -60,15 +60,15 @@
     "Kilbride": "634d598d-5971-4fb7-9ce3-765398676cd6",
     "O Hanrahans": {
       "id": "232363eb-1b0b-40e6-a149-8b6c609d593d",
-      "name": "O’Hanrahan’s"
+      "name": "O'Hanrahan's"
     },
     "St.Patricks": {
       "id": "2bf5b042-f8c1-41ba-8ee5-592f8b43a370",
-      "name": "St. Patrick’s"
+      "name": "St. Patrick's"
     },
     "St Patricks": {
       "id": "2bf5b042-f8c1-41ba-8ee5-592f8b43a370",
-      "name": "St. Patrick’s"
+      "name": "St. Patrick's"
     },
     "Rathvilly/Rathbhile": "8eb2f899-3203-47ca-b7ac-b96b9f5bb23d",
     "Burren Rangers": "cc0f9dca-5429-459b-b212-6a75d44fd9a8"
@@ -344,15 +344,15 @@
     "St. Rynagh's": "bf276f82-0351-40fc-85f1-2ae554867bf5",
     "St Rynagh's": {
       "id": "bf276f82-0351-40fc-85f1-2ae554867bf5",
-      "name": "St. Rynagh’s"
+      "name": "St. Rynagh's"
     },
     "St Rynaghs": {
       "id": "bf276f82-0351-40fc-85f1-2ae554867bf5",
-      "name": "St. Rynagh’s"
+      "name": "St. Rynagh's"
     },
     "St Rynaghs Hurling Club": {
       "id": "bf276f82-0351-40fc-85f1-2ae554867bf5",
-      "name": "St. Rynagh’s"
+      "name": "St. Rynagh's"
     },
     "Tubber": "c1446d77-efbc-48ac-ab09-d61a94a8c883",
     "Tullamore": "eecc3bb8-93ac-4480-8550-d276e472fbe5",
@@ -374,11 +374,11 @@
   "Laois": {
     "Abbeyleix St Lazarians GAA&Camogie": {
       "id": "2ba8b055-fdfe-48a0-aa30-7acb3ac8fb3c",
-      "name": "St Lazerian’s Abbeyleix"
+      "name": "St Lazerian's Abbeyleix"
     },
     "St Lazerian's Abbeyleix": {
       "id": "2ba8b055-fdfe-48a0-aa30-7acb3ac8fb3c",
-      "name": "St Lazerian’s Abbeyleix"
+      "name": "St Lazerian's Abbeyleix"
     },
     "Annanough": "d77fba03-cc8b-48ca-8ecf-ab5cb15ff6ac",
     "Ard Lios Chill Chruis": {
@@ -429,11 +429,11 @@
     "Castletown": "4bc5362f-cbcd-4a6a-942c-b93363efd0e0",
     "Clonaslee St Manman's": {
       "id": "85d857c2-439f-402d-ab3d-036bba62bd73",
-      "name": "Clonaslee St Manman’s"
+      "name": "Clonaslee St Manman's"
     },
     "Clonaslee St Manmans/Cluainna SlíNaomh Meanmain": {
       "id": "85d857c2-439f-402d-ab3d-036bba62bd73",
-      "name": "Clonaslee St Manman’s"
+      "name": "Clonaslee St Manman's"
     },
     "Clonad": "30f45453-f9a7-4542-88f8-4a4d293ff151",
     "Clonad GA Aand Camogie Club": {
@@ -469,19 +469,19 @@
     "Mountmellick": "567af47b-3212-4ced-ab6a-02a58e88a0ca",
     "Naomh Fiontáin Maighean Rátha": {
       "id": "a55e897e-e251-4f79-89bb-066ddec87dd4",
-      "name": "St Fintan’s Mountrath"
+      "name": "St Fintan's Mountrath"
     },
     "St Fintan's Mountrath": {
       "id": "a55e897e-e251-4f79-89bb-066ddec87dd4",
-      "name": "St Fintan’s Mountrath"
+      "name": "St Fintan's Mountrath"
     },
     "O'Dempsey's": {
       "id": "dcaa590f-13d7-450d-9bbb-484db486f706",
-      "name": "O’Dempsey’s"
+      "name": "O'Dempsey's"
     },
     "O'Dempseys": {
       "id": "dcaa590f-13d7-450d-9bbb-484db486f706",
-      "name": "O’Dempsey’s"
+      "name": "O'Dempsey's"
     },
     "Park Ratheniska": "1028ee5c-dd2a-43c4-b8d8-bc837e81cb9c",
     "Park Ratheniska-Timahoe": {
@@ -497,7 +497,7 @@
     "Spink": "26dc644a-7c6e-4ebf-8684-9557f052059c",
     "St. Conleth's": {
       "id": "4033553f-f050-45ba-b10d-90a155ee094b",
-      "name": "St. Conleth’s"
+      "name": "St. Conleth's"
     },
     "St Joseph's": "63ab9ac4-1caa-475e-a108-caf3bcc3dd2e",
     "Stradbally": "7e9c4c74-6b1d-40c8-a4fa-861958a8a0b1",
@@ -533,11 +533,11 @@
     },
     "Abbeyleix St Lazarians GAA & Camogie": {
       "id": "2ba8b055-fdfe-48a0-aa30-7acb3ac8fb3c",
-      "name": "St Lazerian’s Abbeyleix"
+      "name": "St Lazerian's Abbeyleix"
     },
     "Clonaslee St Manmans/Cluain na Slí Naomh Meanmain": {
       "id": "85d857c2-439f-402d-ab3d-036bba62bd73",
-      "name": "Clonaslee St Manman’s"
+      "name": "Clonaslee St Manman's"
     },
     "Borris in Ossory Kilcotton": {
       "id": "0ccf146e-a1a9-431c-ac8f-de9b7c77c128",
@@ -582,7 +582,7 @@
     },
     "CLG Naomh Pádraig": {
       "id": "66dcaacb-aa86-4339-8228-d5adfe3965ef",
-      "name": "St Patrick’s"
+      "name": "St Patrick's"
     },
     "St Patrick's": "66dcaacb-aa86-4339-8228-d5adfe3965ef",
     "Clonard": "8e1d9bc6-4ebb-4445-b012-ad0c70a112c4",
@@ -592,7 +592,7 @@
     "Craanford Fr. O'Regans": "6ae63658-1906-435b-8562-a3f446cf70fe",
     "Fr O'Regans Craanford": {
       "id": "6ae63658-1906-435b-8562-a3f446cf70fe",
-      "name": "Craanford Fr. O’Regans"
+      "name": "Craanford Fr. O'Regans"
     },
     "Crossabeg-Ballymurn": "2d4e0001-0b92-4b68-a3c9-b54f8c8d8784",
     "Davidstown-Courtnacuddy": "c33d47ce-7e67-4cd6-8848-f0f3b5f1f6db",
@@ -616,7 +616,7 @@
     "Gusserane O'Rahillys": "5b1a10e4-5de7-46fa-a7f3-f299c98ae24d",
     "Gusserane-O'Rahilly's": {
       "id": "5b1a10e4-5de7-46fa-a7f3-f299c98ae24d",
-      "name": "Gusserane O’Rahillys"
+      "name": "Gusserane O'Rahillys"
     },
     "Half Way House Bunclody": "37974fc5-da20-40f4-ab91-9aec11c8fef3",
     "HWH Bunclody/Tig Leath SlíBun Clóidí": {
@@ -726,7 +726,7 @@
     },
     "CLG Naomh Pádraic": {
       "id": "66dcaacb-aa86-4339-8228-d5adfe3965ef",
-      "name": "St Patrick’s"
+      "name": "St Patrick's"
     },
     "Duffry Rovers/Feannaire na Dubh Tíre": {
       "id": "eb50357d-3be5-443d-ab7d-43d45bde261e",
@@ -750,11 +750,11 @@
     },
     "Fr O`Regans Craanford": {
       "id": "6ae63658-1906-435b-8562-a3f446cf70fe",
-      "name": "Craanford Fr. O’Regans"
+      "name": "Craanford Fr. O'Regans"
     },
     "Gusserane-O`Rahilly's": {
       "id": "5b1a10e4-5de7-46fa-a7f3-f299c98ae24d",
-      "name": "Gusserane O’Rahillys"
+      "name": "Gusserane O'Rahillys"
     },
     "St John's Volunteers": {
       "id": "50231288-02c9-4f31-a995-1e4a440b35d4",
@@ -772,7 +772,7 @@
     },
     "St. Martins": {
       "id": "11c913a5-3ab1-49c8-a9b5-8ff7fd180a8b",
-      "name": "St Martin’s"
+      "name": "St Martin's"
     },
     "Ballyhale Shamrocks": "627dbc77-a509-42be-b1c9-29083be12ab8",
     "Barrow Rangers": "f6b55ce6-df60-428b-9681-94b5e3d40fb8",
@@ -812,7 +812,7 @@
     "St Patrick'S": "44d3558b-874b-410c-826f-6c844de9c0b4",
     "St Patrick's": {
       "id": "44d3558b-874b-410c-826f-6c844de9c0b4",
-      "name": "St Patrick’S"
+      "name": "St Patrick'S"
     },
     "St. Brigid's": "0178dfc3-be1a-4223-adaf-648610f6cb2c",
     "Thomastown": "fc05ad62-8c0d-4397-b34e-8619e78dc7df",
@@ -823,7 +823,7 @@
     "Young Irelands": "3e0d932d-8bf2-425b-9417-4f6e2e2d7a69",
     "St Patricks": {
       "id": "44d3558b-874b-410c-826f-6c844de9c0b4",
-      "name": "St Patrick’S"
+      "name": "St Patrick'S"
     },
     "Blacks and  Whites": {
       "id": "450a867e-460d-4aac-86b7-42dc50451bd1",
@@ -831,7 +831,7 @@
     },
     "O Loughlin Gaels": {
       "id": "5d35c0bd-1d66-4845-b677-4c0a0133e7b3",
-      "name": "O’Loughlin Gaels"
+      "name": "O'Loughlin Gaels"
     },
     "Shamrocks Ballyhale": {
       "id": "627dbc77-a509-42be-b1c9-29083be12ab8",
@@ -839,11 +839,11 @@
     },
     "Erins Own": {
       "id": "89f4df8c-c62d-4250-a8b8-01fb425074bd",
-      "name": "Erin’s Own"
+      "name": "Erin's Own"
     },
     "St. Lachtains": {
       "id": "35f8d93d-4e1a-4e77-9519-31d06c7518f7",
-      "name": "St Lachtain’s"
+      "name": "St Lachtain's"
     },
     "Ballyhale Shamrocks Camogie Club": "627dbc77-a509-42be-b1c9-29083be12ab8",
     "Dicksboro GAA and Camogie Club": "4ee3e744-78e5-4277-981e-a43c938c46a8",
@@ -910,7 +910,7 @@
     },
     "Latton O'Rahilly GAA Club": {
       "id": "ba2326bb-bbdf-4ab0-a05d-7f530890055b",
-      "name": "Latton O’Rahilly"
+      "name": "Latton O'Rahilly"
     },
     "Eire Óg": "f9ba4c86-fa49-4789-9b3f-73f9d1af9d1d",
     "Magheracloone GFC": {
@@ -921,11 +921,11 @@
   "Meath": {
     "St Vincent's": {
       "id": "0f72963f-676c-412e-917b-34c9886d2aa2",
-      "name": "St. Vincent’s"
+      "name": "St. Vincent's"
     },
     "St Ultan's": {
       "id": "da5011a7-4003-486a-af00-27c8d4e55a9d",
-      "name": "St. Ultan’s"
+      "name": "St. Ultan's"
     },
     "Bhulf Tón": {
       "id": "15f04b68-46e9-480a-a2ee-40e46576f31c",
@@ -937,15 +937,15 @@
     },
     "Navan O'Mahonys": {
       "id": "ce8b2cc1-c33e-4daa-b506-c5ae54e0aacf",
-      "name": "Navan O’Mahony’s"
+      "name": "Navan O'Mahony's"
     },
     "St Michael's": {
       "id": "a4c2f66d-d2a7-4354-9453-0dfd54fd1ce2",
-      "name": "St. Michael’s"
+      "name": "St. Michael's"
     },
     "St Peter's, Dunboyne": {
       "id": "446b22cb-0117-4f87-bc8c-1b6540690ea6",
-      "name": "St. Peter’s Dunboyne"
+      "name": "St. Peter's Dunboyne"
     },
     "An Tuascairt": "aa8d8868-a39d-4cdf-947d-78bb2e053dbd",
     "Ardbraccan": "88636caa-5d18-4978-995e-99a9c17d90ff",
@@ -1008,39 +1008,39 @@
     "Slane": "365fa557-8438-482f-9d13-fbe67c658d65",
     "St. Brigid's": {
       "id": "12c8a813-09f6-4266-888b-f22b86fe69cc",
-      "name": "St. Brigid’s"
+      "name": "St. Brigid's"
     },
     "St. Colmcille's": {
       "id": "8280b691-108e-48df-9aa0-47fdbc632f6c",
-      "name": "St. Colmcille’s"
+      "name": "St. Colmcille's"
     },
     "St. Mary's": {
       "id": "d9ffb1b6-90d4-470a-9fda-12572b7eff4a",
-      "name": "St. Mary’s"
+      "name": "St. Mary's"
     },
     "St. Michael's": {
       "id": "a4c2f66d-d2a7-4354-9453-0dfd54fd1ce2",
-      "name": "St. Michael’s"
+      "name": "St. Michael's"
     },
     "St. Patrick's": {
       "id": "0381c001-cb60-49ac-adf5-c881c91eb76f",
-      "name": "St. Patrick’s"
+      "name": "St. Patrick's"
     },
     "St. Paul's": {
       "id": "ecdfae81-47aa-4ca4-b4c0-405851679fc2",
-      "name": "St. Paul’s"
+      "name": "St. Paul's"
     },
     "St. Peter's Dunboyne": {
       "id": "446b22cb-0117-4f87-bc8c-1b6540690ea6",
-      "name": "St. Peter’s Dunboyne"
+      "name": "St. Peter's Dunboyne"
     },
     "St. Ultan's": {
       "id": "da5011a7-4003-486a-af00-27c8d4e55a9d",
-      "name": "St. Ultan’s"
+      "name": "St. Ultan's"
     },
     "St. Vincent's": {
       "id": "0f72963f-676c-412e-917b-34c9886d2aa2",
-      "name": "St. Vincent’s"
+      "name": "St. Vincent's"
     },
     "Summerhill": "6f3e0116-b643-4663-9a61-1c2eb98d3314",
     "Syddan": "e3cf04d7-2fe6-4096-a89f-e8f44e2f53a9",
@@ -1082,11 +1082,11 @@
     },
     "St Patrick's": {
       "id": "0381c001-cb60-49ac-adf5-c881c91eb76f",
-      "name": "St. Patrick’s"
+      "name": "St. Patrick's"
     },
     "St Colmcille's": {
       "id": "8280b691-108e-48df-9aa0-47fdbc632f6c",
-      "name": "St. Colmcille’s"
+      "name": "St. Colmcille's"
     }
   },
   "Longford": {
@@ -1360,7 +1360,7 @@
     },
     "O'Connells GFC": {
       "id": "aaf47cb3-bef0-4cdb-a7d2-3fc4e29cda11",
-      "name": "O’Connells"
+      "name": "O'Connells"
     },
     "Oilibhéar Pluincéad": {
       "id": "fac7f696-0afc-4108-94b7-e6a6b0d9b657",
@@ -1521,16 +1521,16 @@
     },
     "St. Kevin's": {
       "id": "30e11b53-4174-4fab-8c37-bf68bcd7edfc",
-      "name": "St. Kevin’s"
+      "name": "St. Kevin's"
     },
     "St Kevin's": {
       "id": "30e11b53-4174-4fab-8c37-bf68bcd7edfc",
-      "name": "St. Kevin’s"
+      "name": "St. Kevin's"
     },
     "St. Laurence's": "6e3f5521-b6c0-492d-afff-365daca321cf",
     "St Laurence's GAA": {
       "id": "6e3f5521-b6c0-492d-afff-365daca321cf",
-      "name": "St. Laurence’s"
+      "name": "St. Laurence's"
     },
     "Straffan": "f75d50d0-2483-41bd-8de5-cf46baa77a08",
     "Straffard LGFA": {
@@ -1557,7 +1557,7 @@
     },
     "St. Laurence's GAA": {
       "id": "6e3f5521-b6c0-492d-afff-365daca321cf",
-      "name": "St. Laurence’s"
+      "name": "St. Laurence's"
     }
   },
   "Cork": {
@@ -1595,7 +1595,7 @@
     "Fermoy": "27712c66-128f-4a6c-bc61-beeda73451d7",
     "Fr O Neills": {
       "id": "757ee427-5e82-4f1a-9aec-9e49a8b60bd0",
-      "name": "Fr. O’Neills"
+      "name": "Fr. O'Neills"
     },
     "Glen Rovers": "c92f008b-9cee-4c58-92da-d8225f8f8921",
     "Inniscarra": "a7d8d8b8-75ea-4f15-87fc-4c09f5661655",
@@ -1613,7 +1613,7 @@
     "Nemo Rangers": "169fb23b-2a41-4163-894d-5223434f2fa2",
     "O Donovan Rossa": {
       "id": "d440414d-0757-4c27-9a37-f668f741b8d1",
-      "name": "O’Donavan Rossa"
+      "name": "O'Donavan Rossa"
     },
     "Russell Rovers": "44763427-0e77-4ad5-910d-cd67f916a801",
     "Sarsfields": "3b21081b-ebdf-4dbf-8499-a1c20d6f4242",
@@ -1694,7 +1694,7 @@
   "Kerry": {
     "St Brendans Board": {
       "id": "83e33440-332d-44ad-85c3-9d64a2f936b9",
-      "name": "St. Brendan’s Board"
+      "name": "St. Brendan's Board"
     },
     "North Kerry": {
       "id": "b06eef57-d35b-4a57-91ae-1434725004eb",
@@ -1750,7 +1750,7 @@
     "Keel": "6f00a06c-dc60-48f2-a5ba-247147e4fb4c",
     "Kerins O`Rahilly's": {
       "id": "3f0f9f2f-40b3-4355-a536-76446b1afc7b",
-      "name": "Kerins O’Rahillys"
+      "name": "Kerins O'Rahillys"
     },
     "Kilcummin": "f13b4e63-687d-4788-8e23-d5679c0c61a4",
     "Kilgarvan": "5553e3c0-514d-45bb-9e31-13f630821291",
@@ -1774,7 +1774,7 @@
     "Spa": "2a0403e7-72a3-4f6b-b60a-35ab1040f805",
     "St Michael's-Foilmore": {
       "id": "8c269e37-7ac7-4172-ba5f-b006b6196c9b",
-      "name": "St.Michael’s Foilmore"
+      "name": "St.Michael's Foilmore"
     },
     "St Senan's": {
       "id": "9c5b62ae-28fe-4a37-ad5b-d924379e1156",
