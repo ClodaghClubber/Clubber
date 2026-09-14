@@ -1143,6 +1143,14 @@
     "St. Mary's Granard": {
       "id": "0d650f94-9f3f-4bf4-b356-426a3a0c9658",
       "name": "St. Marys Granard"
+    },
+    "Sean Connollys": {
+      "id": "77a08c51-a4ff-4ae3-b4ad-61e819a40f20",
+      "name": "Seán Conollys"
+    },
+    "Seán Connollys": {
+      "id": "77a08c51-a4ff-4ae3-b4ad-61e819a40f20",
+      "name": "Seán Conollys"
     }
   },
   "Roscommon": {
@@ -1794,6 +1802,22 @@
     "St Pats Blennerville": {
       "id": "501d1450-0434-428e-8402-f281a17ac85c",
       "name": "Blennerville St. Pats"
+    },
+    "West Kerry": {
+      "id": "053525e1-86d6-4892-8638-db14da98b4dc",
+      "name": "West Kerry"
+    },
+    "South Kerry": {
+      "id": "226bb574-0187-4163-b56d-3570f8c96919",
+      "name": "South Kerry"
+    },
+    "St Kierans": {
+      "id": "4f6c37dd-e171-47fd-bbf6-7c664404e916",
+      "name": "St Kierans"
+    },
+    "St.Kierans": {
+      "id": "4f6c37dd-e171-47fd-bbf6-7c664404e916",
+      "name": "St Kierans"
     }
   },
   "Champ": {
