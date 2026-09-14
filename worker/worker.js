@@ -577,10 +577,12 @@ async function fetchKerryFootballCompetitions() {
   return comps;
 }
 
-// Kerry Minor Football Championship Semi-Finals (from kerrygaa.ie, Sep 2026)
+// Kerry Minor Football Championship (from kerrygaa.ie, Sep 2026)
 const KERRY_STATIC_FIXTURES = [
   mkStatic('Kerry','East Kerry','Dr. Crokes','10 September 2026','18:00','Fitzgerald Stadium, Killarney','Minor Football Championship','SF'),
   mkStatic('Kerry','St Brendans Board','North Kerry','10 September 2026','19:00','Austin Stack Park, Tralee','Minor Football Championship','SF'),
+  mkStatic('Kerry','South Kerry','Kenmare District','17 September 2026','18:15','Fossa','Minor Football Championship Shield','Final'),
+  mkStatic('Kerry','East Kerry','North Kerry','17 September 2026','19:30','Austin Stack Park, Tralee','Minor Football Championship','Final'),
 ];
 
 const CORK_NAME_FIX = {
