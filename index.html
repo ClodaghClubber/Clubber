@@ -1851,6 +1851,8 @@ function openClubberConfirm(selFixtures, site) {
       ...(r.errors||[]).map(e=>`<div class="err-badge">✗ ${e}</div>`),
       ...(r.warnings||[]).map(w=>`<div class="warn-badge">⚠ ${w}</div>`),
       r.skipped ? '<div class="err-badge">✗ Not Approved — skipped</div>' : '',
+      f.clubberPick ? '<span class="badge-pick">PICK</span>' : '',
+      f.hero ? '<span class="badge-hero">HERO</span>' : '',
     ].join('');
     const price = p ? p.price : '';
     return `<tr class="${rowCls}" data-idx="${i}">
