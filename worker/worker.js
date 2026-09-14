@@ -2423,7 +2423,7 @@ async function sendTeamsNotification(webhookUrl, changes) {
         body: [
           {
             type: 'TextBlock',
-            text: `⚠️ ${changes.length} Clubber fixture${changes.length > 1 ? 's' : ''} changed`,
+            text: `⚠️ ${changes.length} Approved fixture${changes.length > 1 ? 's' : ''} changed`,
             weight: 'Bolder',
             size: 'Medium',
           },
@@ -2448,7 +2448,7 @@ const TRACKED_FIELDS = ['date', 'time', 'venue'];
 
 export default {
   // Cron handler: runs every hour, fetches all fixtures, diffs against the
-  // stored snapshot for In Clubber fixtures, and sends a Teams alert if anything changed.
+  // stored snapshot for Approved fixtures, and sends a Teams alert if anything changed.
   async scheduled(event, env, ctx) {
     const kv = env.FIXTURE_STATUS;
     if (!kv) return;
@@ -2465,16 +2465,18 @@ export default {
     }
 
     const fixtures = payload.fixtures || [];
-    const overridesMap = payload.overrides || {};
 
-    const snapshot = await getClubberSnapshot(kv);
+    const [snapshot, statusMap] = await Promise.all([
+      getClubberSnapshot(kv),
+      getStatusMap(kv),
+    ]);
     const changes = [];
     const newSnapshot = { ...snapshot };
 
     for (const f of fixtures) {
       const key = fixtureKey(f);
-      const ov = overridesMap[key] || {};
-      if (!ov.clubberCreated) continue;
+      const status = statusMap[key] || f.status || 'Proposed';
+      if (status !== 'Approved') continue;
 
       // Normalised values used for comparison (strips formatting differences)
       const norm = {
