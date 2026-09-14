@@ -2804,10 +2804,13 @@ function buildGamePayload(f) {
 
   const county = isRugby ? 'UK' : f.county;
 
+  const rawTime = f.time ? from12h(f.time) : '';
+  const utcTime = rawTime && rawTime.includes(':') ? dublinToUtc(f.date, rawTime) : '';
+
   const payload = {
     gameScope: 'Club',
     date: f.date,
-    time: dublinToUtc(f.date, from12h(f.time)),
+    time: utcTime,
     county,
     club: teamAResult?.matchedName || normA,
     clubId: teamAResult?.clubId || '',
