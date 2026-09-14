@@ -1802,8 +1802,8 @@ function csvEscape(val){
 function exportSelectedToExcel(){
   const selFixtures=fixtures.filter(f=>selected.has(f.id));
   if(!selFixtures.length) return;
-  const headers=['County','Code','Team A','Team B','Date','Day','Time','Venue','Competition','Round','Status'];
-  const rows=selFixtures.map(f=>[f.county,f.code||'',f.teamA,f.teamB,f.date,f.day,f.time,f.venue,f.competition,f.round,f.status]);
+  const headers=['County','Code','Team A','Team B','Date','Day','Time','Venue','Competition','Round','Status','Clubber Pick','Hero'];
+  const rows=selFixtures.map(f=>[f.county,f.code||'',f.teamA,f.teamB,f.date,f.day,f.time,f.venue,f.competition,f.round,f.status,f.clubberPick?'Yes':'',f.hero?'Yes':'']);
   const csv=[headers,...rows].map(row=>row.map(csvEscape).join(',')).join('\r\n');
   const blob=new Blob(['﻿'+csv],{type:'application/vnd.ms-excel;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
