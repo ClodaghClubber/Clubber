@@ -1448,6 +1448,14 @@ function setupModal(){
             fixtureOverrides[origKey]=Object.assign(fixtureOverrides[origKey]||{}, structEdit);
             saveOverrides();
             syncOverrides([{key:origKey,fields:structEdit}]);
+            // Record manual edit in changelog
+            const sk=stableKeyOf(ex);
+            const now=new Date().toLocaleString('en-IE');
+            const _fl={date:'Date',time:'Time',venue:'Venue',round:'Round',county:'County',teamA:'Team A',teamB:'Team B',competition:'Competition',code:'Code'};
+            const diffs=Object.keys(structEdit).map(k=>({field:_fl[k]||k,from:base[k],to:structEdit[k]}));
+            if(!fixtureChangelog[sk]) fixtureChangelog[sk]={type:'changed',data:{county:ex.county,teamA:ex.teamA,teamB:ex.teamB,competition:ex.competition,date:ex.date,time:ex.time,venue:ex.venue||'',round:ex.round||'',code:ex.code||''},history:[]};
+            fixtureChangelog[sk].history.push({at:now,who:'Manual edit',diffs});
+            fixtureChangelog[sk].type='changed';
           }
         }
         saveCache(); populateFilterOptions(); render();
