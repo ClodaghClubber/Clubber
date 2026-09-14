@@ -112,13 +112,14 @@ function parseSportLomoRows(html) {
       comment: decodeEntities(m[5]),
       venue: decodeEntities(m[6]),
       compname: decodeEntities(m[7]),
+      index: m.index,
     });
   }
   return rows;
 }
 
-// Cork league pages don't carry group info per-row; it's only present in the
-// standings tables as <h3>Group N</h3> followed by team rows.
+// Cork standings tables contain <h3>Group N</h3> followed by team rows.
+// We use this to map each team name → its group label as a round fallback.
 function parseCorkGroupMap(html) {
   const map = {};
   const groupRe = /<h3>Group (\d+)<\/h3>([\s\S]*?)(?=<h3>Group \d+<\/h3>|$)/g;
@@ -149,7 +150,9 @@ async function fetchCorkCompetition(comp) {
     time: r.time,
     venue: r.venue,
     competition: comp.name,
-    round: groupMap[r.home] || '',
+    // data-comment holds knockout stage labels ("Quarter Final", "Relegation Play-Off");
+    // group-stage games have empty comment so fall back to the standings-derived group label.
+    round: r.comment || groupMap[r.home] || '',
   }));
 }
 
@@ -520,7 +523,8 @@ const MEATH_COMPETITIONS = [
   { path: '/fixtures-results/football/club/junior/2026-jfc-balreask-bar-restaurant-guest-accommodation/6facc47c-e383-4452-b247-42989e2ca459/', uuid: '6facc47c-e383-4452-b247-42989e2ca459', sport: 'football', level: 'club', grade: 'junior', name: 'Junior Football Championship' },
 ];
 
-const KERRY_COMPETITIONS = [
+// Static hurling competition (not on the auto-discovered football pages)
+const KERRY_HURLING_COMPETITIONS = [
   {
     path: '/fixtures-results/hurling/club/senior/garveys-supervalu-senior-hurling-championship/124fff6c-39d9-4c73-b284-4e93043d3478/',
     uuid: '124fff6c-39d9-4c73-b284-4e93043d3478',
@@ -529,47 +533,49 @@ const KERRY_COMPETITIONS = [
     grade: 'senior',
     name: 'Senior Hurling Championship',
   },
-  {
-    path: '/fixtures-results/football/club/senior/kerry-petroleum-senior-football-club-championship/f4820e52-a11e-4085-baef-108c5d4d242f/',
-    uuid: 'f4820e52-a11e-4085-baef-108c5d4d242f',
-    sport: 'football',
-    level: 'club',
-    grade: 'senior',
-    name: 'Senior Football Championship',
-  },
-  {
-    path: '/fixtures-results/football/club/intermediate/kerry-petroleum-intermediate-football-club-championship/5016bcb8-80fa-483a-9a28-5a734797ef03/',
-    uuid: '5016bcb8-80fa-483a-9a28-5a734797ef03',
-    sport: 'football',
-    level: 'club',
-    grade: 'intermediate',
-    name: 'Intermediate Football Championship',
-  },
-  {
-    path: '/fixtures-results/football/club/junior/kerry-petroleum-premier-junior-football-club-championship/f85fed08-f780-408c-824e-d12cd3d9aeb9/',
-    uuid: 'f85fed08-f780-408c-824e-d12cd3d9aeb9',
-    sport: 'football',
-    level: 'club',
-    grade: 'junior',
-    name: 'Premier Junior Football Championship',
-  },
-  {
-    path: '/fixtures-results/football/club/junior/kerry-petroleum-junior-football-club-championship/d03c65a4-fd20-4f75-b996-40d7f318b275/',
-    uuid: 'd03c65a4-fd20-4f75-b996-40d7f318b275',
-    sport: 'football',
-    level: 'club',
-    grade: 'junior',
-    name: 'Junior Football Championship',
-  },
-  {
-    path: '/fixtures-results/football/club/junior/kerry-petroleum-novice-football-club-championship/0a802380-c9c7-454c-92d5-3465335c70b1/',
-    uuid: '0a802380-c9c7-454c-92d5-3465335c70b1',
-    sport: 'football',
-    level: 'club',
-    grade: 'junior',
-    name: 'Novice Football Championship',
-  },
 ];
+
+// Derive a human-readable competition name from the URL slug and grade
+function kerryCompNameFromPath(path, grade) {
+  const slug = path.split('/').filter(Boolean).slice(-2, -1)[0] || '';
+  // Strip sponsor prefixes (kerry-petroleum-, garveys-supervalu-, etc.)
+  const cleaned = slug
+    .replace(/^kerry-petroleum-/, '')
+    .replace(/^garveys-supervalu-/, '')
+    .replace(/^mccarthy-insurance-group-/, '')
+    .replace(/-/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase())
+    .trim();
+  return cleaned || `${grade.charAt(0).toUpperCase() + grade.slice(1)} Football Championship`;
+}
+
+// Discover all football competitions from Kerry's listing pages
+async function fetchKerryFootballCompetitions() {
+  const listingPages = [
+    { url: 'https://www.kerrygaa.ie/fixtures-results/football/club/senior/',       sport: 'football', level: 'club', grade: 'senior' },
+    { url: 'https://www.kerrygaa.ie/fixtures-results/football/club/intermediate/', sport: 'football', level: 'club', grade: 'intermediate' },
+    { url: 'https://www.kerrygaa.ie/fixtures-results/football/club/junior/',        sport: 'football', level: 'club', grade: 'junior' },
+  ];
+  const uuidRe = /href="(\/fixtures-results\/football\/club\/[^"]+\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?)"/g;
+  const seen = new Set();
+  const comps = [];
+  await Promise.all(listingPages.map(async ({ url, sport, level, grade }) => {
+    try {
+      const res = await fetch(url, { headers: { 'User-Agent': UA } });
+      if (!res.ok) return;
+      const html = await res.text();
+      let m;
+      while ((m = uuidRe.exec(html)) !== null) {
+        const path = m[1].endsWith('/') ? m[1] : m[1] + '/';
+        const uuid = m[2];
+        if (seen.has(uuid)) continue;
+        seen.add(uuid);
+        comps.push({ path, uuid, sport, level, grade, name: kerryCompNameFromPath(path, grade) });
+      }
+    } catch (_) {}
+  }));
+  return comps;
+}
 
 // Kerry Minor Football Championship Semi-Finals (from kerrygaa.ie, Sep 2026)
 const KERRY_STATIC_FIXTURES = [
@@ -1286,6 +1292,32 @@ const LONGFORD_FIXTURES = [];
   ['Ardagh Moydow GAA','Fr Manning Gaels','12 September 2026','20:15','','SF'],
   ['Mostrim','Cashel','13 September 2026','12:00','','SF'],
 ].forEach(r=>LONGFORD_FIXTURES.push(mkStatic('Longford',r[0],r[1],r[2],r[3],r[4],'Junior C Football Championship',r[5])));
+
+// Longford - Intermediate Football Championship KO Semi Finals (source: longfordgaa.ie Sep 2026)
+[
+  ['Grattan Óg','Mostrim','18 September 2026','','','Semi Final'],
+  ['Seán Connollys','Ballymahon','19 September 2026','','','Semi Final'],
+].forEach(r=>LONGFORD_FIXTURES.push(mkStatic('Longford',r[0],r[1],r[2],r[3],r[4],'Intermediate Football Championship',r[5])));
+
+// Longford - Senior Football Championship KO Semi Finals (source: longfordgaa.ie Sep 2026)
+[
+  ['Abbeylara','Killoe Young Emmets','26 September 2026','12:00','','Semi Final'],
+  ['Clonguish','Dromard','27 September 2026','12:00','','Semi Final'],
+].forEach(r=>LONGFORD_FIXTURES.push(mkStatic('Longford',r[0],r[1],r[2],r[3],r[4],'Senior Football Championship',r[5])));
+
+// Longford - Leinster Club Championships (source: longfordgaa.ie Sep 2026)
+[
+  ['Longford','Kildare','31 October 2026','','','Round 1'],
+].forEach(r=>LONGFORD_FIXTURES.push(mkStatic('Longford',r[0],r[1],r[2],r[3],r[4],'Leinster Club Intermediate Football Championship',r[5])));
+[
+  ['Meath','Longford','31 October 2026','','','Round 1'],
+].forEach(r=>LONGFORD_FIXTURES.push(mkStatic('Longford',r[0],r[1],r[2],r[3],r[4],'Leinster Club Junior Football Championship',r[5])));
+[
+  ['Westmeath','Longford','1 November 2026','14:00','','Round 1'],
+].forEach(r=>LONGFORD_FIXTURES.push(mkStatic('Longford',r[0],r[1],r[2],r[3],r[4],'Leinster Club Senior Football Championship',r[5])));
+[
+  ['Longford Slashers','Europe','7 November 2026','','','Semi Final'],
+].forEach(r=>LONGFORD_FIXTURES.push(mkStatic('Longford',r[0],r[1],r[2],r[3],r[4],'Leinster Club Special Hurling Championship',r[5])));
 
 // ---- Kildare: static data ----
 // Kildare's fixtures aren't published on a scrapable website; they were
@@ -2623,7 +2655,7 @@ export default {
         Promise.all(WATERFORD_COMPETITIONS.map(fetchWaterfordCompetition)).catch(() => []),
         Promise.all(LAOIS_COMPETITIONS.map((c) => fetchCacDirectCompetition('Laois', 'laoisgaa.ie', c, cacDebug))).catch(() => []),
         Promise.all(WEXFORD_COMPETITIONS.map((c) => fetchCacDirectCompetition('Wexford', 'wexford.clubandcounty.com', c, cacDebug))).catch(() => []),
-        Promise.all(KERRY_COMPETITIONS.map((c) => fetchCacDirectCompetition('Kerry', 'www.kerrygaa.ie', c, cacDebug))).catch(() => []),
+        fetchKerryFootballCompetitions().then(dynComps => Promise.all([...KERRY_HURLING_COMPETITIONS, ...dynComps].map((c) => fetchCacDirectCompetition('Kerry', 'www.kerrygaa.ie', c, cacDebug)))).catch(() => []),
         Promise.all(OFFALY_COMPETITIONS.map((c) => fetchCacDirectCompetition('Offaly', 'offaly.gaa.ie', c, cacDebug))).catch(() => []),
         Promise.all(TIPPERARY_COMPETITIONS.map((c) => fetchCacDirectCompetition('Tipperary', 'tipperary.gaa.ie', c, cacDebug))).catch(() => []),
         fetchTipperaryFootball(cacDebug).catch(() => []),
@@ -2660,14 +2692,12 @@ export default {
         ...kilkennyResults.flat().map(fixNames),
         ...monaghanResults.flat().map(fixNames),
         ...meathResults.flat().map(fixNames),
-        ...longfordResults,
-        ...LONGFORD_FIXTURES,
+        ...(longfordResults.length > 0 ? longfordResults : LONGFORD_FIXTURES),
         ...TIPPERARY_FIXTURES,
         ...KILDARE_FIXTURES,
         ...KERRY_STATIC_FIXTURES,
         ...OFFALY_STATIC_FIXTURES,
-        ...carlowLiveResults,
-        ...CARLOW_FIXTURES,
+        ...(carlowLiveResults.length > 0 ? carlowLiveResults : CARLOW_FIXTURES),
         ...(louthLiveResults.length > 0 ? louthLiveResults : LOUTH_FIXTURES.filter(f => !/^Winner|^Loser/i.test(f.teamA) && !/^Winner|^Loser/i.test(f.teamB))),
         ...tipperaryCamogieResults,
         ...kilkennyCamogieResults.flat().map(f => ({ ...fixNames(f), sport: 'Camogie' })),
