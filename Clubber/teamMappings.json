@@ -1841,5 +1841,17 @@
     "Nottingham": "269c12e2-61e0-4e42-b883-81f43fd2efdd",
     "Richmond": "91b189f7-43e2-4e55-848b-a2e68406e5ec",
     "Rotherham Titans": "7003d835-f7e1-49f1-b47a-d5e928b43199"
+  },
+  "BUCS": {
+    "Bath": "e6fc1d5d-5bc9-44af-b914-b30e66af429d",
+    "Brunel": "84203da1-5ba5-4059-9ceb-99c6e8113491",
+    "Cardiff": "f93d2cd6-879e-400b-aa81-bd53c661444b",
+    "Cardiff Met": "27e7cf23-d535-4c80-bd34-8a529e2dcee6",
+    "Durham": "7f816964-dff8-4663-8f8f-f5091b40c859",
+    "Exeter": "a5c714f5-2059-4cfb-98d2-5f6f5394ca11",
+    "Hartpury": "3756e3ac-1609-492c-ac0e-d0497828c51d",
+    "Leeds Beckett": "7cf25afd-ab8c-431d-93a5-08122220b4d3",
+    "Loughborough": "ccd8557b-45e7-4bf2-8e79-c645fe4db45c",
+    "Nottingham": "65f098ac-2a77-40bf-9c9d-5c4cb1a8a0fd"
   }
 }

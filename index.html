@@ -1939,8 +1939,9 @@ document.getElementById('clubberConfirmDownloadBtn').addEventListener('click', (
 
 selectAll.addEventListener('change',()=>{
   const list=getFiltered();
-  if(selectAll.checked) list.forEach(f=>selected.add(f.id));
-  else list.forEach(f=>selected.delete(f.id));
+  // When indeterminate, the browser fires change with checked=true — treat as deselect-all
+  if(selectAll.checked && !selectAll.indeterminate) list.forEach(f=>selected.add(f.id));
+  else { list.forEach(f=>selected.delete(f.id)); selectAll.checked=false; }
   render();
 });
 
@@ -1982,7 +1983,7 @@ approveBtn.addEventListener('click',()=>{
   const names=selFixtures.map(f=>`${f.teamA} v ${f.teamB}`);
   const msg=selFixtures.length===1
     ? `✓ ${label}: ${names[0]}`
-    : `✓ ${selFixtures.length} fixtures ${label.toLowerCase()}: ${names.join(', ')}`;
+    : `✓ ${selFixtures.length} fixtures ${label.toLowerCase()}`;
   showConflictToast(msg,allApproved?'#6b7280':'#16a34a');
 });
 rejectBtn.addEventListener('click',()=>{
