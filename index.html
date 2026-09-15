@@ -3455,9 +3455,12 @@ async function handleLogin(e) {
     if (!data.ok) throw new Error(data.error || 'Login failed');
     authToken = data.token;
     localStorage.setItem(AUTH_TOKEN_KEY, authToken);
-    currentUser = data.username;
-    localStorage.setItem(USER_KEY, currentUser);
-    setUserCookie(currentUser);
+    // Only use login username if user hasn't set a display name — preserves "Set name" value across logins
+    if (!currentUser) {
+      currentUser = data.username;
+      localStorage.setItem(USER_KEY, currentUser);
+      setUserCookie(currentUser);
+    }
     if (data.mustChangePassword) {
       document.getElementById('loginPanel').style.display = 'none';
       document.getElementById('changePasswordPanel').style.display = '';
