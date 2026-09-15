@@ -422,24 +422,40 @@ async function fetchCacDirectCompetition(county, baseDomain, comp, debug) {
   return out;
 }
 
-const KILKENNY_COMPETITIONS = [
-  { path: '/fixtures-results/hurling/club/senior/st-canices-credit-union-senior-hurling-league/bf2fc916-357c-402a-be39-e5c119d1fea9/', uuid: 'bf2fc916-357c-402a-be39-e5c119d1fea9', sport: 'hurling', level: 'club', grade: 'senior', name: 'Senior Hurling League' },
-  { path: '/fixtures-results/hurling/club/senior/st-canices-credit-union-senior-hurling-league/846dd489-2158-45b4-974c-b97f63ab6501/', uuid: '846dd489-2158-45b4-974c-b97f63ab6501', sport: 'hurling', level: 'club', grade: 'senior', name: 'Senior Hurling League Shield' },
-  { path: '/fixtures-results/hurling/club/senior/st-canices-credit-union-div-2-sen-int-league/7d55afe7-9705-40a8-abc9-72bcdc0a8310/', uuid: '7d55afe7-9705-40a8-abc9-72bcdc0a8310', sport: 'hurling', level: 'club', grade: 'senior', name: 'Senior Intermediate Hurling League Div 2' },
-  { path: '/fixtures-results/hurling/club/senior/st-canices-credit-union-div-1-byrne-cup/a941968b-49f9-4fd9-8ff4-b2a332bbca64/', uuid: 'a941968b-49f9-4fd9-8ff4-b2a332bbca64', sport: 'hurling', level: 'club', grade: 'senior', name: 'Senior Hurling Byrne Cup' },
-  { path: '/fixtures-results/hurling/club/intermediate/michael-lyng-motors-hyundai-intermediate-league/1518a925-dc42-4ac2-8e0c-686876f0b28c/', uuid: '1518a925-dc42-4ac2-8e0c-686876f0b28c', sport: 'hurling', level: 'club', grade: 'intermediate', name: 'Intermediate Hurling League' },
-  { path: '/fixtures-results/hurling/club/intermediate/michael-lyng-motors-hyundai-intermediate-hurling/beef3f3e-84b5-4bfe-af1a-4ed2d210b399/', uuid: 'beef3f3e-84b5-4bfe-af1a-4ed2d210b399', sport: 'hurling', level: 'club', grade: 'intermediate', name: 'Intermediate Hurling Championship' },
-  { path: '/fixtures-results/hurling/club/intermediate/michael-lyng-motors-hyundai-hurling-league/93433332-340a-4ce6-b97e-c3cc53a28580/', uuid: '93433332-340a-4ce6-b97e-c3cc53a28580', sport: 'hurling', level: 'club', grade: 'intermediate', name: 'Hurling League Cup Division 1' },
-  { path: '/fixtures-results/hurling/club/intermediate/michael-lyng-motors-hyundai-intermediate-hurling-shield/6cd24378-af07-4bfc-8e17-3b43fc0e998c/', uuid: '6cd24378-af07-4bfc-8e17-3b43fc0e998c', sport: 'hurling', level: 'club', grade: 'intermediate', name: 'Intermediate Hurling League Shield' },
-  { path: '/fixtures-results/hurling/club/junior/jj-kavanagh-premier-jnr-league/f0ffc6b6-6e0b-4a16-b7a8-9de4766b2af6/', uuid: 'f0ffc6b6-6e0b-4a16-b7a8-9de4766b2af6', sport: 'hurling', level: 'club', grade: 'junior', name: 'Premier Junior Hurling League' },
-  { path: '/fixtures-results/hurling/club/junior/jj-kavanagh-premier-jnr-championship/120cd983-7c7c-4ff7-bbb3-49fe67ee97d5/', uuid: '120cd983-7c7c-4ff7-bbb3-49fe67ee97d5', sport: 'hurling', level: 'club', grade: 'junior', name: 'Premier Junior Hurling Championship' },
-  { path: '/fixtures-results/hurling/club/junior/jj-kavanagh-section-b-jnr-hurling-championship/178df9bf-41a6-4144-ac54-a63e6149e4eb/', uuid: '178df9bf-41a6-4144-ac54-a63e6149e4eb', sport: 'hurling', level: 'club', grade: 'junior', name: 'Junior B Hurling Championship' },
-  { path: '/fixtures-results/hurling/club/junior/jj-kavanagh-section-b-jnr-hurling-league/f4802610-7575-46bc-a49f-7c3180b23889/', uuid: 'f4802610-7575-46bc-a49f-7c3180b23889', sport: 'hurling', level: 'club', grade: 'junior', name: 'Junior B Hurling League' },
-  { path: '/fixtures-results/hurling/club/junior/junior-e-hurling/d95a0228-ff17-482e-8dd0-7e126078e8dd/', uuid: 'd95a0228-ff17-482e-8dd0-7e126078e8dd', sport: 'hurling', level: 'club', grade: 'junior', name: 'Junior E Hurling' },
-  { path: '/fixtures-results/hurling/club/junior/junior-f-hurling/e7b5714b-1640-4641-8e01-0495bf34c617/', uuid: 'e7b5714b-1640-4641-8e01-0495bf34c617', sport: 'hurling', level: 'club', grade: 'junior', name: 'Junior F Hurling' },
-  { path: '/fixtures-results/football/club/senior/jj-kavanagh-senior-football-championship-fod/5eaf4009-47fd-487a-8405-1bfb1271cb16/', uuid: '5eaf4009-47fd-487a-8405-1bfb1271cb16', sport: 'football', level: 'club', grade: 'senior', name: 'Senior Football Championship' },
-  { path: '/fixtures-results/football/club/junior/jj-kavanagh-jnr-football-championship-fod/bccea29a-1ad9-4b68-beab-c49e3e8ec99a/', uuid: 'bccea29a-1ad9-4b68-beab-c49e3e8ec99a', sport: 'football', level: 'club', grade: 'junior', name: 'Junior Football Championship' },
-];
+function kilkennyCompNameFromPath(path, grade) {
+  const slug = path.split('/').filter(Boolean).slice(-2, -1)[0] || '';
+  return slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+    .replace(/\bFod\b/, 'FOD').replace(/\bJnr\b/i, 'Junior').replace(/\bSnr\b/i, 'Senior');
+}
+
+async function fetchKilkennyCompetitions() {
+  const listingPages = [
+    { url: 'https://kilkennygaa.ie/fixtures-results/hurling/club/senior/',       sport: 'hurling',  level: 'club', grade: 'senior' },
+    { url: 'https://kilkennygaa.ie/fixtures-results/hurling/club/intermediate/', sport: 'hurling',  level: 'club', grade: 'intermediate' },
+    { url: 'https://kilkennygaa.ie/fixtures-results/hurling/club/junior/',        sport: 'hurling',  level: 'club', grade: 'junior' },
+    { url: 'https://kilkennygaa.ie/fixtures-results/football/club/senior/',       sport: 'football', level: 'club', grade: 'senior' },
+    { url: 'https://kilkennygaa.ie/fixtures-results/football/club/junior/',       sport: 'football', level: 'club', grade: 'junior' },
+  ];
+  const uuidRe = /href="(\/fixtures-results\/(?:hurling|football)\/club\/[^"]+\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?)"/g;
+  const seen = new Set();
+  const comps = [];
+  await Promise.all(listingPages.map(async ({ url, sport, level, grade }) => {
+    try {
+      const res = await fetch(url, { headers: { 'User-Agent': UA } });
+      if (!res.ok) return;
+      const html = await res.text();
+      let m;
+      while ((m = uuidRe.exec(html)) !== null) {
+        const path = m[1].endsWith('/') ? m[1] : m[1] + '/';
+        const uuid = m[2];
+        if (seen.has(uuid)) continue;
+        seen.add(uuid);
+        comps.push({ path, uuid, sport, level, grade, name: kilkennyCompNameFromPath(path, grade) });
+      }
+    } catch (_) {}
+  }));
+  return comps;
+}
 
 const KILKENNY_CAMOGIE_COMPETITIONS = [
   { path: '/fixtures-results/camogie/club/senior/michael-lyng-motors-senior-camogie-championship/72901512-0136-4202-8b3b-911ccd35355f/', uuid: '72901512-0136-4202-8b3b-911ccd35355f', sport: 'camogie', level: 'club', grade: 'senior', name: 'Senior Camogie Championship' },
@@ -2666,7 +2682,7 @@ export default {
         fetchKildare(cacDebug).catch(() => []),
         fetchRoscommonFootball().catch(() => []),
         fetchRoscommonSport('hurling').catch(() => []),
-        Promise.all(KILKENNY_COMPETITIONS.map((c) => fetchCacDirectCompetition('Kilkenny', 'kilkennygaa.ie', c, cacDebug))).catch(() => []),
+        fetchKilkennyCompetitions().then(dynComps => Promise.all(dynComps.map((c) => fetchCacDirectCompetition('Kilkenny', 'kilkennygaa.ie', c, cacDebug)))).catch(() => []),
         Promise.all(MONAGHAN_COMPETITIONS.map((c) => fetchCacDirectCompetition('Monaghan', 'www.monaghangaa.ie', c, cacDebug))).catch(() => []),
         Promise.all(MEATH_COMPETITIONS.map((c) => fetchCacDirectCompetition('Meath', 'meath.gaa.ie', c, cacDebug))).catch(() => []),
         fetchLongford(env.FOIREANN_API_KEY).catch(() => []),
