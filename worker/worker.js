@@ -400,21 +400,36 @@ async function fetchCacDirectCompetition(county, baseDomain, comp, debug) {
   return out;
 }
 
-// Generic competition name from CAC URL slug.
-// Strips leading year, trailing year, and leading sponsor prefixes so the name
-// matches what was stored in KV when static arrays were active (e.g. the slug
-// "st-canices-credit-union-senior-hurling-league-group-a-2026" becomes
-// "Senior Hurling League Group A").
+// Strip leading sponsor prefix from a competition name (display text or slug words).
+// Finds the first recognisable GAA/competition term and drops everything before it
+// so "St Canices Credit Union Senior Hurling League Group A" → "Senior Hurling League Group A".
+// Also includes abbreviated terms (snr, jnr, premier) so we don't accidentally skip
+// qualifier words that precede the sport noun.
+function cacStripSponsor(s) {
+  const gaaFirst = s.search(/\b(senior|snr|intermediate|premier|junior|jnr|section|division|div\b|all[\s-]co|championship|league|cup|football|hurling|camogie|ladies[\s-]football|shield|plate|trophy|county|provincial|grade)\b/i);
+  return gaaFirst > 0 ? s.slice(gaaFirst) : s;
+}
+
+// Name from the option element's display text (preferred — includes sport type
+// which the URL slug may omit, e.g. "JJ Kavanagh Premier Junior Hurling Championship").
+function cacCompNameFromText(text) {
+  let s = cacStripSponsor((text || '').trim());
+  return s
+    .replace(/\bSnr\b/g, 'Senior')
+    .replace(/\bJnr\b/g, 'Junior')
+    .replace(/\bGaa\b/g, 'GAA')
+    .replace(/\bFod\b/g, 'FOD')
+    .trim();
+}
+
+// Fallback name from CAC URL slug when no display text is available.
 function cacCompNameFromPath(path) {
   const slug = path.split('/').filter(Boolean).slice(-2, -1)[0] || '';
   let s = slug
-    .replace(/^20\d\d-/, '')   // leading year (2026-foo)
-    .replace(/-20\d\d$/, '')   // trailing year (foo-2026)
+    .replace(/^20\d\d-/, '')
+    .replace(/-20\d\d$/, '')
     .replace(/-/g, ' ');
-  // Strip leading sponsor prefix: drop everything before the first recognisable
-  // GAA term so "St Canices Credit Union Senior Hurling" → "Senior Hurling".
-  const gaaFirst = s.search(/\b(senior|intermediate|junior|championship|league|cup|football|hurling|camogie|ladies|shield|plate|trophy|county|provincial)\b/i);
-  if (gaaFirst > 0) s = s.slice(gaaFirst);
+  s = cacStripSponsor(s);
   return s
     .replace(/\b\w/g, c => c.toUpperCase())
     .replace(/\bGaa\b/, 'GAA')
@@ -439,10 +454,14 @@ async function fetchCacCountyCompetitions(domain, listingPages, compNameFn) {
     const res = await fetch(url, { headers: { 'User-Agent': UA } });
     if (!res.ok) return comps;
     const html = await res.text();
-    const optRe = /<option\b([^>]+)>/g;
+    // Capture attrs AND the display text between > and </option> so we can use
+    // the full name (e.g. "JJ Kavanagh Premier Junior Hurling Championship") and
+    // strip only the sponsor prefix rather than guessing from the URL slug.
+    const optRe = /<option\b([^>]+)>([^<]*)<\/option>/g;
     let m;
     while ((m = optRe.exec(html)) !== null) {
       const attrs = m[1];
+      const optText = m[2].trim();
       const uuidM = attrs.match(/data-uuid="([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"/);
       if (!uuidM) continue;
       const uuid = uuidM[1];
@@ -456,12 +475,14 @@ async function fetchCacCountyCompetitions(domain, listingPages, compNameFn) {
       const cSport = sportM[1];
       const cGrade = gradeM[1];
       const slug = valueM[1];
-      // Skip underage competitions (u14, u14b, u-14, under-14, minor, feile…)
-      if (/\b(minor|u\d+\w*|under.?\d+|feile|bainne|primary|juvenile|youth)\b/i.test(slug) ||
-          /\b(minor|u\d+\w*|under.?\d+|feile|bainne|primary|juvenile|youth)\b/i.test(cGrade)) continue;
+      // Skip underage competitions (u14, u14b, u-14, under-14, minor, juvenile…)
+      const underageRe = /\b(minor|underage|u\d+\w*|under.?\d+|feile|bainne|primary|juvenile|youth)\b/i;
+      if (underageRe.test(slug) || underageRe.test(cGrade) || underageRe.test(optText)) continue;
       seen.add(uuid);
       const path = `/fixtures-results/${cSport}/club/${cGrade}/${slug}/${uuid}/`;
-      comps.push({ path, uuid, sport: cSport, level: 'club', grade: cGrade, name: nameFn(path, cGrade) });
+      // Prefer the option display text (includes sport type the slug may omit).
+      const name = optText ? cacCompNameFromText(optText) : nameFn(path, cGrade);
+      comps.push({ path, uuid, sport: cSport, level: 'club', grade: cGrade, name });
     }
   } catch (_) {}
   return comps;
