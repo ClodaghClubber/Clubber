@@ -2017,8 +2017,8 @@ const RUGBY_FIXTURES = [];
 
 // BUCS Super Rugby 2026-27
 (function() {
-  const bucsAdd = (competition, round, teamA, teamB, date) => {
-    const f = mkStatic('BUCS', teamA, teamB, date, 'TBC', teamA, competition, round);
+  const bucsAdd = (competition, round, teamA, teamB, date, time = 'TBC') => {
+    const f = mkStatic('BUCS', teamA, teamB, date, time, teamA, competition, round);
     f.sport = 'Rugby';
     RUGBY_FIXTURES.push(f);
   };
