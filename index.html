@@ -2808,7 +2808,7 @@ function buildGamePayload(f) {
     return ''; // Group Stage, Relegation Round, etc. — leave blank
   }
   const isCamogie = (f.competition || '').toLowerCase().includes('camogie');
-  let price = isRugby ? 9.99 : 14.99;
+  let price = f.county === 'BUCS' ? 7.99 : isRugby ? 9.99 : 14.99;
   if (!isRugby && !isCamogie) {
     if (/\bfinal\b/.test(roundNorm) && !/semi/.test(roundNorm) && !/quarter/.test(roundNorm)) price = 19.99;
     else if (/semi.?final|^\bsf\b/.test(roundNorm)) price = 16.99;
