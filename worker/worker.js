@@ -410,12 +410,45 @@ function cacStripSponsor(s) {
   return gaaFirst > 0 ? s.slice(gaaFirst) : s;
 }
 
+// Abbreviation expansion map for counties that use shorthand in option text
+// (e.g. meath.gaa.ie uses "2026 - SFC - Fairyhouse Steel" style option text).
+const CAC_COMP_ABBREVS = {
+  'SFC': 'Senior Football Championship',    'SFC B': 'Senior Football Championship B',
+  'IFC': 'Intermediate Football Championship', 'IFC B': 'Intermediate Football Championship B',
+  'JFC': 'Junior Football Championship',    'JFC B': 'Junior B Football Championship',
+  'JBFC': 'Junior B Football Championship', 'RFC': 'Reserve Football Championship',
+  'SHC': 'Senior Hurling Championship',     'SHC B': 'Senior Hurling Championship B',
+  'IHC': 'Intermediate Hurling Championship', 'IHC B': 'Intermediate Hurling Championship B',
+  'JHC': 'Junior Hurling Championship',     'JHC B': 'Junior B Hurling Championship',
+  'JBHC': 'Junior B Hurling Championship',
+  'IACFC': 'Intermediate A Football Championship',
+  'JACFC': 'Junior A Football Championship',
+};
+
 // Name from the option element's display text (preferred — includes sport type
 // which the URL slug may omit, e.g. "JJ Kavanagh Premier Junior Hurling Championship").
 // sport is passed so we can inject it when the option text omits it
 // (e.g. "JJ Kavanagh Premier Jnr Championship" → "Premier Junior Hurling Championship").
+// Also handles "YEAR - ABBREV - Sponsor" format used by meath.gaa.ie.
 function cacCompNameFromText(text, sport) {
-  let s = cacStripSponsor((text || '').trim());
+  let s = (text || '').trim();
+
+  // Strip leading year prefix "2026 - " or "2025 - " etc.
+  s = s.replace(/^\d{4}\s*[-–]\s*/, '');
+
+  // Expand known competition abbreviation at start (e.g. "SFC - Fairyhouse Steel" → "Senior Football Championship")
+  const abbrevM = s.match(/^([A-Z]{2,6}(?:\s+[AB])?)(?:\s*[-–]\s*.*)?$/);
+  if (abbrevM && CAC_COMP_ABBREVS[abbrevM[1].trim()]) {
+    s = CAC_COMP_ABBREVS[abbrevM[1].trim()];
+  } else {
+    // Strip leading sponsor prefix (anything before first GAA keyword)
+    s = cacStripSponsor(s);
+    // Strip trailing sponsor suffix " - Sponsor Name" (e.g. "Senior FC - Fairyhouse Steel")
+    s = s.replace(/\s*[-–]\s+[A-Z][\w\s,'&.]+$/, '').trim();
+    // Normalise "Div." punctuation
+    s = s.replace(/\bDiv\.\s*/g, 'Div ').trim();
+  }
+
   s = s
     .replace(/\bSnr\b/g, 'Senior')
     .replace(/\bSen\b/g, 'Senior')
