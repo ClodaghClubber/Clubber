@@ -443,10 +443,13 @@ async function fetchCacCountyCompetitions(domain, listingPages, compNameFn) {
       const gradeM = attrs.match(/data-grade="([^"]+)"/);
       const valueM = attrs.match(/value="([^"]+)"/);
       if (!sportM || !gradeM || !valueM) continue;
-      seen.add(uuid);
       const cSport = sportM[1];
       const cGrade = gradeM[1];
       const slug = valueM[1];
+      // Skip underage competitions
+      if (/\b(minor|u\d+|under.?\d+|feile|bainne|primary|juvenile|youth)\b/i.test(slug) ||
+          /\b(minor|u\d+|under.?\d+|feile|bainne|primary|juvenile|youth)\b/i.test(cGrade)) continue;
+      seen.add(uuid);
       const path = `/fixtures-results/${cSport}/club/${cGrade}/${slug}/${uuid}/`;
       comps.push({ path, uuid, sport: cSport, level: 'club', grade: cGrade, name: nameFn(path, cGrade) });
     }
