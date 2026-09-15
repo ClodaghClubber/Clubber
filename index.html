@@ -1027,7 +1027,7 @@ function loadManualFixtures(){
 function applyManualFixtures(){
   const today=new Date().toISOString().slice(0,10);
   fixtures=fixtures.filter(f=>!f.manual);
-  manualFixtures.forEach(f=>fixtures.push(f));
+  manualFixtures.forEach(f=>{ if(f.date>=today) fixtures.push(f); });
 }
 
 // ---- Fixture Change Tracking ----
