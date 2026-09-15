@@ -39,28 +39,6 @@ const WATERFORD_COMPETITIONS = [
   { id: '219171', name: 'Junior B/C HC Cup' },
 ];
 
-const LAOIS_COMPETITIONS = [
-  { path: '/fixtures-results/football/club/senior/senior-football-championship/6cca5451-31a9-4b52-b984-7774b4983e2b/', uuid: '6cca5451-31a9-4b52-b984-7774b4983e2b', sport: 'football', level: 'club', grade: 'senior', name: 'Senior Football Championship' },
-  { path: '/fixtures-results/football/club/intermediate/intermediate-football-championship/5f030f3c-2cf2-4750-9a1d-9be5a3fb21da/', uuid: '5f030f3c-2cf2-4750-9a1d-9be5a3fb21da', sport: 'football', level: 'club', grade: 'intermediate', name: 'Intermediate Football Championship' },
-  { path: '/fixtures-results/hurling/club/senior/senior-hurling-championship/45807eed-e83d-4556-b993-09377bea07bf/', uuid: '45807eed-e83d-4556-b993-09377bea07bf', sport: 'hurling', level: 'club', grade: 'senior', name: 'Senior Hurling Championship' },
-  { path: '/fixtures-results/hurling/club/intermediate/premier-intermediate-hurling-championship/927f09db-237e-41a9-b085-183cb42aabdc/', uuid: '927f09db-237e-41a9-b085-183cb42aabdc', sport: 'hurling', level: 'club', grade: 'intermediate', name: 'Premier Intermediate Hurling Championship' },
-  { path: '/fixtures-results/hurling/club/intermediate/intermediate-hurling-championship/4636a85b-fd62-48e6-a848-235546e99d42/', uuid: '4636a85b-fd62-48e6-a848-235546e99d42', sport: 'hurling', level: 'club', grade: 'intermediate', name: 'Intermediate Hurling Championship' },
-  { path: '/fixtures-results/hurling/club/junior/junior-hurling-championship/a5190d7d-355b-467a-88e4-3761e6e8cd2b/', uuid: 'a5190d7d-355b-467a-88e4-3761e6e8cd2b', sport: 'hurling', level: 'club', grade: 'junior', name: 'Junior Hurling Championship' },
-  { path: '/fixtures-results/hurling/club/junior/junior-b-hurling-championship/9071c776-2e05-4e90-bb77-944639492f04/', uuid: '9071c776-2e05-4e90-bb77-944639492f04', sport: 'hurling', level: 'club', grade: 'junior', name: 'Junior B Hurling Championship' },
-  { path: '/fixtures-results/football/club/junior/junior-football-championship/f1d36b4e-02fd-48bd-873b-5bf1d4292665/', uuid: 'f1d36b4e-02fd-48bd-873b-5bf1d4292665', sport: 'football', level: 'club', grade: 'junior', name: 'Junior Football Championship' },
-  { path: '/fixtures-results/football/club/junior/junior-c-football-championship/5992caa7-279b-49aa-9c7f-e04d45e585c7/', uuid: '5992caa7-279b-49aa-9c7f-e04d45e585c7', sport: 'football', level: 'club', grade: 'junior', name: 'Junior C Football Championship' },
-];
-
-const WEXFORD_COMPETITIONS = [
-  { path: '/fixtures-results/hurling/club/senior/pettitts-supervalue-senior-hurling-championship/b6c4a297-e08a-4188-9e8d-53c06cfaf50e/', uuid: 'b6c4a297-e08a-4188-9e8d-53c06cfaf50e', sport: 'hurling', level: 'club', grade: 'senior', name: 'Senior Hurling Championship' },
-  { path: '/fixtures-results/hurling/club/intermediate/the-courtyard-ferns-intermediate-hurling-championship/c4efa6b0-a7e8-4546-ac7d-068fb7e81294/', uuid: 'c4efa6b0-a7e8-4546-ac7d-068fb7e81294', sport: 'hurling', level: 'club', grade: 'intermediate', name: 'Intermediate Hurling Championship' },
-  { path: '/fixtures-results/hurling/club/intermediate/joyces-expert-wexford-intermediate-a-hurling-championship/3aab003e-2e33-4967-9121-4c23f31e6d79/', uuid: '3aab003e-2e33-4967-9121-4c23f31e6d79', sport: 'hurling', level: 'club', grade: 'intermediate', name: 'Intermediate A Hurling Championship' },
-  { path: '/fixtures-results/football/club/senior/dominic-smith-expert-electrical-senior-football-championship/892924d0-b2fb-40f8-8244-50324f3822c2/', uuid: '892924d0-b2fb-40f8-8244-50324f3822c2', sport: 'football', level: 'club', grade: 'senior', name: 'Senior Football Championship' },
-  { path: '/fixtures-results/football/club/intermediate/amber-springs-and-ashdown-park-hotels-intermediate-football-championship/0d8a8195-b0db-4583-9426-86f5c37d9d5d/', uuid: '0d8a8195-b0db-4583-9426-86f5c37d9d5d', sport: 'football', level: 'club', grade: 'intermediate', name: 'Intermediate Football Championship' },
-  { path: '/fixtures-results/football/club/intermediate/whizzy-internet-intermediate-a-football-championship/2e8cc25f-84e5-430a-9a25-435f02e5e459/', uuid: '2e8cc25f-84e5-430a-9a25-435f02e5e459', sport: 'football', level: 'club', grade: 'intermediate', name: 'Intermediate A Football Championship' },
-  { path: '/fixtures-results/football/club/junior/enniscorthy-farm-systems-junior-a-football-championship/ecad2027-bcc6-47be-8ea2-c14243647ea4/', uuid: 'ecad2027-bcc6-47be-8ea2-c14243647ea4', sport: 'football', level: 'club', grade: 'junior', name: 'Junior A Football Championship' },
-  { path: '/fixtures-results/hurling/club/junior/kavanagh-meats-junior-hurling-championship/d1a5bd31-ed21-4f58-8dcd-1ea914574579/', uuid: 'd1a5bd31-ed21-4f58-8dcd-1ea914574579', sport: 'hurling', level: 'club', grade: 'junior', name: 'Junior Hurling Championship' },
-];
 
 const MONTHS = {
   Jan: 'January', Feb: 'February', Mar: 'March', Apr: 'April',
@@ -422,175 +400,151 @@ async function fetchCacDirectCompetition(county, baseDomain, comp, debug) {
   return out;
 }
 
-function kilkennyCompNameFromPath(path, grade) {
+// Generic competition name from CAC URL slug — strips year prefix and title-cases
+function cacCompNameFromPath(path) {
   const slug = path.split('/').filter(Boolean).slice(-2, -1)[0] || '';
-  return slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
-    .replace(/\bFod\b/, 'FOD').replace(/\bJnr\b/i, 'Junior').replace(/\bSnr\b/i, 'Senior');
+  return slug
+    .replace(/^20\d\d-/, '')
+    .replace(/-/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase())
+    .replace(/\bGaa\b/, 'GAA')
+    .replace(/\bFod\b/, 'FOD')
+    .replace(/\bJnr\b/, 'Junior')
+    .replace(/\bSnr\b/, 'Senior')
+    .trim();
 }
 
-async function fetchKilkennyCompetitions() {
-  const listingPages = [
+// Generic CAC competition discovery — fetches listing pages and extracts UUID hrefs.
+// compNameFn(path, grade) is optional; defaults to cacCompNameFromPath.
+async function fetchCacCountyCompetitions(domain, listingPages, compNameFn) {
+  const nameFn = compNameFn || cacCompNameFromPath;
+  const seen = new Set();
+  const comps = [];
+  const uuidRe = /href="(\/fixtures-results\/(?:hurling|football|camogie|ladies-football)\/club\/[^"]+\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?)"/g;
+  await Promise.all(listingPages.map(async ({ url, sport, level, grade }) => {
+    try {
+      const res = await fetch(url, { headers: { 'User-Agent': UA } });
+      if (!res.ok) return;
+      const html = await res.text();
+      let m;
+      while ((m = uuidRe.exec(html)) !== null) {
+        const path = m[1].endsWith('/') ? m[1] : m[1] + '/';
+        const uuid = m[2];
+        if (seen.has(uuid)) continue;
+        seen.add(uuid);
+        comps.push({ path, uuid, sport, level, grade, name: nameFn(path, grade) });
+      }
+    } catch (_) {}
+  }));
+  return comps;
+}
+
+function fetchKilkennyCompetitions() {
+  return fetchCacCountyCompetitions('kilkennygaa.ie', [
     { url: 'https://kilkennygaa.ie/fixtures-results/hurling/club/senior/',       sport: 'hurling',  level: 'club', grade: 'senior' },
     { url: 'https://kilkennygaa.ie/fixtures-results/hurling/club/intermediate/', sport: 'hurling',  level: 'club', grade: 'intermediate' },
     { url: 'https://kilkennygaa.ie/fixtures-results/hurling/club/junior/',        sport: 'hurling',  level: 'club', grade: 'junior' },
     { url: 'https://kilkennygaa.ie/fixtures-results/football/club/senior/',       sport: 'football', level: 'club', grade: 'senior' },
     { url: 'https://kilkennygaa.ie/fixtures-results/football/club/junior/',       sport: 'football', level: 'club', grade: 'junior' },
-  ];
-  const uuidRe = /href="(\/fixtures-results\/(?:hurling|football)\/club\/[^"]+\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?)"/g;
-  const seen = new Set();
-  const comps = [];
-  await Promise.all(listingPages.map(async ({ url, sport, level, grade }) => {
-    try {
-      const res = await fetch(url, { headers: { 'User-Agent': UA } });
-      if (!res.ok) return;
-      const html = await res.text();
-      let m;
-      while ((m = uuidRe.exec(html)) !== null) {
-        const path = m[1].endsWith('/') ? m[1] : m[1] + '/';
-        const uuid = m[2];
-        if (seen.has(uuid)) continue;
-        seen.add(uuid);
-        comps.push({ path, uuid, sport, level, grade, name: kilkennyCompNameFromPath(path, grade) });
-      }
-    } catch (_) {}
-  }));
-  return comps;
+  ]);
 }
 
-const KILKENNY_CAMOGIE_COMPETITIONS = [
-  { path: '/fixtures-results/camogie/club/senior/michael-lyng-motors-senior-camogie-championship/72901512-0136-4202-8b3b-911ccd35355f/', uuid: '72901512-0136-4202-8b3b-911ccd35355f', sport: 'camogie', level: 'club', grade: 'senior', name: 'Senior Camogie Championship' },
-  { path: '/fixtures-results/camogie/club/intermediate/abbott-intermediate-camogie-championship/74fef4e1-9926-4d5d-8538-4cefeaf0fc1f/', uuid: '74fef4e1-9926-4d5d-8538-4cefeaf0fc1f', sport: 'camogie', level: 'club', grade: 'intermediate', name: 'Intermediate Camogie Championship' },
-];
+function fetchKilkennyAmogieCompetitions() {
+  return fetchCacCountyCompetitions('kilkennycamogie.ie', [
+    { url: 'https://kilkennycamogie.ie/fixtures-results/camogie/club/senior/',       sport: 'camogie', level: 'club', grade: 'senior' },
+    { url: 'https://kilkennycamogie.ie/fixtures-results/camogie/club/intermediate/', sport: 'camogie', level: 'club', grade: 'intermediate' },
+    { url: 'https://kilkennycamogie.ie/fixtures-results/camogie/club/junior/',        sport: 'camogie', level: 'club', grade: 'junior' },
+  ]);
+}
 
-const MONAGHAN_COMPETITIONS = [
-  {
-    path: '/fixtures-results/football/club/senior/senior-football-championship/5d0d90fc-8f40-4280-817b-7a5d71b6d62a/',
-    uuid: '5d0d90fc-8f40-4280-817b-7a5d71b6d62a',
-    sport: 'football',
-    level: 'club',
-    grade: 'senior',
-    name: 'Senior Football Championship',
-  },
-  { path: '/fixtures-results/football/club/senior/senior-football-league/9f2a204f-20cd-4cec-852b-2760b4216812/', uuid: '9f2a204f-20cd-4cec-852b-2760b4216812', sport: 'football', level: 'club', grade: 'senior', name: 'Senior Football League' },
-  {
-    path: '/fixtures-results/football/club/intermediate/intermediate-football-championship/1b9079d3-c2aa-4c06-9479-17b8fbbd93a3/',
-    uuid: '1b9079d3-c2aa-4c06-9479-17b8fbbd93a3',
-    sport: 'football',
-    level: 'club',
-    grade: 'intermediate',
-    name: 'Intermediate Football Championship',
-  },
-  {
-    path: '/fixtures-results/football/club/junior/junior-football-championship/b5a5d354-a19b-482b-8826-119499a17114/',
-    uuid: 'b5a5d354-a19b-482b-8826-119499a17114',
-    sport: 'football',
-    level: 'club',
-    grade: 'junior',
-    name: 'Junior Football Championship',
-  },
-  {
-    path: '/fixtures-results/hurling/club/senior/senior-hurling-championship/de727338-5845-4233-8236-beffed1b5160/',
-    uuid: 'de727338-5845-4233-8236-beffed1b5160',
-    sport: 'hurling',
-    level: 'club',
-    grade: 'senior',
-    name: 'Senior Hurling Championship',
-  },
-  {
-    path: '/fixtures-results/hurling/club/senior/senior-hurling-league-2026/0f17c081-8272-4ace-9829-e212c19f1c6b/',
-    uuid: '0f17c081-8272-4ace-9829-e212c19f1c6b',
-    sport: 'hurling',
-    level: 'club',
-    grade: 'senior',
-    name: 'Senior Hurling League',
-  },
-];
+function fetchLaoisCompetitions() {
+  return fetchCacCountyCompetitions('laoisgaa.ie', [
+    { url: 'https://laoisgaa.ie/fixtures-results/football/club/senior/',       sport: 'football', level: 'club', grade: 'senior' },
+    { url: 'https://laoisgaa.ie/fixtures-results/football/club/intermediate/', sport: 'football', level: 'club', grade: 'intermediate' },
+    { url: 'https://laoisgaa.ie/fixtures-results/football/club/junior/',        sport: 'football', level: 'club', grade: 'junior' },
+    { url: 'https://laoisgaa.ie/fixtures-results/hurling/club/senior/',        sport: 'hurling',  level: 'club', grade: 'senior' },
+    { url: 'https://laoisgaa.ie/fixtures-results/hurling/club/intermediate/',  sport: 'hurling',  level: 'club', grade: 'intermediate' },
+    { url: 'https://laoisgaa.ie/fixtures-results/hurling/club/junior/',         sport: 'hurling',  level: 'club', grade: 'junior' },
+  ]);
+}
 
-const MEATH_COMPETITIONS = [
-  { path: '/fixtures-results/hurling/club/senior/2026-shc-ted-murtagh-clothing-footwear-trim/ede1b15c-2b0f-40d4-b69f-0125767718f8/', uuid: 'ede1b15c-2b0f-40d4-b69f-0125767718f8', sport: 'hurling', level: 'club', grade: 'senior', name: 'Senior Hurling Championship' },
-  { path: '/fixtures-results/hurling/club/intermediate/2026-ihc-abbey-pharmacy/7a4e5912-efee-486f-b4de-b69563253d31/', uuid: '7a4e5912-efee-486f-b4de-b69563253d31', sport: 'hurling', level: 'club', grade: 'intermediate', name: 'Intermediate Hurling Championship' },
-  { path: '/fixtures-results/hurling/club/intermediate/2026-ihc-b-abbey-pharmacy/63320d74-f53a-456f-a21d-331965580e49/', uuid: '63320d74-f53a-456f-a21d-331965580e49', sport: 'hurling', level: 'club', grade: 'intermediate', name: 'Intermediate Hurling Championship B' },
-  { path: '/fixtures-results/football/club/senior/2026-sfc-gr-a-fairyhouse-steel/6d1e3b7a-13f7-40b3-9538-43c568d94770/', uuid: '6d1e3b7a-13f7-40b3-9538-43c568d94770', sport: 'football', level: 'club', grade: 'senior', name: 'Senior Football Championship' },
-  { path: '/fixtures-results/football/club/senior/2026-sfc-gr-b-fairyhouse-steel/6559156e-a91e-418e-8db5-d4261f3d06a2/', uuid: '6559156e-a91e-418e-8db5-d4261f3d06a2', sport: 'football', level: 'club', grade: 'senior', name: 'Senior Football Championship' },
-  { path: '/fixtures-results/football/club/senior/2026-sfc-gr-c-fairyhouse-steel/11d7a6ba-9d24-4451-ab0b-6429430b3c77/', uuid: '11d7a6ba-9d24-4451-ab0b-6429430b3c77', sport: 'football', level: 'club', grade: 'senior', name: 'Senior Football Championship' },
-  { path: '/fixtures-results/football/club/senior/2026-sfc-gr-d-fairyhouse-steel/72b01516-aacf-4474-9f80-743cf35f58f5/', uuid: '72b01516-aacf-4474-9f80-743cf35f58f5', sport: 'football', level: 'club', grade: 'senior', name: 'Senior Football Championship' },
-  { path: '/fixtures-results/football/club/senior/2026-sfc-fairyhouse-steel/25a14edf-b4f6-4bcb-ba26-27ad50353860/', uuid: '25a14edf-b4f6-4bcb-ba26-27ad50353860', sport: 'football', level: 'club', grade: 'senior', name: 'Senior Football Championship' },
-  { path: '/fixtures-results/football/club/intermediate/2026-iacfc-meath-cleaning-supplies/699b7e0f-a44c-4c4b-b76c-551a1b002c13/', uuid: '699b7e0f-a44c-4c4b-b76c-551a1b002c13', sport: 'football', level: 'club', grade: 'intermediate', name: 'Intermediate A Football Championship' },
-  { path: '/fixtures-results/football/club/intermediate/2026-ifc-gr-a-meade-farm/ab5bfe87-ec32-481b-b082-704908036527/', uuid: 'ab5bfe87-ec32-481b-b082-704908036527', sport: 'football', level: 'club', grade: 'intermediate', name: 'Intermediate Football Championship' },
-  { path: '/fixtures-results/football/club/intermediate/2026-ifc-gr-b-meade-farm/f395ac08-91fe-4c4f-ba54-940187674cb7/', uuid: 'f395ac08-91fe-4c4f-ba54-940187674cb7', sport: 'football', level: 'club', grade: 'intermediate', name: 'Intermediate Football Championship' },
-  { path: '/fixtures-results/football/club/intermediate/2026-ifc-gr-c-meade-farm/ec52c8c0-58e7-4d73-9b0d-7e66247e21ce/', uuid: 'ec52c8c0-58e7-4d73-9b0d-7e66247e21ce', sport: 'football', level: 'club', grade: 'intermediate', name: 'Intermediate Football Championship' },
-  { path: '/fixtures-results/football/club/intermediate/2026-ifc-gr-d-meade-farm/78bce439-10c8-4e7b-958f-58839f72a93f/', uuid: '78bce439-10c8-4e7b-958f-58839f72a93f', sport: 'football', level: 'club', grade: 'intermediate', name: 'Intermediate Football Championship' },
-  // Hurling: missing grades
-  { path: '/fixtures-results/hurling/club/senior/2026-shc-b-loman-dempsey-property-consultants/aab21a16-e475-429c-8aad-8239041e779b/', uuid: 'aab21a16-e475-429c-8aad-8239041e779b', sport: 'hurling', level: 'club', grade: 'senior', name: 'Senior Hurling Championship B' },
-  { path: '/fixtures-results/hurling/club/junior/2026-jhc-k-windows-doors/050f3a24-335b-4932-a3f8-59bce6d02376/', uuid: '050f3a24-335b-4932-a3f8-59bce6d02376', sport: 'hurling', level: 'club', grade: 'junior', name: 'Junior Hurling Championship' },
-  // Relegation cup
-  { path: '/fixtures-results/hurling/club/junior/2026-corn-donal-o-loingsigh/8bcf6906-a025-4e58-be13-aba961d8212a/', uuid: '8bcf6906-a025-4e58-be13-aba961d8212a', sport: 'hurling', level: 'club', grade: 'junior', name: 'Corn Donal O Loingsigh (Hurling Relegation)' },
-  // Football: IFC knockout + Corn na Bóinne + Junior grades
-  { path: '/fixtures-results/football/club/intermediate/2026-ifc-meade-farm/d4103129-88fb-43aa-8642-4f3f74032c66/', uuid: 'd4103129-88fb-43aa-8642-4f3f74032c66', sport: 'football', level: 'club', grade: 'intermediate', name: 'Intermediate Football Championship' },
-  { path: '/fixtures-results/football/club/intermediate/2026-gaelic-games-equipment-corn-na-boinne/45c1e9db-d97d-476b-80bb-d76ca0c71190/', uuid: '45c1e9db-d97d-476b-80bb-d76ca0c71190', sport: 'football', level: 'club', grade: 'intermediate', name: 'Corn na Boinne (IFC Cup)' },
-  { path: '/fixtures-results/football/club/junior/2026-jacfc-div-1-meath-cleaning-supplies/5d13b902-0d71-4795-ab1a-fcc2ce10f5bb/', uuid: '5d13b902-0d71-4795-ab1a-fcc2ce10f5bb', sport: 'football', level: 'club', grade: 'junior', name: 'Junior A Football Championship Div 1' },
-  { path: '/fixtures-results/football/club/junior/2026-jacfc-div-2-meath-cleaning-supplies/3e04ee84-34bb-40ed-83da-91fe7332588e/', uuid: '3e04ee84-34bb-40ed-83da-91fe7332588e', sport: 'football', level: 'club', grade: 'junior', name: 'Junior A Football Championship Div 2' },
-  { path: '/fixtures-results/football/club/junior/2026-jacfc-div-3-meath-cleaning-supplies/592c4832-fb13-41ca-b06f-5db5568d981e/', uuid: '592c4832-fb13-41ca-b06f-5db5568d981e', sport: 'football', level: 'club', grade: 'junior', name: 'Junior A Football Championship Div 3' },
-  { path: '/fixtures-results/football/club/junior/2026-jacfc-div-4-meath-cleaning-supplies/85762bd5-bcc4-4d6b-98d7-ea7621d3d63a/', uuid: '85762bd5-bcc4-4d6b-98d7-ea7621d3d63a', sport: 'football', level: 'club', grade: 'junior', name: 'Junior A Football Championship Div 4' },
-  { path: '/fixtures-results/football/club/junior/2026-jacfc-div-5-meath-cleaning-supplies/51477063-1004-45e8-9766-8f35d8f6a22e/', uuid: '51477063-1004-45e8-9766-8f35d8f6a22e', sport: 'football', level: 'club', grade: 'junior', name: 'Junior A Football Championship Div 5' },
-  { path: '/fixtures-results/football/club/junior/2026-jacfc-div-6-meath-cleaning-supplies/7d3ea908-28a8-42cf-bcbf-adaa45180c4c/', uuid: '7d3ea908-28a8-42cf-bcbf-adaa45180c4c', sport: 'football', level: 'club', grade: 'junior', name: 'Junior A Football Championship Div 6' },
-  { path: '/fixtures-results/football/club/junior/2026-jacfc-div-7-meath-cleaning-supplies/e6958d69-90a7-4d82-986c-bba08bb875d0/', uuid: 'e6958d69-90a7-4d82-986c-bba08bb875d0', sport: 'football', level: 'club', grade: 'junior', name: 'Junior A Football Championship Div 7' },
-  { path: '/fixtures-results/football/club/junior/2026-jbfc-coolrite/75a67535-326c-49e2-a885-6ae5b39d2101/', uuid: '75a67535-326c-49e2-a885-6ae5b39d2101', sport: 'football', level: 'club', grade: 'junior', name: 'Junior B Football Championship' },
-  { path: '/fixtures-results/football/club/junior/2026-jfc-balreask-bar-restaurant-guest-accommodation/6facc47c-e383-4452-b247-42989e2ca459/', uuid: '6facc47c-e383-4452-b247-42989e2ca459', sport: 'football', level: 'club', grade: 'junior', name: 'Junior Football Championship' },
-];
+function fetchWexfordCompetitions() {
+  return fetchCacCountyCompetitions('wexford.clubandcounty.com', [
+    { url: 'https://wexford.clubandcounty.com/fixtures-results/football/club/senior/',       sport: 'football', level: 'club', grade: 'senior' },
+    { url: 'https://wexford.clubandcounty.com/fixtures-results/football/club/intermediate/', sport: 'football', level: 'club', grade: 'intermediate' },
+    { url: 'https://wexford.clubandcounty.com/fixtures-results/football/club/junior/',        sport: 'football', level: 'club', grade: 'junior' },
+    { url: 'https://wexford.clubandcounty.com/fixtures-results/hurling/club/senior/',        sport: 'hurling',  level: 'club', grade: 'senior' },
+    { url: 'https://wexford.clubandcounty.com/fixtures-results/hurling/club/intermediate/',  sport: 'hurling',  level: 'club', grade: 'intermediate' },
+    { url: 'https://wexford.clubandcounty.com/fixtures-results/hurling/club/junior/',         sport: 'hurling',  level: 'club', grade: 'junior' },
+  ]);
+}
 
-// Static hurling competition (not on the auto-discovered football pages)
-const KERRY_HURLING_COMPETITIONS = [
-  {
-    path: '/fixtures-results/hurling/club/senior/garveys-supervalu-senior-hurling-championship/124fff6c-39d9-4c73-b284-4e93043d3478/',
-    uuid: '124fff6c-39d9-4c73-b284-4e93043d3478',
-    sport: 'hurling',
-    level: 'club',
-    grade: 'senior',
-    name: 'Senior Hurling Championship',
-  },
-];
+function fetchMonaghanCompetitions() {
+  return fetchCacCountyCompetitions('www.monaghangaa.ie', [
+    { url: 'https://www.monaghangaa.ie/fixtures-results/football/club/senior/',       sport: 'football', level: 'club', grade: 'senior' },
+    { url: 'https://www.monaghangaa.ie/fixtures-results/football/club/intermediate/', sport: 'football', level: 'club', grade: 'intermediate' },
+    { url: 'https://www.monaghangaa.ie/fixtures-results/football/club/junior/',        sport: 'football', level: 'club', grade: 'junior' },
+    { url: 'https://www.monaghangaa.ie/fixtures-results/hurling/club/senior/',        sport: 'hurling',  level: 'club', grade: 'senior' },
+    { url: 'https://www.monaghangaa.ie/fixtures-results/hurling/club/intermediate/',  sport: 'hurling',  level: 'club', grade: 'intermediate' },
+  ]);
+}
 
-// Derive a human-readable competition name from the URL slug and grade
+function fetchMeathCompetitions() {
+  return fetchCacCountyCompetitions('meath.gaa.ie', [
+    { url: 'https://meath.gaa.ie/fixtures-results/football/club/senior/',       sport: 'football', level: 'club', grade: 'senior' },
+    { url: 'https://meath.gaa.ie/fixtures-results/football/club/intermediate/', sport: 'football', level: 'club', grade: 'intermediate' },
+    { url: 'https://meath.gaa.ie/fixtures-results/football/club/junior/',        sport: 'football', level: 'club', grade: 'junior' },
+    { url: 'https://meath.gaa.ie/fixtures-results/hurling/club/senior/',        sport: 'hurling',  level: 'club', grade: 'senior' },
+    { url: 'https://meath.gaa.ie/fixtures-results/hurling/club/intermediate/',  sport: 'hurling',  level: 'club', grade: 'intermediate' },
+    { url: 'https://meath.gaa.ie/fixtures-results/hurling/club/junior/',         sport: 'hurling',  level: 'club', grade: 'junior' },
+  ]);
+}
+
+function fetchOffalyCompetitions() {
+  return fetchCacCountyCompetitions('offaly.gaa.ie', [
+    { url: 'https://offaly.gaa.ie/fixtures-results/football/club/senior/',       sport: 'football', level: 'club', grade: 'senior' },
+    { url: 'https://offaly.gaa.ie/fixtures-results/football/club/intermediate/', sport: 'football', level: 'club', grade: 'intermediate' },
+    { url: 'https://offaly.gaa.ie/fixtures-results/football/club/junior/',        sport: 'football', level: 'club', grade: 'junior' },
+    { url: 'https://offaly.gaa.ie/fixtures-results/hurling/club/senior/',        sport: 'hurling',  level: 'club', grade: 'senior' },
+    { url: 'https://offaly.gaa.ie/fixtures-results/hurling/club/intermediate/',  sport: 'hurling',  level: 'club', grade: 'intermediate' },
+    { url: 'https://offaly.gaa.ie/fixtures-results/hurling/club/junior/',         sport: 'hurling',  level: 'club', grade: 'junior' },
+  ]);
+}
+
+function fetchTipperaryHurlingCompetitions() {
+  return fetchCacCountyCompetitions('tipperary.gaa.ie', [
+    { url: 'https://tipperary.gaa.ie/fixtures-results/hurling/club/senior/',       sport: 'hurling', level: 'club', grade: 'senior' },
+    { url: 'https://tipperary.gaa.ie/fixtures-results/hurling/club/intermediate/', sport: 'hurling', level: 'club', grade: 'intermediate' },
+    { url: 'https://tipperary.gaa.ie/fixtures-results/hurling/club/junior/',        sport: 'hurling', level: 'club', grade: 'junior' },
+  ]);
+}
+
+
+
+// Discover all Kerry competitions (football + hurling) from listing pages.
+// Kerry URLs use sponsor prefixes — strip known ones for cleaner display names.
 function kerryCompNameFromPath(path, grade) {
   const slug = path.split('/').filter(Boolean).slice(-2, -1)[0] || '';
-  // Strip sponsor prefixes (kerry-petroleum-, garveys-supervalu-, etc.)
   const cleaned = slug
     .replace(/^kerry-petroleum-/, '')
     .replace(/^garveys-supervalu-/, '')
     .replace(/^mccarthy-insurance-group-/, '')
+    .replace(/^20\d\d-/, '')
     .replace(/-/g, ' ')
     .replace(/\b\w/g, c => c.toUpperCase())
     .trim();
-  return cleaned || `${grade.charAt(0).toUpperCase() + grade.slice(1)} Football Championship`;
+  return cleaned || `${grade.charAt(0).toUpperCase() + grade.slice(1)} Championship`;
 }
 
-// Discover all football competitions from Kerry's listing pages
-async function fetchKerryFootballCompetitions() {
-  const listingPages = [
+function fetchKerryCompetitions() {
+  return fetchCacCountyCompetitions('www.kerrygaa.ie', [
     { url: 'https://www.kerrygaa.ie/fixtures-results/football/club/senior/',       sport: 'football', level: 'club', grade: 'senior' },
     { url: 'https://www.kerrygaa.ie/fixtures-results/football/club/intermediate/', sport: 'football', level: 'club', grade: 'intermediate' },
     { url: 'https://www.kerrygaa.ie/fixtures-results/football/club/junior/',        sport: 'football', level: 'club', grade: 'junior' },
-  ];
-  const uuidRe = /href="(\/fixtures-results\/football\/club\/[^"]+\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?)"/g;
-  const seen = new Set();
-  const comps = [];
-  await Promise.all(listingPages.map(async ({ url, sport, level, grade }) => {
-    try {
-      const res = await fetch(url, { headers: { 'User-Agent': UA } });
-      if (!res.ok) return;
-      const html = await res.text();
-      let m;
-      while ((m = uuidRe.exec(html)) !== null) {
-        const path = m[1].endsWith('/') ? m[1] : m[1] + '/';
-        const uuid = m[2];
-        if (seen.has(uuid)) continue;
-        seen.add(uuid);
-        comps.push({ path, uuid, sport, level, grade, name: kerryCompNameFromPath(path, grade) });
-      }
-    } catch (_) {}
-  }));
-  return comps;
+    { url: 'https://www.kerrygaa.ie/fixtures-results/hurling/club/senior/',        sport: 'hurling',  level: 'club', grade: 'senior' },
+    { url: 'https://www.kerrygaa.ie/fixtures-results/hurling/club/intermediate/',  sport: 'hurling',  level: 'club', grade: 'intermediate' },
+    { url: 'https://www.kerrygaa.ie/fixtures-results/hurling/club/junior/',         sport: 'hurling',  level: 'club', grade: 'junior' },
+  ], kerryCompNameFromPath);
 }
 
 // Kerry Minor Football Championship (from kerrygaa.ie, Sep 2026)
@@ -626,223 +580,12 @@ const KERRY_NAME_FIX = {
 };
 function fixKerryName(s) { return KERRY_NAME_FIX[s] || s; }
 
-const OFFALY_COMPETITIONS = [
-  {
-    path: '/fixtures-results/hurling/club/senior/2026-senior-hurling-championship/7441793c-f051-4489-8efb-cd7e41617f74/',
-    uuid: '7441793c-f051-4489-8efb-cd7e41617f74',
-    sport: 'hurling',
-    level: 'club',
-    grade: 'senior',
-    name: 'Senior Hurling Championship',
-  },
-  {
-    path: '/fixtures-results/hurling/club/senior/2026-senior-b-hurling-championship/c9ba5708-a15e-4a1e-98da-32f0af567fc0/',
-    uuid: 'c9ba5708-a15e-4a1e-98da-32f0af567fc0',
-    sport: 'hurling',
-    level: 'club',
-    grade: 'senior',
-    name: 'Senior B Hurling Championship',
-  },
-  {
-    path: '/fixtures-results/hurling/club/intermediate/2026-intermediate-hurling-championship/beab9c19-3849-4221-bf48-cdf0fe8b609b/',
-    uuid: 'beab9c19-3849-4221-bf48-cdf0fe8b609b',
-    sport: 'hurling',
-    level: 'club',
-    grade: 'intermediate',
-    name: 'Intermediate Hurling Championship',
-  },
-  {
-    path: '/fixtures-results/football/club/senior/2026-senior-football-championship/b4e6f100-d62e-4fb1-9a81-3131563be7f2/',
-    uuid: 'b4e6f100-d62e-4fb1-9a81-3131563be7f2',
-    sport: 'football',
-    level: 'club',
-    grade: 'senior',
-    name: 'Senior Football Championship',
-  },
-  {
-    path: '/fixtures-results/football/club/senior/2026-senior-b-football-championship/b0eaefd7-a6d0-4c86-a124-50b05a6c6c2d/',
-    uuid: 'b0eaefd7-a6d0-4c86-a124-50b05a6c6c2d',
-    sport: 'football',
-    level: 'club',
-    grade: 'senior',
-    name: 'Senior B Football Championship',
-  },
-  {
-    path: '/fixtures-results/football/club/intermediate/2026-intermediate-football-championship/5aeb35ee-d903-4133-b9ca-9fbf02e22972/',
-    uuid: '5aeb35ee-d903-4133-b9ca-9fbf02e22972',
-    sport: 'football',
-    level: 'club',
-    grade: 'intermediate',
-    name: 'Intermediate Football Championship',
-  },
-  { path: '/fixtures-results/football/club/junior/2026-junior-a-football-championship/49b658c2-54e0-4807-a1c6-d36e292a1a58/', uuid: '49b658c2-54e0-4807-a1c6-d36e292a1a58', sport: 'football', level: 'club', grade: 'junior', name: 'Junior A Football Championship' },
-  { path: '/fixtures-results/football/club/junior/2026-junior-c-football-championship/e4053741-b169-4c4f-9a89-998c3dda70cb/', uuid: 'e4053741-b169-4c4f-9a89-998c3dda70cb', sport: 'football', level: 'club', grade: 'junior', name: 'Junior C Football Championship' },
-  { path: '/fixtures-results/hurling/club/junior/2026-junior-a-hurling-championship/d81c1c3f-44e4-438b-9e24-a6c540a05c32/', uuid: 'd81c1c3f-44e4-438b-9e24-a6c540a05c32', sport: 'hurling', level: 'club', grade: 'junior', name: 'Junior A Hurling Championship' },
-  { path: '/fixtures-results/hurling/club/junior/junior-b-hurling-championship/bd740ba1-87e1-4085-ac83-51acbadc7798/', uuid: 'bd740ba1-87e1-4085-ac83-51acbadc7798', sport: 'hurling', level: 'club', grade: 'junior', name: 'Junior B Hurling Championship' },
-  { path: '/fixtures-results/hurling/club/junior/junior-c-hurling-championship/8f59ecee-9c26-40be-b981-b3a3eb112daa/', uuid: '8f59ecee-9c26-40be-b981-b3a3eb112daa', sport: 'hurling', level: 'club', grade: 'junior', name: 'Junior C Hurling Championship' },
-];
 
 // Offaly U20 Hurling Championship Semi-Final Replay (from offaly.gaa.ie, Sep 2026)
 const OFFALY_STATIC_FIXTURES = [
   mkStatic('Offaly','St Rynaghs','SBK','10 September 2026','19:30','Coolderry','U20 Hurling Championship','SF'),
 ];
 
-const TIPPERARY_COMPETITIONS = [
-  {
-    path: '/fixtures-results/hurling/club/senior/fbd-insurance-county-tipperary-senior-hurling-championship-dan-breen-cup/1f70265b-652f-43e4-a23e-fa36a3a23f7f/',
-    uuid: '1f70265b-652f-43e4-a23e-fa36a3a23f7f',
-    sport: 'hurling',
-    level: 'club',
-    grade: 'senior',
-    name: 'Tipperary Senior Hurling Championship',
-  },
-  {
-    path: '/fixtures-results/hurling/club/intermediate/fbd-insurance-county-tipperary-intermediate-hurling-championship-michael-maher-cup/a23baf2f-0e3c-4947-98f1-4411ebda06c8/',
-    uuid: 'a23baf2f-0e3c-4947-98f1-4411ebda06c8',
-    sport: 'hurling',
-    level: 'club',
-    grade: 'intermediate',
-    name: 'Tipperary Intermediate Hurling Championship',
-  },
-  {
-    path: '/fixtures-results/hurling/club/intermediate/fbd-insurance-county-tipperary-premier-intermediate-hurling-championship-seamus-o-riain-cup/06b306f8-f68a-4099-9dbc-0e38b6f7ed55/',
-    uuid: '06b306f8-f68a-4099-9dbc-0e38b6f7ed55',
-    sport: 'hurling',
-    level: 'club',
-    grade: 'intermediate',
-    name: 'Tipperary Premier Intermediate Hurling Championship',
-  },
-  {
-    path: '/fixtures-results/hurling/club/intermediate/doran-oil-mid-premier-intermediate-hurling-championship/dd2a713f-6a9f-4915-8712-82f9dd86043b/',
-    uuid: 'dd2a713f-6a9f-4915-8712-82f9dd86043b',
-    sport: 'hurling',
-    level: 'club',
-    grade: 'intermediate',
-    name: 'Mid Tipperary Premier Intermediate Hurling Championship',
-  },
-  {
-    path: '/fixtures-results/hurling/club/intermediate/roadstone-mid-intermediate-hurling-championship/7904e415-bf9e-45ab-9ca3-ae2f3416bfd1/',
-    uuid: '7904e415-bf9e-45ab-9ca3-ae2f3416bfd1',
-    sport: 'hurling',
-    level: 'club',
-    grade: 'intermediate',
-    name: 'Mid Tipperary Intermediate Hurling Championship',
-  },
-  {
-    path: '/fixtures-results/hurling/club/senior/cm-signs-cahill-cup/3aa03c3c-b46c-4a58-ba4e-bf77cf80a114/',
-    uuid: '3aa03c3c-b46c-4a58-ba4e-bf77cf80a114',
-    sport: 'hurling',
-    level: 'club',
-    grade: 'senior',
-    name: 'Mid Tipperary Cahill Cup',
-  },
-  {
-    path: '/fixtures-results/hurling/club/senior/buckley-car-sales-prem-inter-hurling/fd42b45a-9af6-43f7-87c7-3c2df798aaab/',
-    uuid: 'fd42b45a-9af6-43f7-87c7-3c2df798aaab',
-    sport: 'hurling',
-    level: 'club',
-    grade: 'senior',
-    name: 'North Tipperary Premier Intermediate Hurling Championship',
-  },
-  {
-    path: '/fixtures-results/hurling/club/senior/jim-mcloughney-menswear-intermediate-hurling/22baeb6c-1093-4003-95b3-c9ff0894126a/',
-    uuid: '22baeb6c-1093-4003-95b3-c9ff0894126a',
-    sport: 'hurling',
-    level: 'club',
-    grade: 'senior',
-    name: 'North Tipperary Intermediate Hurling Championship',
-  },
-  {
-    path: '/fixtures-results/hurling/club/intermediate/south-tipperary-intermediate-hurling-championship/1bbeae2e-2cb0-486c-b588-678b426335bf/',
-    uuid: '1bbeae2e-2cb0-486c-b588-678b426335bf',
-    sport: 'hurling',
-    level: 'club',
-    grade: 'intermediate',
-    name: 'South Tipperary Intermediate Hurling Championship',
-  },
-  {
-    path: '/fixtures-results/hurling/club/intermediate/west-tipperary-premier-intermediate-hurling-championship/d506ec46-01af-4113-88d2-6114dc7b8969/',
-    uuid: 'd506ec46-01af-4113-88d2-6114dc7b8969',
-    sport: 'hurling',
-    level: 'club',
-    grade: 'intermediate',
-    name: 'West Tipperary Premier Intermediate Hurling Championship',
-  },
-  {
-    path: '/fixtures-results/hurling/club/intermediate/west-tipperary-intermediate-hurling-championship-2026/f39d79ac-ac77-41f1-886c-0061a660dd8a/',
-    uuid: 'f39d79ac-ac77-41f1-886c-0061a660dd8a',
-    sport: 'hurling',
-    level: 'club',
-    grade: 'intermediate',
-    name: 'West Tipperary Intermediate Hurling Championship',
-  },
-  {
-    path: '/fixtures-results/hurling/club/senior/crosco-cup-hurling/b7493f36-1d05-459d-80ec-45f3366b5fc2/',
-    uuid: 'b7493f36-1d05-459d-80ec-45f3366b5fc2',
-    sport: 'hurling',
-    level: 'club',
-    grade: 'senior',
-    name: 'West Tipperary Crosco Cup',
-  },
-  // Relegation cups
-  {
-    path: '/fixtures-results/hurling/club/senior/fbd-insurance-tipperary-senior-hurling-relegation/93a8b7d4-70f5-490c-808a-2ec90d01c19b/',
-    uuid: '93a8b7d4-70f5-490c-808a-2ec90d01c19b',
-    sport: 'hurling',
-    level: 'club',
-    grade: 'senior',
-    name: 'Tipperary Senior Hurling Relegation',
-  },
-  {
-    path: '/fixtures-results/hurling/club/intermediate/fbd-insurance-tipperary-intermediate-hurling-relegation/db30a39e-7b27-4923-a1f7-c3252203815e/',
-    uuid: 'db30a39e-7b27-4923-a1f7-c3252203815e',
-    sport: 'hurling',
-    level: 'club',
-    grade: 'intermediate',
-    name: 'Tipperary Intermediate Hurling Relegation',
-  },
-  {
-    path: '/fixtures-results/hurling/club/intermediate/fbd-insurance-tipperary-premier-intermediate-hurling-relegation/a98f9390-2a6e-4e61-8734-3b75eef6dbf7/',
-    uuid: 'a98f9390-2a6e-4e61-8734-3b75eef6dbf7',
-    sport: 'hurling',
-    level: 'club',
-    grade: 'intermediate',
-    name: 'Tipperary Premier Intermediate Hurling Relegation',
-  },
-  {
-    path: '/fixtures-results/football/club/senior/fbd-insurance-tipperary-senior-football-relegation/2d4f603a-e06c-48db-8ade-f0147e08b63b/',
-    uuid: '2d4f603a-e06c-48db-8ade-f0147e08b63b',
-    sport: 'football',
-    level: 'club',
-    grade: 'senior',
-    name: 'Tipperary Senior Football Relegation',
-  },
-  {
-    path: '/fixtures-results/football/club/intermediate/fbd-insurance-county-tipperary-intermediate-football-relegation/201cd3f9-bd85-49de-baaf-d6ebb6a95a2e/',
-    uuid: '201cd3f9-bd85-49de-baaf-d6ebb6a95a2e',
-    sport: 'football',
-    level: 'club',
-    grade: 'intermediate',
-    name: 'Tipperary Intermediate Football Relegation',
-  },
-  {
-    path: '/fixtures-results/football/club/junior/fbd-insurance-county-tipperary-premier-junior-football-relegation/55d24c49-ca8e-47c8-95cb-1077af2e9249/',
-    uuid: '55d24c49-ca8e-47c8-95cb-1077af2e9249',
-    sport: 'football',
-    level: 'club',
-    grade: 'junior',
-    name: 'Tipperary Premier Junior Football Relegation',
-  },
-  // Football main championships
-  { path: '/fixtures-results/football/club/senior/fbd-insurance-county-tipperary-senior-football-championship-philly-ryan-cup/766c95bf-01ee-44e1-a05e-e61d236c794f/', uuid: '766c95bf-01ee-44e1-a05e-e61d236c794f', sport: 'football', level: 'club', grade: 'senior', name: 'Tipperary Senior Football Championship' },
-  { path: '/fixtures-results/football/club/intermediate/fbd-insurance-county-tipperary-intermediate-football-championship-barrett-cup/74ad46d9-8294-490b-9100-1a0249b5ed9e/', uuid: '74ad46d9-8294-490b-9100-1a0249b5ed9e', sport: 'football', level: 'club', grade: 'intermediate', name: 'Tipperary Intermediate Football Championship' },
-  { path: '/fixtures-results/football/club/junior/fbd-insurance-county-tipperary-premier-junior-football-championship-odwyer-cup/15271131-b3e1-4c0e-9ff6-164e8f4e6779/', uuid: '15271131-b3e1-4c0e-9ff6-164e8f4e6779', sport: 'football', level: 'club', grade: 'junior', name: 'Tipperary Premier Junior Football Championship' },
-  // Junior hurling championships
-  { path: '/fixtures-results/hurling/club/junior/fbd-insurance-county-tipperary-junior-a-hurling-championship/936dbecd-5587-48e8-88f0-b4a552dd67ce/', uuid: '936dbecd-5587-48e8-88f0-b4a552dd67ce', sport: 'hurling', level: 'club', grade: 'junior', name: 'Tipperary Junior A Hurling Championship' },
-  { path: '/fixtures-results/hurling/club/junior/premier-credit-union-mid-junior-a-hurling-championship/40ad8ba1-8de4-4704-8e90-01e00582e9da/', uuid: '40ad8ba1-8de4-4704-8e90-01e00582e9da', sport: 'hurling', level: 'club', grade: 'junior', name: 'Mid Tipperary Junior A Hurling Championship' },
-  { path: '/fixtures-results/hurling/club/junior/west-tipperary-junior-a-hurling-championship/cd2793a3-e96f-460f-a24c-58123ced2345/', uuid: 'cd2793a3-e96f-460f-a24c-58123ced2345', sport: 'hurling', level: 'club', grade: 'junior', name: 'West Tipperary Junior A Hurling Championship' },
-  { path: '/fixtures-results/hurling/club/junior/south-tipperary-junior-a-hurling-championship/c74df8de-00a9-4e9c-ab67-1462c6fd6bbf/', uuid: 'c74df8de-00a9-4e9c-ab67-1462c6fd6bbf', sport: 'hurling', level: 'club', grade: 'junior', name: 'South Tipperary Junior A Hurling Championship' },
-];
 
 // ---- Roscommon: custom WordPress site (gaaroscommon.ie) ----
 // Fixtures are server-rendered in a #foireannFixures div. Current HTML structure:
@@ -2673,23 +2416,23 @@ export default {
       const [corkResults, waterfordResults, laoisResults, wexfordResults, kerryResults, offalyResults, tipperaryResults, tipperaryFootballResults, kildareResults, roscommonFootballResults, roscommonHurlingResults, kilkennyResults, monaghanResults, meathResults, longfordResults, carlowLiveResults, louthLiveResults, tipperaryCamogieResults, kilkennyCamogieResults] = await Promise.all([
         Promise.all(CORK_COMPETITIONS.map(fetchCorkCompetition)).catch(() => []),
         Promise.all(WATERFORD_COMPETITIONS.map(fetchWaterfordCompetition)).catch(() => []),
-        Promise.all(LAOIS_COMPETITIONS.map((c) => fetchCacDirectCompetition('Laois', 'laoisgaa.ie', c, cacDebug))).catch(() => []),
-        Promise.all(WEXFORD_COMPETITIONS.map((c) => fetchCacDirectCompetition('Wexford', 'wexford.clubandcounty.com', c, cacDebug))).catch(() => []),
-        fetchKerryFootballCompetitions().then(dynComps => Promise.all([...KERRY_HURLING_COMPETITIONS, ...dynComps].map((c) => fetchCacDirectCompetition('Kerry', 'www.kerrygaa.ie', c, cacDebug)))).catch(() => []),
-        Promise.all(OFFALY_COMPETITIONS.map((c) => fetchCacDirectCompetition('Offaly', 'offaly.gaa.ie', c, cacDebug))).catch(() => []),
-        Promise.all(TIPPERARY_COMPETITIONS.map((c) => fetchCacDirectCompetition('Tipperary', 'tipperary.gaa.ie', c, cacDebug))).catch(() => []),
+        fetchLaoisCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Laois', 'laoisgaa.ie', c, cacDebug)))).catch(() => []),
+        fetchWexfordCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Wexford', 'wexford.clubandcounty.com', c, cacDebug)))).catch(() => []),
+        fetchKerryCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Kerry', 'www.kerrygaa.ie', c, cacDebug)))).catch(() => []),
+        fetchOffalyCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Offaly', 'offaly.gaa.ie', c, cacDebug)))).catch(() => []),
+        fetchTipperaryHurlingCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Tipperary', 'tipperary.gaa.ie', c, cacDebug)))).catch(() => []),
         fetchTipperaryFootball(cacDebug).catch(() => []),
         fetchKildare(cacDebug).catch(() => []),
         fetchRoscommonFootball().catch(() => []),
         fetchRoscommonSport('hurling').catch(() => []),
-        fetchKilkennyCompetitions().then(dynComps => Promise.all(dynComps.map((c) => fetchCacDirectCompetition('Kilkenny', 'kilkennygaa.ie', c, cacDebug)))).catch(() => []),
-        Promise.all(MONAGHAN_COMPETITIONS.map((c) => fetchCacDirectCompetition('Monaghan', 'www.monaghangaa.ie', c, cacDebug))).catch(() => []),
-        Promise.all(MEATH_COMPETITIONS.map((c) => fetchCacDirectCompetition('Meath', 'meath.gaa.ie', c, cacDebug))).catch(() => []),
+        fetchKilkennyCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Kilkenny', 'kilkennygaa.ie', c, cacDebug)))).catch(() => []),
+        fetchMonaghanCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Monaghan', 'www.monaghangaa.ie', c, cacDebug)))).catch(() => []),
+        fetchMeathCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Meath', 'meath.gaa.ie', c, cacDebug)))).catch(() => []),
         fetchLongford(env.FOIREANN_API_KEY).catch(() => []),
         fetchCarlowFixtures().catch(() => []),
         fetchLouthFixtures().catch(() => []),
         fetchTipperaryCamogieFixtures().catch(() => []),
-        Promise.all(KILKENNY_CAMOGIE_COMPETITIONS.map((c) => fetchCacDirectCompetition('Kilkenny', 'kilkennycamogie.ie', c, cacDebug))).catch(() => []),
+        fetchKilkennyAmogieCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Kilkenny', 'kilkennycamogie.ie', c, cacDebug)))).catch(() => []),
       ]);
 
       const fixCamel = s => s
