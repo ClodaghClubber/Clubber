@@ -400,12 +400,22 @@ async function fetchCacDirectCompetition(county, baseDomain, comp, debug) {
   return out;
 }
 
-// Generic competition name from CAC URL slug — strips year prefix and title-cases
+// Generic competition name from CAC URL slug.
+// Strips leading year, trailing year, and leading sponsor prefixes so the name
+// matches what was stored in KV when static arrays were active (e.g. the slug
+// "st-canices-credit-union-senior-hurling-league-group-a-2026" becomes
+// "Senior Hurling League Group A").
 function cacCompNameFromPath(path) {
   const slug = path.split('/').filter(Boolean).slice(-2, -1)[0] || '';
-  return slug
-    .replace(/^20\d\d-/, '')
-    .replace(/-/g, ' ')
+  let s = slug
+    .replace(/^20\d\d-/, '')   // leading year (2026-foo)
+    .replace(/-20\d\d$/, '')   // trailing year (foo-2026)
+    .replace(/-/g, ' ');
+  // Strip leading sponsor prefix: drop everything before the first recognisable
+  // GAA term so "St Canices Credit Union Senior Hurling" → "Senior Hurling".
+  const gaaFirst = s.search(/\b(senior|intermediate|junior|championship|league|cup|football|hurling|camogie|ladies|shield|plate|trophy|county|provincial)\b/i);
+  if (gaaFirst > 0) s = s.slice(gaaFirst);
+  return s
     .replace(/\b\w/g, c => c.toUpperCase())
     .replace(/\bGaa\b/, 'GAA')
     .replace(/\bFod\b/, 'FOD')
@@ -446,9 +456,9 @@ async function fetchCacCountyCompetitions(domain, listingPages, compNameFn) {
       const cSport = sportM[1];
       const cGrade = gradeM[1];
       const slug = valueM[1];
-      // Skip underage competitions
-      if (/\b(minor|u\d+|under.?\d+|feile|bainne|primary|juvenile|youth)\b/i.test(slug) ||
-          /\b(minor|u\d+|under.?\d+|feile|bainne|primary|juvenile|youth)\b/i.test(cGrade)) continue;
+      // Skip underage competitions (u14, u14b, u-14, under-14, minor, feile…)
+      if (/\b(minor|u\d+\w*|under.?\d+|feile|bainne|primary|juvenile|youth)\b/i.test(slug) ||
+          /\b(minor|u\d+\w*|under.?\d+|feile|bainne|primary|juvenile|youth)\b/i.test(cGrade)) continue;
       seen.add(uuid);
       const path = `/fixtures-results/${cSport}/club/${cGrade}/${slug}/${uuid}/`;
       comps.push({ path, uuid, sport: cSport, level: 'club', grade: cGrade, name: nameFn(path, cGrade) });
