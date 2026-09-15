@@ -414,28 +414,43 @@ function cacCompNameFromPath(path) {
     .trim();
 }
 
-// Generic CAC competition discovery — fetches listing pages and extracts UUID hrefs.
+// Generic CAC competition discovery.
+// These sites render all competitions as <option data-uuid="..." data-sport="..."
+// data-level="club" data-grade="..." value="slug"> elements in a filter dropdown.
+// A single listing page fetch returns ALL competitions for the domain.
 // compNameFn(path, grade) is optional; defaults to cacCompNameFromPath.
 async function fetchCacCountyCompetitions(domain, listingPages, compNameFn) {
   const nameFn = compNameFn || cacCompNameFromPath;
   const seen = new Set();
   const comps = [];
-  const uuidRe = /href="(\/fixtures-results\/(?:hurling|football|camogie|ladies-football)\/club\/[^"]+\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?)"/g;
-  await Promise.all(listingPages.map(async ({ url, sport, level, grade }) => {
-    try {
-      const res = await fetch(url, { headers: { 'User-Agent': UA } });
-      if (!res.ok) return;
-      const html = await res.text();
-      let m;
-      while ((m = uuidRe.exec(html)) !== null) {
-        const path = m[1].endsWith('/') ? m[1] : m[1] + '/';
-        const uuid = m[2];
-        if (seen.has(uuid)) continue;
-        seen.add(uuid);
-        comps.push({ path, uuid, sport, level, grade, name: nameFn(path, grade) });
-      }
-    } catch (_) {}
-  }));
+  // Only need one page — the full site HTML is returned regardless of filter URL.
+  const url = listingPages[0].url;
+  try {
+    const res = await fetch(url, { headers: { 'User-Agent': UA } });
+    if (!res.ok) return comps;
+    const html = await res.text();
+    const optRe = /<option\b([^>]+)>/g;
+    let m;
+    while ((m = optRe.exec(html)) !== null) {
+      const attrs = m[1];
+      const uuidM = attrs.match(/data-uuid="([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"/);
+      if (!uuidM) continue;
+      const uuid = uuidM[1];
+      if (seen.has(uuid)) continue;
+      const levelM = attrs.match(/data-level="([^"]+)"/);
+      if (!levelM || levelM[1] !== 'club') continue;
+      const sportM = attrs.match(/data-sport="([^"]+)"/);
+      const gradeM = attrs.match(/data-grade="([^"]+)"/);
+      const valueM = attrs.match(/value="([^"]+)"/);
+      if (!sportM || !gradeM || !valueM) continue;
+      seen.add(uuid);
+      const cSport = sportM[1];
+      const cGrade = gradeM[1];
+      const slug = valueM[1];
+      const path = `/fixtures-results/${cSport}/club/${cGrade}/${slug}/${uuid}/`;
+      comps.push({ path, uuid, sport: cSport, level: 'club', grade: cGrade, name: nameFn(path, cGrade) });
+    }
+  } catch (_) {}
   return comps;
 }
 
