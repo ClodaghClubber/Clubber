@@ -412,14 +412,24 @@ function cacStripSponsor(s) {
 
 // Name from the option element's display text (preferred — includes sport type
 // which the URL slug may omit, e.g. "JJ Kavanagh Premier Junior Hurling Championship").
-function cacCompNameFromText(text) {
+// sport is passed so we can inject it when the option text omits it
+// (e.g. "JJ Kavanagh Premier Jnr Championship" → "Premier Junior Hurling Championship").
+function cacCompNameFromText(text, sport) {
   let s = cacStripSponsor((text || '').trim());
-  return s
+  s = s
     .replace(/\bSnr\b/g, 'Senior')
+    .replace(/\bSen\b/g, 'Senior')
     .replace(/\bJnr\b/g, 'Junior')
     .replace(/\bGaa\b/g, 'GAA')
     .replace(/\bFod\b/g, 'FOD')
     .trim();
+  // Inject sport type if not already present so name matches historic KV keys
+  // (e.g. "Premier Junior Championship" → "Premier Junior Hurling Championship")
+  if (sport && !/hurling|football|camogie|ladies/i.test(s)) {
+    const sportTitle = sport.charAt(0).toUpperCase() + sport.slice(1);
+    s = s.replace(/\b(Championship|League|Cup|Shield|Plate|Trophy)\b/, `${sportTitle} $1`);
+  }
+  return s;
 }
 
 // Fallback name from CAC URL slug when no display text is available.
@@ -481,7 +491,7 @@ async function fetchCacCountyCompetitions(domain, listingPages, compNameFn) {
       seen.add(uuid);
       const path = `/fixtures-results/${cSport}/club/${cGrade}/${slug}/${uuid}/`;
       // Prefer the option display text (includes sport type the slug may omit).
-      const name = optText ? cacCompNameFromText(optText) : nameFn(path, cGrade);
+      const name = optText ? cacCompNameFromText(optText, cSport) : nameFn(path, cGrade);
       comps.push({ path, uuid, sport: cSport, level: 'club', grade: cGrade, name });
     }
   } catch (_) {}
