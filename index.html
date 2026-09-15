@@ -956,14 +956,18 @@ function to12h(t){ // '19:15' -> '7:15 PM'
   h=h%12; if(h===0)h=12;
   return `${h}:${String(m).padStart(2,'0')} ${ap}`;
 }
-function from12h(t){ // '7:15 PM' -> '19:15'
+function from12h(t){ // '7:15 PM' -> '19:15', '19:00' -> '19:00'
   if(!t) return '';
   const m=t.match(/(\d+):(\d+)\s*(AM|PM)/i);
-  if(!m) return ''; // TBC or unknown
-  let [,h,min,ap]=m; h=parseInt(h);
-  if(ap.toUpperCase()==='PM'&&h!==12) h+=12;
-  if(ap.toUpperCase()==='AM'&&h===12) h=0;
-  return `${String(h).padStart(2,'0')}:${min}`;
+  if(m) {
+    let [,h,min,ap]=m; h=parseInt(h);
+    if(ap.toUpperCase()==='PM'&&h!==12) h+=12;
+    if(ap.toUpperCase()==='AM'&&h===12) h=0;
+    return `${String(h).padStart(2,'0')}:${min}`;
+  }
+  // Already 24h format (HH:MM) — pass through
+  if(/^\d{1,2}:\d{2}$/.test(t.trim())) return t.trim().padStart(5,'0');
+  return ''; // TBC or unrecognised
 }
 function mk(county,teamA,teamB,date,time,venue,competition,round){
   const d=iso(date);
