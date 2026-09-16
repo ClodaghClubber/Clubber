@@ -2547,6 +2547,39 @@ export default {
       }
     }
 
+    // Stale-while-revalidate: if KV cache is < 55 min old serve it immediately;
+    // start a background live-fetch to keep it warm. Force live fetch with ?refresh=1.
+    const forceRefresh = url.searchParams.has('refresh');
+    if (!forceRefresh && kv) {
+      try {
+        const cached = await kv.get(FIXTURE_CACHE_KV_KEY);
+        if (cached) {
+          const { cachedAt, fixtures: baseFixtures } = JSON.parse(cached);
+          const ageMs = Date.now() - new Date(cachedAt).getTime();
+          if (ageMs < 55 * 60 * 1000) { // < 55 minutes: serve immediately
+            const [statusMap, overridesMap, kvManualFixtures] = await Promise.all([
+              getStatusMap(kv), getOverridesMap(kv), getManualFixtures(kv),
+            ]);
+            const fixtures = baseFixtures
+              .map((f) => {
+                const key = fixtureKey(f);
+                const ov = overridesMap[key];
+                return { ...f, ...(ov || {}), status: statusMap[key] || 'Proposed' };
+              })
+              .filter((f) => f.status !== 'Removed');
+            // Background: refresh the cache without blocking this response
+            if (ctx) ctx.waitUntil(
+              this.fetch(new Request(url.origin + url.pathname + '?refresh=1'), env, ctx).catch(() => {})
+            );
+            return new Response(
+              JSON.stringify({ fetchedAt: cachedAt, fromCache: true, fixtures, overrides: overridesMap, manualFixtures: kvManualFixtures }),
+              { headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } }
+            );
+          }
+        }
+      } catch (_) { /* fall through to live fetch */ }
+    }
+
     try {
       const cacDebug = [];
       const [corkResults, waterfordResults, laoisResults, wexfordResults, kerryResults, offalyResults, tipperaryResults, tipperaryFootballResults, kildareResults, roscommonFootballResults, roscommonHurlingResults, kilkennyResults, monaghanResults, meathResults, longfordResults, carlowLiveResults, louthLiveResults, tipperaryCamogieResults, kilkennyCamogieResults] = await Promise.all([
@@ -2624,10 +2657,9 @@ export default {
 
       const fetchedAt = new Date().toISOString();
 
-      // Save base fixtures (before status/override application) as last-known-good cache.
-      // Fire-and-forget so it doesn't add latency to the response.
-      if (kv && ctx) {
-        ctx.waitUntil(kv.put(FIXTURE_CACHE_KV_KEY, JSON.stringify({ cachedAt: fetchedAt, fixtures })));
+      // Save base fixtures as last-known-good cache (always await so background refresh works).
+      if (kv) {
+        await kv.put(FIXTURE_CACHE_KV_KEY, JSON.stringify({ cachedAt: fetchedAt, fixtures }));
       }
 
       const [statusMap, overridesMap, kvManualFixtures] = await Promise.all([getStatusMap(kv), getOverridesMap(kv), getManualFixtures(kv)]);
