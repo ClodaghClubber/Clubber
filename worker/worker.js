@@ -1229,23 +1229,31 @@ async function fetchCarlowFixtures() {
     { pattern: /intermediate football championship/i, name: 'Intermediate Football Championship' },
     { pattern: /senior hurling championship/i,        name: 'Senior Hurling Championship' },
     { pattern: /intermediate hurling championship/i,  name: 'Intermediate Hurling Championship' },
-    { pattern: /junior [''‘’]?a[''‘’]? football championship/i, name: "Junior 'A' Football Championship" },
-    { pattern: /junior [''‘’]?b[''‘’]? (football )?championship/i, name: "Junior 'B' Football Championship" },
-    { pattern: /junior [''‘’]?c[''‘’]? (football )?championship/i, name: "Junior 'C' Football Championship" },
+    { pattern: /junior hurling championship/i,        name: 'Junior Hurling Championship' },
+    { pattern: /junior ['''']?a['''']? football championship/i, name: "Junior 'A' Football Championship" },
+    { pattern: /junior ['''']?b['''']? (football )?championship/i, name: "Junior 'B' Football Championship" },
+    { pattern: /junior ['''']?c['''']? (football )?championship/i, name: "Junior 'C' Football Championship" },
   ];
   try {
     const res = await fetch('https://carlowgaa.ie/fixtures/', {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36' }
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-GB,en;q=0.9',
+      }
     });
-    if (!res.ok) return [];
+    if (!res.ok) { console.error('fetchCarlowFixtures HTTP', res.status); return []; }
     const html = await res.text();
     // Strip tags and split into lines
-    const text = html.replace(/<[^>]+>/g, '\n').replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ').replace(/&#[0-9]+;/g, '');
+    const text = html.replace(/<[^>]+>/g, '\n').replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ').replace(/&#039;/g, "'").replace(/&#[0-9]+;/g, '').replace(/&[a-z]+;/g, '');
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
     const fixtures = [];
     for (let i = 0; i < lines.length; i++) {
       const comp = TARGET_COMPS.find(c => c.pattern.test(lines[i]));
       if (!comp) continue;
+      // Extract round from competition header "Sponsor Competition - Round - Year"
+      const headerDash = lines[i].split(/\s*-\s*/);
+      const round = headerDash.length >= 3 ? headerDash[headerDash.length - 2].trim() : '';
       // Next non-empty line should be "Team A vs Team B"
       const matchLine = lines[i + 1] || '';
       const vsMatch = matchLine.match(/^(.+?)\s+vs\s+(.+)$/i);
@@ -1264,9 +1272,7 @@ async function fetchCarlowFixtures() {
       const date = `${parseInt(d,10)} ${MONTHS[parseInt(m,10)-1]} ${y}`;
       const timePart = parts[1]; // e.g. "7:00 pm"
       const venue = parts.slice(2).join('/').trim();
-      // Derive round from context — scan back for a round hint or leave blank
-      // (carlowgaa.ie doesn't show round in the listing)
-      fixtures.push(mkStatic('Carlow', vsMatch[1].trim(), vsMatch[2].trim(), date, timePart, venue, comp.name, ''));
+      fixtures.push(mkStatic('Carlow', vsMatch[1].trim(), vsMatch[2].trim(), date, timePart, venue, comp.name, round));
     }
     return fixtures;
   } catch (e) {
@@ -1504,6 +1510,22 @@ const CARLOW_FIXTURES = [];
   ['Naomh Brid GAA','Setanta Ceatharlach','4 September 2026','19:30','Netwatch Cullen Park','QF'],
   ['Naomh Moling','Mt Leinster Rangers','4 September 2026','20:30','Netwatch Cullen Park','QF'],
 ].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Junior Hurling Championship',r[5])));
+
+// Carlow - Junior Hurling Championship Finals (source: carlowgaa.ie Sep 2026)
+[
+  ['Burren Rangers Hurling and Camogie Club','Setanta Ceatharlach','24 September 2026','19:30','Netwatch Cullen Park, Carlow','Shield Final'],
+  ['Ballinkillen','Naomh Moling','27 September 2026','14:00','Netwatch Cullen Park, Carlow','Final'],
+].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Junior Hurling Championship',r[5])));
+
+// Carlow - Senior Hurling Championship Final (source: carlowgaa.ie Sep 2026)
+[
+  ['Naomh Moling','Mt Leinster Rangers','26 September 2026','19:30','Netwatch Cullen Park, Carlow','Final'],
+].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Senior Hurling Championship',r[5])));
+
+// Carlow - Intermediate Hurling Championship Final (source: carlowgaa.ie Sep 2026)
+[
+  ['Carlow Town Hurling Club','Burren Rangers Hurling and Camogie Club','27 September 2026','16:00','Netwatch Cullen Park, Carlow','Final'],
+].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Intermediate Hurling Championship',r[5])));
 
 // Carlow - Intermediate Hurling Championship QFs (source: carlowgaa.ie Sep 2026)
 [
@@ -2338,8 +2360,8 @@ export default {
         venue: normaliseVenue(f.venue),
         round: (f.round || '').trim(),
       };
-      // Raw values used for display in the Teams card
-      const raw = { date: toIsoDate(f.date), time: f.time || '', venue: f.venue || '', round: f.round || '' };
+      // Raw values used for display in the Teams card — store time in 24h so display matches comparison
+      const raw = { date: toIsoDate(f.date), time: norm.time, venue: f.venue || '', round: f.round || '' };
       const prev = snapshot[key];
 
       if (prev) {
