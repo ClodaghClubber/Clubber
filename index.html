@@ -1549,6 +1549,9 @@ const statusFilter=document.getElementById('statusFilter');
 
 // ---- Multi-select widget ----
 const _msSelected={};
+function _msSave(id){
+  try{ localStorage.setItem('gaaFilter_'+id, JSON.stringify([..._msSelected[id]])); }catch(_){}
+}
 function msInit(id,opts,onChange,autoApply=false){
   const wrap=document.getElementById(id);
   const trigger=wrap.querySelector('.ms-trigger');
@@ -1608,13 +1611,14 @@ function msInit(id,opts,onChange,autoApply=false){
       if(cb.checked)_pending.add(cb.value);else _pending.delete(cb.value);
       list.querySelector('[data-all]').checked=_pending.size===0;
     }
-    if(autoApply){ _msSelected[id]=new Set(_pending); updateLabel(); onChange(); }
+    if(autoApply){ _msSelected[id]=new Set(_pending); updateLabel(); _msSave(id); onChange(); }
   });
   // Apply commits pending → selected, updates label, fires onChange, closes panel
   applyBtn.addEventListener('click',e=>{
     e.stopPropagation();
     _msSelected[id]=new Set(_pending);
     updateLabel();
+    _msSave(id);
     onChange();
     panel.hidden=true;
   });
@@ -1638,7 +1642,19 @@ function msInit(id,opts,onChange,autoApply=false){
   document.addEventListener('click',()=>{panel.hidden=true;});
   panel.addEventListener('click',e=>e.stopPropagation());
   if(opts)rebuild(opts);
-  return {setOptions:rebuild,getValues:()=>[..._msSelected[id]]};
+  function setValues(vals){
+    _msSelected[id]=new Set(vals);
+    _pending=new Set(vals);
+    // Sync checkboxes to restored values
+    const allIsActive=vals.length===0;
+    list.querySelectorAll('input[type=checkbox]:not([data-all])').forEach(cb=>{
+      cb.checked=allIsActive||_pending.has(cb.value);
+    });
+    const allCb=list.querySelector('[data-all]');
+    if(allCb) allCb.checked=allIsActive;
+    updateLabel();
+  }
+  return {setOptions:rebuild,getValues:()=>[..._msSelected[id]],setValues};
 }
 function msGetValues(id){return [...(_msSelected[id]||new Set())];}
 const msCounty=msInit('countyFilter',[],()=>{populateCompOptions();render();});
@@ -1671,7 +1687,9 @@ let sortKey='date', sortDir=1;
 function populateFilterOptions(){
   const counties=[...new Set(fixtures.map(f=>f.county))].sort((a,b)=>a.localeCompare(b));
   msCounty.setOptions(counties);
+  if(window._pendingRestore_countyFilter){ msCounty.setValues(window._pendingRestore_countyFilter); delete window._pendingRestore_countyFilter; }
   populateCompOptions();
+  if(window._pendingRestore_compFilter){ msComp.setValues(window._pendingRestore_compFilter); delete window._pendingRestore_compFilter; }
 }
 
 function extractGrade(competition){
@@ -2093,9 +2111,40 @@ dateTo.addEventListener('change',()=>{
   localStorage.setItem('gaaDateTo',dateTo.value);
   render();
 });
-document.getElementById('changesFilter').addEventListener('change',e=>{changesOnlyFilter=e.target.value==='changes';render();});
-document.getElementById('clubberFilter').addEventListener('change',e=>{clubberFilterVal=e.target.value;render();});
+// Restore + persist plain select filters
+(()=>{
+  const cf=document.getElementById('changesFilter');
+  const bf=document.getElementById('clubberFilter');
+  const savedCf=localStorage.getItem('gaaFilter_changesFilter');
+  const savedBf=localStorage.getItem('gaaFilter_clubberFilter');
+  if(savedCf){ cf.value=savedCf; changesOnlyFilter=savedCf==='changes'; }
+  if(savedBf){ bf.value=savedBf; clubberFilterVal=savedBf; }
+  cf.addEventListener('change',e=>{
+    changesOnlyFilter=e.target.value==='changes';
+    localStorage.setItem('gaaFilter_changesFilter',e.target.value);
+    render();
+  });
+  bf.addEventListener('change',e=>{
+    clubberFilterVal=e.target.value;
+    localStorage.setItem('gaaFilter_clubberFilter',e.target.value);
+    render();
+  });
+})();
 const msHighlight=msInit('highlightFilter',['Clubber Pick','Hero Section'],render,true);
+
+// Restore persisted multi-select filter values
+(()=>{
+  const msMap={codeFilter:msCode,statusFilter:msStatus,highlightFilter:msHighlight};
+  Object.entries(msMap).forEach(([id,ms])=>{
+    const saved=localStorage.getItem('gaaFilter_'+id);
+    if(saved){ try{ const v=JSON.parse(saved); if(v.length) ms.setValues(v); }catch(_){} }
+  });
+  // countyFilter and compFilter options aren't available yet — restore after populateFilterOptions
+  ['countyFilter','compFilter'].forEach(id=>{
+    const saved=localStorage.getItem('gaaFilter_'+id);
+    if(saved){ try{ const v=JSON.parse(saved); if(v.length) window['_pendingRestore_'+id]=v; }catch(_){} }
+  });
+})();
 document.getElementById('clearChangesBtn').addEventListener('click',()=>{
   fixtureChangelog={};saveChangelog();
   fixtureBaseline={};saveBaseline();
