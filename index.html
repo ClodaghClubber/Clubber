@@ -2946,7 +2946,11 @@ function buildGamePayload(f) {
     county,
     club: teamAResult?.matchedName || normA,
     clubId: teamAResult?.clubId || '',
-    code: isRugby ? 'Union' : (f.code || ''),
+    code: isRugby
+      ? (f.competition === "Men's BUCS Super Rugby" ? "Union Men's"
+        : f.competition === "Women's BUCS Super Rugby" ? "Union Women's"
+        : 'Union')
+      : (f.code || ''),
     sportType: isRugby ? 'Rugby' : undefined,
     grade: isRugby ? 'Senior 1' : grade,
     championsType,
