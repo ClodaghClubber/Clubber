@@ -2076,8 +2076,23 @@ document.getElementById('removeConfirmBtn').addEventListener('click',()=>{
   syncStatus(ids,'Removed');
 });
 
-dateFrom.addEventListener('change',()=>{ dateTo.value=dateFrom.value; render(); });
-dateTo.addEventListener('change',render);
+// Restore persisted date filters
+(()=>{
+  const df=localStorage.getItem('gaaDateFrom');
+  const dt=localStorage.getItem('gaaDateTo');
+  if(df) dateFrom.value=df;
+  if(dt) dateTo.value=dt;
+})();
+dateFrom.addEventListener('change',()=>{
+  dateTo.value=dateFrom.value;
+  localStorage.setItem('gaaDateFrom',dateFrom.value);
+  localStorage.setItem('gaaDateTo',dateTo.value);
+  render();
+});
+dateTo.addEventListener('change',()=>{
+  localStorage.setItem('gaaDateTo',dateTo.value);
+  render();
+});
 document.getElementById('changesFilter').addEventListener('change',e=>{changesOnlyFilter=e.target.value==='changes';render();});
 document.getElementById('clubberFilter').addEventListener('change',e=>{clubberFilterVal=e.target.value;render();});
 const msHighlight=msInit('highlightFilter',['Clubber Pick','Hero Section'],render,true);
