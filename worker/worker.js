@@ -2412,6 +2412,28 @@ export default {
           if (authResp) return authResp;
         }
 
+        // User prefs (display name) — no auth required, keyed by clientId
+        if (body.action === 'getPrefs') {
+          if (!kv) return jsonResp({ ok: false, error: 'KV not bound' }, 500);
+          const clientId = (body.clientId || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64);
+          if (!clientId) return jsonResp({ ok: false, error: 'clientId required' }, 400);
+          const raw = await kv.get('prefs:' + clientId);
+          const prefs = raw ? JSON.parse(raw) : {};
+          return jsonResp({ ok: true, prefs });
+        }
+        if (body.action === 'setPrefs') {
+          if (!kv) return jsonResp({ ok: false, error: 'KV not bound' }, 500);
+          const clientId = (body.clientId || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64);
+          if (!clientId) return jsonResp({ ok: false, error: 'clientId required' }, 400);
+          const allowed = { displayName: 1 };
+          const prefs = {};
+          for (const [k, v] of Object.entries(body.prefs || {})) {
+            if (allowed[k] && typeof v === 'string') prefs[k] = v.slice(0, 120);
+          }
+          await kv.put('prefs:' + clientId, JSON.stringify(prefs), { expirationTtl: 60 * 60 * 24 * 365 * 5 }); // 5 years
+          return jsonResp({ ok: true });
+        }
+
         // All other POST actions require a valid session
         const authedActions = ['setManualFixtures','setOverrides'];
         if (authedActions.includes(body.action)) {
