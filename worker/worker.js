@@ -2572,7 +2572,7 @@ export default {
               this.fetch(new Request(url.origin + url.pathname + '?refresh=1'), env, ctx).catch(() => {})
             );
             return new Response(
-              JSON.stringify({ fetchedAt: cachedAt, fromCache: true, fixtures, overrides: overridesMap, manualFixtures: kvManualFixtures }),
+              JSON.stringify({ fetchedAt: cachedAt, fixtures, overrides: overridesMap, manualFixtures: kvManualFixtures }),
               { headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } }
             );
           }
