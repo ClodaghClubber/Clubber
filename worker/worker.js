@@ -2547,6 +2547,26 @@ export default {
       }
     }
 
+    // Proxy the Clubber sports/counties lookup (bypasses CORS; cached 24h in KV)
+    if (url.searchParams.get('action') === 'clubberLookup') {
+      const LOOKUP_KV_KEY = 'clubberLookup';
+      const LOOKUP_TTL_MS = 24 * 60 * 60 * 1000;
+      const LOOKUP_URL = 'https://prodclubbertvstorageacc.blob.core.windows.net/lookups/sportsCountiesLookup.json';
+      if (kv) {
+        const raw = await kv.get(LOOKUP_KV_KEY);
+        if (raw) {
+          const { data, cachedAt } = JSON.parse(raw);
+          if (Date.now() - new Date(cachedAt).getTime() < LOOKUP_TTL_MS) {
+            return new Response(JSON.stringify(data), { headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } });
+          }
+        }
+      }
+      const resp = await fetch(LOOKUP_URL);
+      const data = await resp.json();
+      if (kv) await kv.put(LOOKUP_KV_KEY, JSON.stringify({ data, cachedAt: new Date().toISOString() }), { expirationTtl: 60 * 60 * 48 });
+      return new Response(JSON.stringify(data), { headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } });
+    }
+
     // Stale-while-revalidate: if KV cache is < 55 min old serve it immediately;
     // start a background live-fetch to keep it warm. Force live fetch with ?refresh=1.
     const forceRefresh = url.searchParams.has('refresh');
