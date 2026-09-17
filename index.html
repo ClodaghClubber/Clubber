@@ -1066,10 +1066,15 @@ function loadManualFixtures(){
     if(Array.isArray(parsed)) manualFixtures=parsed;
   }catch(e){}
 }
+function toIsoDate(d){
+  if(!d) return '';
+  if(/^\d{4}-\d{2}-\d{2}/.test(d)) return d.slice(0,10);
+  try{ return iso(d); }catch(e){ return d; }
+}
 function applyManualFixtures(){
   const today=new Date().toISOString().slice(0,10);
   fixtures=fixtures.filter(f=>!f.manual);
-  manualFixtures.forEach(f=>{ if(f.date>=today) fixtures.push(f); });
+  manualFixtures.forEach(f=>{ if(toIsoDate(f.date)>=today) fixtures.push({...f,date:toIsoDate(f.date)||f.date}); });
 }
 
 // ---- Fixture Change Tracking ----
