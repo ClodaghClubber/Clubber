@@ -2242,7 +2242,6 @@ async function loadFixtures(isRefresh){
     }
     const incoming=(json.fixtures||[]).map(f=>({...mk(f.county,f.teamA,f.teamB,f.date,f.time,f.venue,f.competition,f.round), code:deriveCode(f.competition,f.sport), status:f.status||'Proposed', ...(f.clubberCreated!==undefined?{clubberCreated:f.clubberCreated}:{})}));
     mergeFixtures(incoming);
-    applyManualFixtures();
     detectChanges(takeSnapshot());
     updateClearChangesBtn();
     const fetchedAt=json.fetchedAt?new Date(json.fetchedAt).toLocaleString():new Date().toLocaleString();
