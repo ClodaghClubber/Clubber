@@ -2913,7 +2913,7 @@ function buildGamePayload(f) {
     : lookupClubberCompetition(
         teamAResult?.county || f.county,
         teamBResult?.county || f.county
-      );
+      ) || teamAResult?.county || f.county;
 
   const roundNorm = (f.round || '').trim().toLowerCase();
 
