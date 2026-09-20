@@ -2829,15 +2829,16 @@ function lookupTeam(teamName, preferredCounty) {
     if (typeof val === 'object') return { county, clubId: val.id, matchedName: normApos(val.name) };
     return { county, clubId: val, matchedName: normApos(name) };
   };
-  // 1. Exact match in teamMappings (preferred county first)
+  // 1. Exact match in teamMappings — preferred county first
   if (teamMappings[preferredCounty]?.[name])
     return resolve(preferredCounty, teamMappings[preferredCounty][name]);
+  // 2. Fuzzy match in sportsCountiesLookup — county-scoped (higher priority than cross-county teamMappings)
+  const result = fuzzyLookupClub(name, preferredCounty);
+  if (result) return result;
+  // 3. Exact match in teamMappings — all other counties (last resort)
   for (const [county, teams] of Object.entries(teamMappings)) {
     if (teams[name]) return resolve(county, teams[name]);
   }
-  // 2. Fuzzy match in sportsCountiesLookup — county-scoped only
-  const result = fuzzyLookupClub(name, preferredCounty);
-  if (result) return result;
   return null;
 }
 
