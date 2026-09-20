@@ -2827,7 +2827,10 @@ function lookupTeam(teamName, preferredCounty) {
   const normApos = s => (s || '').replace(/[‘’]/g, "'");
   const resolve = (county, val) => {
     if (typeof val === 'object') return { county, clubId: val.id, matchedName: normApos(val.name) };
-    return { county, clubId: val, matchedName: normApos(name) };
+    // Plain UUID — look up official Clubber name from sportsCountiesIndex
+    const countyClubs = sportsCountiesIndex[(county || '').toLowerCase()] || [];
+    const official = countyClubs.find(c => c.id === val);
+    return { county, clubId: val, matchedName: normApos(official ? official.name : name) };
   };
   // 1. Exact match in teamMappings — preferred county first
   if (teamMappings[preferredCounty]?.[name])
