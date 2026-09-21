@@ -1074,7 +1074,11 @@ function toIsoDate(d){
 function applyManualFixtures(){
   const today=new Date().toISOString().slice(0,10);
   fixtures=fixtures.filter(f=>!f.manual);
-  manualFixtures.forEach(f=>{ if(toIsoDate(f.date)>=today) fixtures.push({status:'Proposed',...f,date:toIsoDate(f.date)||f.date}); });
+  manualFixtures.forEach(f=>{
+    // KV-sourced fixtures have no id — assign a stable content-based one
+    if(!f.id) f.id='m'+Math.abs([...stableKeyOf(f)].reduce((h,c)=>(Math.imul(31,h)+c.charCodeAt(0))|0,0)).toString(36);
+    if(toIsoDate(f.date)>=today) fixtures.push({status:'Proposed',...f,date:toIsoDate(f.date)||f.date});
+  });
 }
 
 // ---- Fixture Change Tracking ----
