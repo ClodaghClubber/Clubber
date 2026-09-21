@@ -2825,12 +2825,18 @@ function deriveGrade(county, competition) {
 function lookupTeam(teamName, preferredCounty) {
   const name = teamName.replace(/\s+/g, ' ').trim();
   const normApos = s => (s || '').replace(/[‘’]/g, "'");
+  const officialName = (clubId, county) => {
+    const clubs = sportsCountiesIndex[(county || '').toLowerCase()] || [];
+    const found = clubs.find(c => c.id === clubId);
+    return found ? found.name : null;
+  };
   const resolve = (county, val) => {
-    if (typeof val === 'object') return { county, clubId: val.id, matchedName: normApos(val.name) };
-    // Plain UUID — look up official Clubber name from sportsCountiesIndex
-    const countyClubs = sportsCountiesIndex[(county || '').toLowerCase()] || [];
-    const official = countyClubs.find(c => c.id === val);
-    return { county, clubId: val, matchedName: normApos(official ? official.name : name) };
+    if (typeof val === 'object') {
+      const official = officialName(val.id, county);
+      return { county, clubId: val.id, matchedName: official ?? normApos(val.name) };
+    }
+    const official = officialName(val, county);
+    return { county, clubId: val, matchedName: official ?? normApos(name) };
   };
   // 1. Exact match in teamMappings — preferred county first
   if (teamMappings[preferredCounty]?.[name])
@@ -2904,6 +2910,16 @@ function buildGamePayload(f) {
   const teamBResult = lookupTeam(f.teamB, f.county);
   if (!teamBResult) errors.push(`Club not found for "${normB}" (${f.county}) — add to teamMappings.json`);
   else if (teamBResult.autoMatched) warnings.push(`"${normB}" auto-matched to "${teamBResult.matchedName}" — verify this is correct`);
+
+  // Validate exported names exactly match Clubber's registered names
+  [{ result: teamAResult, label: 'Club' }, { result: teamBResult, label: 'Competitor club' }].forEach(({ result, label }) => {
+    if (!result?.clubId) return;
+    const clubs = sportsCountiesIndex[(result.county || '').toLowerCase()] || [];
+    const official = clubs.find(c => c.id === result.clubId);
+    if (official && result.matchedName !== official.name) {
+      errors.push(`${label} name '${result.matchedName}' does not match registered club '${official.name}'`);
+    }
+  });
 
   const isRugby = (f.county === 'Champ' || f.county === 'BUCS' || (f.code || '').toLowerCase() === 'rugby');
 
