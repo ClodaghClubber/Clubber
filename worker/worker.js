@@ -1656,15 +1656,38 @@ async function fetchLouthFixtures() {
 async function fetchTipperaryCamogieFixtures() {
   const MONTHS_SHORT = {Jan:'January',Feb:'February',Mar:'March',Apr:'April',May:'May',Jun:'June',Jul:'July',Aug:'August',Sep:'September',Oct:'October',Nov:'November',Dec:'December'};
   const sportlomoDate = d => { const [day, mon, year] = d.split(' '); return `${parseInt(day,10)} ${MONTHS_SHORT[mon] || mon} ${year}`; };
-  const LEAGUES = [
-    { id: 216795, comp: 'Senior Camogie Championship' },
-    { id: 216796, comp: 'Senior Camogie Championship' },
-    { id: 216797, comp: 'Intermediate Camogie Championship' },
-    { id: 216798, comp: 'Intermediate Camogie Championship' },
-  ];
   const fixtureRe = /class="[^"]*table-body fixtures[^"]*"[^>]*data-date="([^"]+)"[^>]*data-time="([^"]*)"[^>]*data-hometeam="([^"]+)"[^>]*data-awayteam="([^"]+)"[^>]*data-homescore="([^"]*)"[^>]*data-awayscore="([^"]*)"[^>]*data-venue="([^"]*)"/g;
+
+  // Discover active league IDs dynamically from the fixtures page so stale
+  // hardcoded IDs don't break loading at the start of each new season.
+  const leagues = [];
+  try {
+    const indexRes = await fetch('https://tipperarycamogie.com/fixtures/', { headers: { 'User-Agent': UA } });
+    if (indexRes.ok) {
+      const indexHtml = await indexRes.text();
+      const linkRe = /href="https?:\/\/tipperarycamogie\.com\/league\/(\d+)\/?"\s*[^>]*>([^<]+)</g;
+      const seen = new Set();
+      let lm;
+      while ((lm = linkRe.exec(indexHtml)) !== null) {
+        const id = lm[1];
+        if (seen.has(id)) continue;
+        seen.add(id);
+        const title = lm[2].trim();
+        // Normalize: "Senior Championship Quarter Finals 2026" → "Senior Camogie Championship"
+        const stageRe = /\s+(Quarter Finals?|Semi[\s-]Finals?|Finals?|Relegation[^,]*|Shield|Plate|Round\s+\d+|Group\s+\w+)\s*\d{0,4}\s*$/i;
+        let comp = title.replace(/\s+\d{4}\s*$/, '').replace(stageRe, '').trim();
+        // Insert "Camogie" before "Championship" if not already present
+        if (!/camogie/i.test(comp)) comp = comp.replace(/\bChampionship\b/, 'Camogie Championship');
+        // Extract round label from the title stage
+        const stageMatch = title.match(/\b(Quarter Finals?|Semi[\s-]Finals?|Finals?|Relegation)\b/i);
+        const round = stageMatch ? stageMatch[1].replace(/Finals?$/, 'Final') : '';
+        leagues.push({ id, comp, round });
+      }
+    }
+  } catch (e) { /* fall through */ }
+
   const all = [];
-  await Promise.all(LEAGUES.map(async ({ id, comp }) => {
+  await Promise.all(leagues.map(async ({ id, comp, round }) => {
     try {
       const res = await fetch(`https://tipperarycamogie.com/league/${id}/`, { headers: { 'User-Agent': UA } });
       if (!res.ok) return;
@@ -1674,7 +1697,7 @@ async function fetchTipperaryCamogieFixtures() {
       while ((m = fixtureRe.exec(html)) !== null) {
         const [, date, time, home, away, homeScore, awayScore, venue] = m;
         if (homeScore || awayScore) continue;
-        all.push({ ...mkStatic('Tipperary', home.trim(), away.trim(), sportlomoDate(date), time.trim(), venue.trim(), comp, ''), sport: 'Camogie' });
+        all.push({ ...mkStatic('Tipperary', home.trim(), away.trim(), sportlomoDate(date), time.trim(), venue.trim(), comp, round), sport: 'Camogie' });
       }
     } catch (e) { /* skip */ }
   }));
