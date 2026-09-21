@@ -2232,10 +2232,15 @@ async function loadFixtures(isRefresh){
     if(!res.ok) throw new Error(`Worker responded ${res.status}`);
     const json=await res.json();
     if(json.error) throw new Error(json.error);
-    // Authoritative manual fixtures from KV replace local copy
+    // Merge KV manual fixtures with local copy — don't blindly replace.
+    // Local-only fixtures (sync failed or in-flight) are preserved and
+    // re-synced to KV so they aren't lost on the next load.
     if(Array.isArray(json.manualFixtures)){
-      manualFixtures=json.manualFixtures;
-      saveManualFixtures(true); // noSync — data came from KV, don't echo it back
+      const kvKeys=new Set(json.manualFixtures.map(f=>stableKeyOf(f)));
+      const localOnly=manualFixtures.filter(f=>!kvKeys.has(stableKeyOf(f)));
+      manualFixtures=[...json.manualFixtures,...localOnly];
+      // If there are local-only fixtures that weren't in KV, push them up now
+      saveManualFixtures(localOnly.length===0);
     }
     // Merge KV overrides into local store so applyOverrides() picks them up
     if(json.overrides && typeof json.overrides==='object'){
