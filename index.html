@@ -2925,6 +2925,7 @@ function buildGamePayload(f) {
 
   const grade = isRugby ? '' : deriveGrade(f.county, f.competition);
   if (!isRugby && !grade) errors.push(`grade could not be derived from competition "${f.competition}"`);
+  if (!isRugby && !(f.code || '').trim()) errors.push(`Code is missing — set a code (e.g. Football, Hurling, LGFA) before exporting`);
 
   const championsType = f.county === 'BUCS'
     ? (f.competition || 'Men\'s BUCS Super Rugby')
