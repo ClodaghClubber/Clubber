@@ -1816,7 +1816,8 @@ function msInit(id,opts,onChange,autoApply=false){
   }
   function updateLabel(){
     const sel=_msSelected[id];
-    trigger.querySelector('.ms-label').textContent=sel.size===0?'All':[...sel].join(', ');
+    const lbl=sel.size===0?'All':sel.size===1?[...sel][0]:`${sel.size} selected`;
+    trigger.querySelector('.ms-label').textContent=lbl;
   }
   // Checkbox changes update the pending set; autoApply also commits immediately
   list.addEventListener('change',e=>{
