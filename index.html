@@ -1133,7 +1133,8 @@ function applyManualFixtures(){
   manualFixtures.forEach(f=>{
     // KV-sourced fixtures have no id — assign a stable content-based one
     if(!f.id) f.id='m'+Math.abs([...stableKeyOf(f)].reduce((h,c)=>(Math.imul(31,h)+c.charCodeAt(0))|0,0)).toString(36);
-    if(toIsoDate(f.date)>=today) fixtures.push({status:'Proposed',...f,date:toIsoDate(f.date)||f.date});
+    const d=toIsoDate(f.date)||f.date;
+    if(d>=today) fixtures.push({status:'Proposed',...f,date:d,day:f.day||dayName(d)});
   });
 }
 
@@ -1211,6 +1212,17 @@ function detectChanges(newSnap){
   });
 
   saveBaseline();
+  saveChangelog();
+}
+function recordManualCreate(f, source){
+  const sk=stableKeyOf(f);
+  const now=new Date().toLocaleString('en-IE');
+  const who=currentUser||'Unknown';
+  fixtureChangelog[sk]={
+    type:'new',
+    data:{county:f.county,teamA:f.teamA,teamB:f.teamB,competition:f.competition,date:f.date,time:f.time,venue:f.venue||'',round:f.round||'',code:f.code||''},
+    history:[{at:now,who,note:`Manually created${source?' via '+source:''} by ${who}`,diffs:[]}]
+  };
   saveChangelog();
 }
 function recordStatusChange(f, fromStatus, toStatus){
@@ -1497,6 +1509,7 @@ function closeImportModal(){
     const f=_importedFixture;
     if(!f.id) f.id='m'+Math.abs([...stableKeyOf(f)].reduce((h,c)=>(Math.imul(31,h)+c.charCodeAt(0))|0,0)).toString(36);
     manualFixtures.push(f);
+    recordManualCreate(f,'file import');
     saveManualFixtures(false);
     applyManualFixtures();
     render();
@@ -1740,6 +1753,7 @@ function setupModal(){
       code:codeVal||deriveCode(compVal||'',null), status:'Proposed', manual:true
     };
     manualFixtures.push(f); fixtures.push(f);
+    recordManualCreate(f,'form');
     saveManualFixtures(); saveCache();
     populateFilterOptions(); render();
     closeModal();
@@ -2800,6 +2814,7 @@ function qaSave(){
     videographer:videographerName, videographerEmail, unitSystem:unitSystemVal, unit:unitVal
   };
   manualFixtures.push(f); fixtures.push(f);
+  recordManualCreate(f,'quick-add');
   saveManualFixtures(); saveCache();
   g('quickAddRow').style.display='none';
   populateFilterOptions(); render();
