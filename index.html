@@ -117,6 +117,13 @@
   /* ---- Add Fixture Modal ---- */
   #addModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;align-items:flex-start;justify-content:center;padding-top:40px;}
   #addModal.open{display:flex;}
+  /* ---- Import Fixture Modal ---- */
+  #importModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;align-items:flex-start;justify-content:center;padding-top:60px;}
+  #importModal.open{display:flex;}
+  #importDropZone:hover{border-color:var(--accent)!important;}
+  #importDropZone.dragover{border-color:var(--accent)!important;background:rgba(90,79,207,.08);}
+  #importFixtureBtn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:6px 12px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;}
+  #importFixtureBtn:hover{color:var(--text);border-color:var(--accent);}
   .modal-box{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:28px 32px;width:620px;max-width:96vw;max-height:85vh;overflow-y:auto;}
   .modal-box h2{margin:0 0 20px;font-size:17px;color:var(--text);}
   .modal-section{margin-bottom:18px;}
@@ -417,6 +424,12 @@
     <button class="btn-remove" id="removeBtn" disabled>Remove</button>
     <button class="btn-remove" id="clearChangesBtn" style="display:none;" title="Clear all change markers">Clear changes</button>
     <button class="btn-modal-add" id="addFixtureBtn">+ Add Fixture</button>
+    <button id="importFixtureBtn" title="Import fixture from a .txt file">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8 1H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V5z"/><path d="M8 1v4h4"/><path d="M4.5 8h5M4.5 10h3"/>
+      </svg>
+      Import
+    </button>
     <button id="vidViewBtn" onclick="toggleVidView()" style="background:#7c3aed;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;">Resources</button>
     <div class="col-picker-wrap" style="display:none;">
       <button class="btn-remove" id="assignSocialsBtn" style="background:#7c3aed;" disabled>Socials ▾</button>
@@ -704,6 +717,49 @@
     <div id="changeHistoryContent" style="max-height:420px;overflow-y:auto;"></div>
     <div class="modal-actions">
       <button class="btn-modal-cancel" onclick="closeChangeHistoryModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import Fixture Modal -->
+<div id="importModal">
+  <div class="modal-box" style="width:500px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+      <h2 style="margin:0;">Import Fixture from File</h2>
+      <button type="button" onclick="closeImportModal()" style="background:none;border:none;cursor:pointer;font-size:20px;line-height:1;color:var(--muted);padding:4px 6px;" aria-label="Close">&times;</button>
+    </div>
+    <!-- Step 1 -->
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px;">Step 1 — Get the template</div>
+      <p style="font-size:13px;color:var(--text);margin:0 0 10px;line-height:1.5;">Download the template, open it in Notepad, fill in your fixture details, and save.</p>
+      <button type="button" id="downloadTemplateBtn" style="background:none;border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:6px 14px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-family:inherit;">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6.5 1v7M4 5.5l2.5 2.5 2.5-2.5"/><path d="M1 10.5h11v1H1z"/>
+        </svg>
+        Download fixture_template.txt
+      </button>
+    </div>
+    <!-- Step 2 -->
+    <div style="margin-bottom:14px;">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px;">Step 2 — Upload your completed file</div>
+      <label id="importDropZone" for="importFileInput" style="display:block;border:2px dashed var(--border);border-radius:8px;padding:22px 16px;text-align:center;cursor:pointer;transition:border-color .15s;">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--muted);display:block;margin:0 auto 8px;">
+          <path d="M13 2H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"/><path d="M13 2v5h5"/>
+        </svg>
+        <span style="font-size:13px;color:var(--text);">Click to browse or drag &amp; drop your <code style="background:var(--border);padding:1px 5px;border-radius:3px;">.txt</code> file</span>
+        <input type="file" id="importFileInput" accept=".txt,text/plain" style="display:none;">
+      </label>
+    </div>
+    <!-- Error -->
+    <div id="importError" style="display:none;background:#2d1515;border:1px solid #7f1d1d;border-radius:6px;padding:10px 14px;font-size:13px;color:#fca5a5;margin-bottom:14px;line-height:1.5;"></div>
+    <!-- Preview -->
+    <div id="importPreview" style="display:none;background:rgba(22,101,52,.15);border:1px solid #166534;border-radius:6px;padding:12px 14px;margin-bottom:14px;">
+      <div style="font-weight:700;color:#4ade80;margin-bottom:10px;font-size:13px;">✓ Fixture ready to add</div>
+      <table id="importPreviewTable" style="border-collapse:collapse;width:100%;font-size:13px;"></table>
+    </div>
+    <div class="modal-actions">
+      <button type="button" onclick="closeImportModal()" class="btn-modal-cancel">Cancel</button>
+      <button type="button" id="importAddBtn" class="btn-modal-add" disabled>Add Fixture</button>
     </div>
   </div>
 </div>
@@ -1288,6 +1344,165 @@ function applyOverrides(){
     if(ov.hero!==undefined){f.hero=ov.hero;}
   });
 }
+
+// ---- Import Fixture from File ----
+let _importedFixture = null;
+const IMPORT_TEMPLATE =
+`County1:
+Club1:
+County2:
+Club2:
+Date: DD/MM/YYYY
+Time: HH:MM
+Location:
+Competition:
+Round:
+Code: (optional - Football / Hurling / Camogie / Rugby Union)`;
+
+function downloadImportTemplate(){
+  const blob=new Blob([IMPORT_TEMPLATE],{type:'text/plain'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='fixture_template.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+}
+
+function parseImportFile(text){
+  const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(l=>l&&!l.startsWith('#'));
+  const map={};
+  for(const line of lines){
+    const colon=line.indexOf(':');
+    if(colon<0) throw new Error(`Line not in "Key: Value" format — "${line}"`);
+    const key=line.slice(0,colon).trim().toLowerCase();
+    const val=line.slice(colon+1).trim();
+    map[key]=val;
+  }
+  const REQUIRED=['county1','club1','county2','club2','date','competition'];
+  const LABELS={county1:'County1',club1:'Club1',county2:'County2',club2:'Club2',date:'Date',competition:'Competition'};
+  const missing=REQUIRED.filter(k=>!map[k]);
+  if(missing.length) throw new Error(`Missing required field${missing.length>1?'s':''}: ${missing.map(k=>LABELS[k]).join(', ')}`);
+  // Date: DD/MM/YYYY
+  const dm=map['date'].match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(!dm) throw new Error(`Date must be DD/MM/YYYY (e.g. 28/09/2026) — got "${map['date']}"`);
+  const [,dd,mm,yyyy]=dm;
+  const dateObj=new Date(Number(yyyy),Number(mm)-1,Number(dd));
+  if(dateObj.getFullYear()!==Number(yyyy)||dateObj.getMonth()!==Number(mm)-1||dateObj.getDate()!==Number(dd))
+    throw new Error(`"${map['date']}" is not a valid calendar date`);
+  const isoDate=`${yyyy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`;
+  // Time: HH:MM (optional)
+  let timeStr='';
+  const rawTime=(map['time']||'').toLowerCase();
+  if(rawTime&&!rawTime.startsWith('hh')&&!rawTime.startsWith('(optional')){
+    const tm=map['time'].match(/^(\d{1,2}):(\d{2})$/);
+    if(!tm) throw new Error(`Time must be HH:MM in 24-hour format (e.g. 19:00) — got "${map['time']}"`);
+    const [,hh,min]=tm;
+    if(Number(hh)>23||Number(min)>59) throw new Error(`"${map['time']}" is not a valid time`);
+    const h=Number(hh),ampm=h>=12?'PM':'AM',h12=h===0?12:h>12?h-12:h;
+    timeStr=`${h12}:${min} ${ampm}`;
+  }
+  // Code (optional)
+  const VALID_CODES={football:'Football',hurling:'Hurling',camogie:'Camogie','rugby union':'Rugby Union'};
+  let code='';
+  const rawCode=(map['code']||'').toLowerCase();
+  if(rawCode&&!rawCode.startsWith('(optional')){
+    if(!VALID_CODES[rawCode]) throw new Error(`Code must be one of: Football, Hurling, Camogie, Rugby Union — got "${map['code']}"`);
+    code=VALID_CODES[rawCode];
+  }
+  const county1=map['county1'],county2=map['county2'];
+  const fixture={county:county1,teamA:map['club1'],teamB:map['club2'],date:isoDate,time:timeStr,
+    venue:map['location']||'',competition:map['competition'],round:map['round']||'',
+    code,status:'Proposed',manual:true};
+  if(county2!==county1) fixture.countyB=county2;
+  return fixture;
+}
+
+function _showImportError(msg){
+  const el=document.getElementById('importError');
+  el.innerHTML='<strong>Error:</strong> '+msg;
+  el.style.display='block';
+  document.getElementById('importPreview').style.display='none';
+  document.getElementById('importAddBtn').disabled=true;
+  _importedFixture=null;
+}
+
+function _showImportPreview(fixture){
+  document.getElementById('importError').style.display='none';
+  const teamB=fixture.teamB+(fixture.countyB?` (${fixture.countyB})`:fixture.county?` (${fixture.county})`:'');
+  const rows=[
+    ['Team A',fixture.teamA+(fixture.county?` (${fixture.county})`:'')],
+    ['Team B',teamB],
+    ['Date',fixture.date],
+    ['Time',fixture.time||'—'],
+    ['Venue',fixture.venue||'—'],
+    ['Competition',fixture.competition],
+    ['Round',fixture.round||'—'],
+    ['Code',fixture.code||'Auto-detect'],
+  ];
+  document.getElementById('importPreviewTable').innerHTML=rows.map(([k,v])=>
+    `<tr><td style="color:var(--muted);padding:2px 12px 2px 0;white-space:nowrap;vertical-align:top;">${k}</td><td style="color:var(--text);">${v}</td></tr>`
+  ).join('');
+  document.getElementById('importPreview').style.display='block';
+  document.getElementById('importAddBtn').disabled=false;
+  _importedFixture=fixture;
+}
+
+function handleImportFile(file){
+  if(!file) return;
+  if(file.name&&!file.name.toLowerCase().endsWith('.txt')&&file.type&&!file.type.startsWith('text/')){
+    _showImportError('Please upload a plain text (.txt) file.');
+    return;
+  }
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{ _showImportPreview(parseImportFile(e.target.result)); }
+    catch(err){ _showImportError(err.message); }
+  };
+  reader.readAsText(file);
+}
+
+function openImportModal(){
+  _importedFixture=null;
+  document.getElementById('importError').style.display='none';
+  document.getElementById('importPreview').style.display='none';
+  document.getElementById('importAddBtn').disabled=true;
+  document.getElementById('importFileInput').value='';
+  document.getElementById('importModal').classList.add('open');
+}
+function closeImportModal(){
+  document.getElementById('importModal').classList.remove('open');
+  _importedFixture=null;
+}
+
+(function setupImportModal(){
+  document.getElementById('downloadTemplateBtn').addEventListener('click',downloadImportTemplate);
+  document.getElementById('importFixtureBtn').addEventListener('click',openImportModal);
+  document.getElementById('importModal').addEventListener('click',e=>{
+    if(e.target===document.getElementById('importModal')) closeImportModal();
+  });
+  document.getElementById('importFileInput').addEventListener('change',e=>{
+    handleImportFile(e.target.files[0]);
+  });
+  const dz=document.getElementById('importDropZone');
+  dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover');});
+  dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));
+  dz.addEventListener('drop',e=>{
+    e.preventDefault();dz.classList.remove('dragover');
+    handleImportFile(e.dataTransfer.files[0]);
+  });
+  document.getElementById('importAddBtn').addEventListener('click',()=>{
+    if(!_importedFixture) return;
+    const f=_importedFixture;
+    if(!f.id) f.id='m'+Math.abs([...stableKeyOf(f)].reduce((h,c)=>(Math.imul(31,h)+c.charCodeAt(0))|0,0)).toString(36);
+    manualFixtures.push(f);
+    saveManualFixtures(false);
+    applyManualFixtures();
+    render();
+    closeImportModal();
+  });
+})();
 
 // ---- Add Fixture Modal ----
 let _ml=null;
