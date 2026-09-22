@@ -1640,6 +1640,14 @@ function openEditModal(id){
   document.querySelector('#addModal .btn-modal-add').textContent='Save Changes';
 }
 
+function closeModal(){
+  editingId=null;
+  const g=id=>document.getElementById(id);
+  g('addModal').classList.remove('open');
+  document.querySelector('#addModal h2').textContent='Add Fixture';
+  document.querySelector('#addModal .btn-modal-add').textContent='Add Fixture';
+  g('f_code').value='';
+}
 function setupModal(){
   const g=id=>document.getElementById(id);
   const fca=g('f_countyA'), fcaNew=g('f_countyANew');
@@ -1677,13 +1685,6 @@ function setupModal(){
   fv.addEventListener('change', ()=>{ fvNew.style.display=fv.value==='__new__'?'block':'none';   if(fv.value!=='__new__')  fvNew.value=''; });
   fc.addEventListener('change', ()=>{ fcNew.style.display=fc.value==='__new__'?'block':'none';   if(fc.value!=='__new__')  fcNew.value=''; });
 
-  function closeModal(){
-    editingId=null;
-    g('addModal').classList.remove('open');
-    document.querySelector('#addModal h2').textContent='Add Fixture';
-    document.querySelector('#addModal .btn-modal-add').textContent='Add Fixture';
-    g('f_code').value='';
-  }
   g('cancelFixtureBtn').addEventListener('click',closeModal);
   g('addModal').addEventListener('click',e=>{ if(e.target===g('addModal')) closeModal(); });
 
