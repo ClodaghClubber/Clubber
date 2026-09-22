@@ -2070,7 +2070,8 @@ function render(){
   tbody.querySelectorAll('.edit-btn').forEach(btn=>{
     btn.addEventListener('click',e=>{
       e.stopPropagation();
-      openEditModal(Number(btn.dataset.editId));
+      const rawId=btn.dataset.editId;
+      openEditModal(isNaN(rawId)||rawId===''?rawId:Number(rawId));
     });
   });
   updateActionButtons();
