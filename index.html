@@ -3276,6 +3276,9 @@ function buildGamePayload(f) {
     competitorClubId: teamBResult?.clubId || '',
     competitorClubCounty: isRugby ? 'UK' : (teamBResult?.county || ''),
     price,
+    hideFromFan: false,
+    sendToSpectatr: true,
+    sendToMagnifi: false,
     ...(f.clubberPick ? { trendingUpcoming: true } : {}),
     ...(f.hero ? { heroSection: true } : {}),
   };
