@@ -1065,15 +1065,46 @@ const clientId   = getOrCreateClientId();
 async function syncUserNameFromServer() {
   if (currentUser) return;
   try {
+    // Try by clientId first
     const res = await fetch(WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'getPrefs', clientId }),
     });
-    if (!res.ok) return;
-    const data = await res.json();
-    if (data.ok && data.prefs && data.prefs.displayName) {
-      currentUser = data.prefs.displayName;
+    if (res.ok) {
+      const data = await res.json();
+      if (data.ok && data.prefs && data.prefs.displayName) {
+        currentUser = data.prefs.displayName;
+        localStorage.setItem(USER_KEY, currentUser);
+        setUserCookie(currentUser);
+        if (typeof updateUserBtn === 'function') updateUserBtn();
+        return;
+      }
+    }
+  } catch (_) {}
+  // If clientId lookup failed and we have an auth token, try restoring by auth username
+  if (!authToken) return;
+  try {
+    const vRes = await authFetch(WORKER_URL, { method: 'POST', body: JSON.stringify({ action: 'validateSession' }) });
+    if (!vRes.ok) return;
+    const vData = await vRes.json();
+    if (!vData.ok || !vData.username) return;
+    const authKey = 'auth:' + vData.username;
+    const pRes = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'getPrefs', clientId: authKey }),
+    });
+    if (!pRes.ok) return;
+    const pData = await pRes.json();
+    if (pData.ok && pData.prefs && pData.prefs.displayName) {
+      currentUser = pData.prefs.displayName;
+      localStorage.setItem(USER_KEY, currentUser);
+      setUserCookie(currentUser);
+      if (typeof updateUserBtn === 'function') updateUserBtn();
+    } else if (!currentUser) {
+      // Fall back to the auth username itself
+      currentUser = vData.username;
       localStorage.setItem(USER_KEY, currentUser);
       setUserCookie(currentUser);
       if (typeof updateUserBtn === 'function') updateUserBtn();
@@ -1081,11 +1112,26 @@ async function syncUserNameFromServer() {
   } catch (_) {}
 }
 async function pushUserNameToServer(name) {
+  const prefs = { displayName: name };
+  // Save under clientId (existing behaviour)
   try {
     await fetch(WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'setPrefs', clientId, prefs: { displayName: name } }),
+      body: JSON.stringify({ action: 'setPrefs', clientId, prefs }),
+    });
+  } catch (_) {}
+  // Also save under auth username so it survives clientId regeneration
+  if (!authToken) return;
+  try {
+    const vRes = await authFetch(WORKER_URL, { method: 'POST', body: JSON.stringify({ action: 'validateSession' }) });
+    if (!vRes.ok) return;
+    const vData = await vRes.json();
+    if (!vData.ok || !vData.username) return;
+    await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'setPrefs', clientId: 'auth:' + vData.username, prefs }),
     });
   } catch (_) {}
 }
