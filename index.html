@@ -2481,7 +2481,7 @@ async function loadFixtures(isRefresh){
       }
       saveOverrides();
     }
-    const incoming=(json.fixtures||[]).map(f=>({...mk(f.county,f.teamA,f.teamB,f.date,f.time,f.venue,f.competition,f.round), code:deriveCode(f.competition,f.sport), status:f.status||'Proposed', ...(f.clubberCreated!==undefined?{clubberCreated:f.clubberCreated}:{})}));
+    const incoming=(json.fixtures||[]).map(f=>({...mk(f.county,f.teamA,f.teamB,f.date,f.time,f.venue,f.competition,f.round), code:f.code||deriveCode(f.competition,f.sport), status:f.status||'Proposed', ...(f.clubberCreated!==undefined?{clubberCreated:f.clubberCreated}:{})}));
     mergeFixtures(incoming);
     detectChanges(takeSnapshot());
     updateClearChangesBtn();
