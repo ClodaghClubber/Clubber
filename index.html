@@ -2518,9 +2518,17 @@ async function loadFixtures(isRefresh){
     // Local-only fixtures (sync failed or in-flight) are preserved and
     // re-synced to KV so they aren't lost on the next load.
     if(Array.isArray(json.manualFixtures)){
+      const localMap=new Map(manualFixtures.map(f=>[stableKeyOf(f),f]));
       const kvKeys=new Set(json.manualFixtures.map(f=>stableKeyOf(f)));
       const localOnly=manualFixtures.filter(f=>!kvKeys.has(stableKeyOf(f)));
-      manualFixtures=[...json.manualFixtures,...localOnly];
+      // Merge: KV wins on all fields except status — preserve local status if user changed it
+      const merged=json.manualFixtures.map(f=>{
+        const local=localMap.get(stableKeyOf(f));
+        return (local&&local.status&&local.status!=='Proposed')
+          ? {...f, status:local.status}
+          : f;
+      });
+      manualFixtures=[...merged,...localOnly];
       // If there are local-only fixtures that weren't in KV, push them up now
       saveManualFixtures(localOnly.length===0);
     }
