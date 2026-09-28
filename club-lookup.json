@@ -1,0 +1,1916 @@
+﻿{
+    "Carlow":  {
+                   "Asca":  {
+                                "clubberName":  "Asca",
+                                "clubberId":  "9e26e851-475e-481c-b487-4e42586bfc2e"
+                            },
+                   "Bagenalstown":  {
+                                        "clubberName":  "Bagenalstown Gaels",
+                                        "clubberId":  "b9305ea4-77eb-40e2-a015-f4c5fb811045"
+                                    },
+                   "Ballinabranna":  {
+                                         "clubberName":  "Ballinabranna",
+                                         "clubberId":  "2dc6d5b9-3ea9-46f5-b446-7705d2e7ce6d"
+                                     },
+                   "Ballinkillen":  {
+                                        "clubberName":  "Ballinkillen HC",
+                                        "clubberId":  "7e58bcb9-c486-436e-a0c9-dcebb9d2bdbe"
+                                    },
+                   "Ballon":  {
+                                  "clubberName":  "Ballon",
+                                  "clubberId":  "ed1bcd04-d987-45e9-b4c5-952f9f1df2b1"
+                              },
+                   "Burren Rangers":  {
+                                          "clubberName":  "Burren Rangers",
+                                          "clubberId":  "cc0f9dca-5429-459b-b212-6a75d44fd9a8"
+                                      },
+                   "Carlow Town":  {
+                                       "clubberName":  "Carlow",
+                                       "clubberId":  "b960f87a-fc72-49ac-964b-2c881a46e4ae"
+                                   },
+                   "Clonmore":  {
+                                    "clubberName":  "Clonmore",
+                                    "clubberId":  "b9c817bc-f854-4e0b-b972-40550332021f"
+                                },
+                   "Eire Og":  {
+                                   "clubberName":  "Eire Og",
+                                   "clubberId":  "7ceb5336-8d17-4383-abdb-575a5460d07c"
+                               },
+                   "Fenagh":  {
+                                  "clubberName":  "Fenagh",
+                                  "clubberId":  "610c740f-d75c-456a-8f41-e31796113a1c"
+                              },
+                   "Fighting Cocks":  {
+                                          "clubberName":  "Fighting Cocks",
+                                          "clubberId":  "305652d4-1c94-4439-b581-1baeb1a8638b"
+                                      },
+                   "Grange":  {
+                                  "clubberName":  "Grange",
+                                  "clubberId":  "5f301070-b16c-4eca-9077-388d598bb389"
+                              },
+                   "Kilbride":  {
+                                    "clubberName":  "Kilbride",
+                                    "clubberId":  "6cbd0b59-279b-478a-87cf-d0a7fb318fea"
+                                },
+                   "Kildavin/Clonegal":  {
+                                             "clubberName":  "Kildavin/Clonegal",
+                                             "clubberId":  "807d72ec-d3e9-4b6c-8681-4689dab61a2f"
+                                         },
+                   "Leighlinbridge":  {
+                                          "clubberName":  "Leighlinbridge",
+                                          "clubberId":  "2455c51d-7b27-47a4-9ad4-4ce4de576964"
+                                      },
+                   "MLR":  {
+                               "clubberName":  "Mount Leinster Rangers",
+                               "clubberId":  "cdeeef01-2a58-4bfc-a8cb-29a7d81293d6"
+                           },
+                   "Naomh Brid":  {
+                                      "clubberName":  "Naomh Brid",
+                                      "clubberId":  "8d6e6cc4-ab0f-4e51-ab73-7f43355079f3"
+                                  },
+                   "Naomh Eoin":  {
+                                      "clubberName":  "Naomh Eoin",
+                                      "clubberId":  "680f34d8-a379-4a34-9a5d-39634d15ff3a"
+                                  },
+                   "Naomh Moling":  {
+                                        "clubberName":  "Naomh Moling",
+                                        "clubberId":  "a12de09d-c16f-4ed5-bdba-19707931544b"
+                                    },
+                   "O Hanrahans":  {
+                                       "clubberName":  "O\u0027Hanrahan\u0027s",
+                                       "clubberId":  "232363eb-1b0b-40e6-a149-8b6c609d593d"
+                                   },
+                   "Old Leighlin":  {
+                                        "clubberName":  "Old Leighlin",
+                                        "clubberId":  "4ef987ef-5ede-454e-bb4f-d13c02f0122c"
+                                    },
+                   "Palatine":  {
+                                    "clubberName":  "Palatine",
+                                    "clubberId":  "5406fefa-7297-477d-822f-94f3cdf6bace"
+                                },
+                   "Rathvilly":  {
+                                     "clubberName":  "Rathvilly",
+                                     "clubberId":  "8eb2f899-3203-47ca-b7ac-b96b9f5bb23d"
+                                 },
+                   "St. Patrick\u0027s":  {
+                                              "clubberName":  "St. Patrick\u0027s",
+                                              "clubberId":  "2bf5b042-f8c1-41ba-8ee5-592f8b43a370"
+                                          },
+                   "Tinryland":  {
+                                     "clubberName":  "Tinryland",
+                                     "clubberId":  "e17f6f9c-0aec-4da4-be80-cfbde0b596b1"
+                                 }
+               },
+    "Kildare":  {
+                    "Allenwood":  {
+                                      "clubberName":  "Allenwood",
+                                      "clubberId":  "14a111c9-f334-493e-888a-8dabd45899ab"
+                                  },
+                    "Ardclough":  {
+                                      "clubberName":  "Ardclough",
+                                      "clubberId":  "5b0d1535-b041-4dc4-bf05-164ed7d41fd8"
+                                  },
+                    "Athgarvan":  {
+                                      "clubberName":  "Athgarvan",
+                                      "clubberId":  "070a4c26-5141-43d4-ae3f-240e4f292349"
+                                  },
+                    "Athy":  {
+                                 "clubberName":  "Athy",
+                                 "clubberId":  "ff2a54e4-acc0-4207-bcf2-23791ddbabf7"
+                             },
+                    "Ballykelly":  {
+                                       "clubberName":  "Ballykelly",
+                                       "clubberId":  "7f41fd3f-bda4-4936-b727-5bebfb867874"
+                                   },
+                    "Ballymore Eustace":  {
+                                              "clubberName":  "Ballymore Eustace",
+                                              "clubberId":  "e7a3040c-669a-4da2-b32d-76d8f7e7a61b"
+                                          },
+                    "Ballyteague":  {
+                                        "clubberName":  "Ballyteague",
+                                        "clubberId":  "737fbe22-677c-4a07-aee5-c5db1694d856"
+                                    },
+                    "Cappagh":  {
+                                    "clubberName":  "Cappagh",
+                                    "clubberId":  "569b017f-4ba0-40d0-a8db-5cbe3f3ffc34"
+                                },
+                    "Caragh":  {
+                                   "clubberName":  "Caragh",
+                                   "clubberId":  "99cc5450-9599-4472-aa18-e2ba8c184e39"
+                               },
+                    "Carbury":  {
+                                    "clubberName":  "Carbury",
+                                    "clubberId":  "1166d192-65a1-471c-a79d-87d7c3386d61"
+                                },
+                    "Castledermot":  {
+                                         "clubberName":  "Castledermot",
+                                         "clubberId":  "2af20de6-75a1-4e48-bc98-22069dfa0ddc"
+                                     },
+                    "Castlemitchell":  {
+                                           "clubberName":  "Castlemitchell",
+                                           "clubberId":  "9d43e0cd-a949-4f81-9c5e-272a6f74426e"
+                                       },
+                    "Celbridge":  {
+                                      "clubberName":  "Celbridge",
+                                      "clubberId":  "8d1d9f4a-1aa6-408d-b15b-f6a335363143"
+                                  },
+                    "Clane":  {
+                                  "clubberName":  "Clane",
+                                  "clubberId":  "f01d1ce5-a377-44f9-a6f6-2e38ec346389"
+                              },
+                    "Clogherinkoe":  {
+                                         "clubberName":  "Clogherinkoe",
+                                         "clubberId":  "f45801cf-1fa0-4b0c-900f-685b8205d67f"
+                                     },
+                    "Confey":  {
+                                   "clubberName":  "Confey",
+                                   "clubberId":  "5b1d6ffb-e775-4fb3-8c81-692b3a29928f"
+                               },
+                    "Eadestown":  {
+                                      "clubberName":  "Eadestown",
+                                      "clubberId":  "0ed96027-8ca0-44ca-ae95-32924f41fcc7"
+                                  },
+                    "Ellistown":  {
+                                      "clubberName":  "Ellistown",
+                                      "clubberId":  "9dbb460d-f26d-4813-999d-a9dc657496b4"
+                                  },
+                    "Grangenolvin":  {
+                                         "clubberName":  "Grangenolvin",
+                                         "clubberId":  "8407f276-10fc-4280-a871-fb70d4f5b5c8"
+                                     },
+                    "Johnstownbridge":  {
+                                            "clubberName":  "Johnstownbridge",
+                                            "clubberId":  "e5cb337b-18ec-4e49-906e-bbaa18f49842"
+                                        },
+                    "Kilcock":  {
+                                    "clubberName":  "Kilcock",
+                                    "clubberId":  "17c6f7fb-d53a-4361-8f22-d7cf4cd75a5e"
+                                },
+                    "Kilcullen":  {
+                                      "clubberName":  "Kilcullen",
+                                      "clubberId":  "4f5b2800-fe09-41b8-b09a-b72ce62b4c59"
+                                  },
+                    "Kildangan":  {
+                                      "clubberName":  "Kildangan",
+                                      "clubberId":  "5943626d-a845-495e-b904-e89b0edc0d67"
+                                  },
+                    "Kill":  {
+                                 "clubberName":  "Kill",
+                                 "clubberId":  "39325d8e-8516-4b0c-a633-3432d6d4149c"
+                             },
+                    "Leixlip":  {
+                                    "clubberName":  "Leixlip",
+                                    "clubberId":  "556c3f04-e286-4255-a6d0-cc6e68a2f1b2"
+                                },
+                    "Maynooth":  {
+                                     "clubberName":  "Maynooth",
+                                     "clubberId":  "70a183b9-d944-49ff-8e21-732db0e9ac9b"
+                                 },
+                    "Milltown":  {
+                                     "clubberName":  "Milltown",
+                                     "clubberId":  "02bfc094-f855-485d-9394-7e98f16eec41"
+                                 },
+                    "Monasterevan":  {
+                                         "clubberName":  "Monasterevan",
+                                         "clubberId":  "6026b6ce-6d20-4677-b874-2916845bbe77"
+                                     },
+                    "Moorefield":  {
+                                       "clubberName":  "Moorefield",
+                                       "clubberId":  "05b5f438-ede6-4432-bbf1-32aa807a3e8b"
+                                   },
+                    "Naas":  {
+                                 "clubberName":  "Naas",
+                                 "clubberId":  "13e05513-8b4b-4e2b-ac25-5228c2212501"
+                             },
+                    "Nurney":  {
+                                   "clubberName":  "Nurney",
+                                   "clubberId":  "c3e48af7-051d-4c09-b2d1-1af05221016c"
+                               },
+                    "Raheens":  {
+                                    "clubberName":  "Raheens",
+                                    "clubberId":  "737032f7-6762-453b-827f-5698cccf5920"
+                                },
+                    "Rathangan":  {
+                                      "clubberName":  "Rathangan",
+                                      "clubberId":  "ccf6a27a-7c53-441b-b891-7a8a8f341011"
+                                  },
+                    "Rathcoffey":  {
+                                       "clubberName":  "Rathcoffey",
+                                       "clubberId":  "032a66f6-7668-4b10-a849-079257cab092"
+                                   },
+                    "Rheban":  {
+                                   "clubberName":  "Rheban",
+                                   "clubberId":  "eeb1e95e-e4c2-4c38-8c0e-a7ceb4cb3ac6"
+                               },
+                    "Robertstown":  {
+                                        "clubberName":  "Robertstown",
+                                        "clubberId":  "995601b8-90f5-40a9-ab16-d7161cc09ff7"
+                                    },
+                    "Round Towers":  {
+                                         "clubberName":  "Round Towers",
+                                         "clubberId":  "3bf170c5-06ae-4a4e-83c7-67838dfd758f"
+                                     },
+                    "Sallins":  {
+                                    "clubberName":  "Sallins",
+                                    "clubberId":  "a4b96d18-1239-4dea-ba34-9e47a098ae87"
+                                },
+                    "Sarsfields":  {
+                                       "clubberName":  "Sarsfields",
+                                       "clubberId":  "852f5027-3fed-491e-9cfb-2447e24a3f1e"
+                                   },
+                    "St. Kevin\u0027s":  {
+                                             "clubberName":  "St Kevins",
+                                             "clubberId":  "bee5d6c8-006e-42b4-af31-4af0de7aa79e"
+                                         },
+                    "St. Laurence\u0027s":  {
+                                                "clubberName":  "St. Laurence\u0027s",
+                                                "clubberId":  "6e3f5521-b6c0-492d-afff-365daca321cf"
+                                            },
+                    "Straffan":  {
+                                     "clubberName":  "Straffan",
+                                     "clubberId":  "f75d50d0-2483-41bd-8de5-cf46baa77a08"
+                                 },
+                    "Suncroft":  {
+                                     "clubberName":  "Suncroft",
+                                     "clubberId":  "477f20b1-0f81-41bb-8e4c-b3e931f86036"
+                                 },
+                    "Two Mile House":  {
+                                           "clubberName":  "Two Mile House",
+                                           "clubberId":  "afa468b3-9965-479c-81f9-e2f696a750d7"
+                                       }
+                },
+    "Longford":  {
+                     "Abbeylara":  {
+                                       "clubberName":  "Abbeylara",
+                                       "clubberId":  "729d9dae-a08d-4ccb-bf34-6d15ef6bf918"
+                                   },
+                     "Ardagh Moydow":  {
+                                           "clubberName":  "Ardagh Moydow",
+                                           "clubberId":  "ddff9be0-9686-4a75-83ec-a43b231b2e08"
+                                       },
+                     "Ballymahon":  {
+                                        "clubberName":  "Ballymahon",
+                                        "clubberId":  "a55a78cd-5ef6-479e-a403-1811eb3e8139"
+                                    },
+                     "Carrickedmond":  {
+                                           "clubberName":  "Carrickedmond",
+                                           "clubberId":  "d382f7c3-991a-4a66-94f4-1c25db9d92d0"
+                                       },
+                     "Cashel":  {
+                                    "clubberName":  "Cashel",
+                                    "clubberId":  "305854ac-55e0-453e-abc2-6d5aa694d3a6"
+                                },
+                     "Clonguish":  {
+                                       "clubberName":  "Clonguish",
+                                       "clubberId":  "5ad28f10-e162-403d-af31-038654ba6d5a"
+                                   },
+                     "Clonguish Gaels":  {
+                                             "clubberName":  "Clonguish",
+                                             "clubberId":  "5ad28f10-e162-403d-af31-038654ba6d5a"
+                                         },
+                     "Colmcille":  {
+                                       "clubberName":  "Colmcille",
+                                       "clubberId":  "44c09c15-c705-492a-8854-2ab78d44c143"
+                                   },
+                     "Dromard":  {
+                                     "clubberName":  "Dromard",
+                                     "clubberId":  "5430bbcc-4245-4249-a1d4-15e915669e0c"
+                                 },
+                     "Fr. Manning Gaels":  {
+                                               "clubberName":  "Fr Manning Gaels",
+                                               "clubberId":  "cfee24e9-0f27-4a91-bf18-5e9f5de328c5"
+                                           },
+                     "Grattan Ã“g":  {
+                                         "clubberName":  "Grattan Ã“g",
+                                         "clubberId":  "6bcb1d59-0b00-4381-9776-90c28d7b0fc5"
+                                     },
+                     "Killoe Young Emmets":  {
+                                                 "clubberName":  "Killoe Young Emmets",
+                                                 "clubberId":  "20c88da6-a2bf-400d-bbbf-4b5e37b39cda"
+                                             },
+                     "Longford Slashers":  {
+                                               "clubberName":  "Longford Slashers",
+                                               "clubberId":  "f5ed4516-2289-47b8-90b7-622c7ac2a03f"
+                                           },
+                     "Mostrim":  {
+                                     "clubberName":  "Mostrim",
+                                     "clubberId":  "fbe86cc1-094a-4961-9e35-e732ee36beb8"
+                                 },
+                     "Mullinalaghta St. Columba\u0027s":  {
+                                                              "clubberName":  "Mullinalaghta St Columbas",
+                                                              "clubberId":  "6cd25955-3f51-4967-aeac-e833d86ebb14"
+                                                          },
+                     "Rathcline":  {
+                                       "clubberName":  "Rathcline",
+                                       "clubberId":  "01b1b85a-9406-4eec-a7c2-5b54f91ccceb"
+                                   },
+                     "SeÃ¡n Connolly\u0027s":  {
+                                                   "clubberName":  "SeÃ¡n Conollys",
+                                                   "clubberId":  "77a08c51-a4ff-4ae3-b4ad-61e819a40f20"
+                                               },
+                     "St. Brigid\u0027s Killashee":  {
+                                                         "clubberName":  "St. Brigids Killashee",
+                                                         "clubberId":  "0c863d93-3512-4657-a7be-5e80a1041381"
+                                                     },
+                     "St. Mary\u0027s Granard":  {
+                                                     "clubberName":  "St. Marys Granard",
+                                                     "clubberId":  "0d650f94-9f3f-4bf4-b356-426a3a0c9658"
+                                                 },
+                     "Wolfe Tones":  {
+                                         "clubberName":  "Wolfe Tones",
+                                         "clubberId":  "15f04b68-46e9-480a-a2ee-40e46576f31c"
+                                     }
+                 },
+    "Meath":  {
+                  "Ballinabrackey":  {
+                                         "clubberName":  "Ballinabrackey",
+                                         "clubberId":  "17f64848-db6c-4239-8ee4-cb6eb31716ab"
+                                     },
+                  "Ballivor":  {
+                                   "clubberName":  "Ballivor",
+                                   "clubberId":  "4832522a-5e48-452f-8f4f-d10039ecba21"
+                               },
+                  "Bective":  {
+                                  "clubberName":  "Bective",
+                                  "clubberId":  "f8621254-843a-4542-8f84-b8a84cd6fae7"
+                              },
+                  "Bhulf TÃºn":  {
+                                     "clubberName":  "Wolfe Tones",
+                                     "clubberId":  "15f04b68-46e9-480a-a2ee-40e46576f31c"
+                                 },
+                  "Blackhall Gaels":  {
+                                          "clubberName":  "Blackhall Gaels",
+                                          "clubberId":  "4c354a7c-fc1e-4bfa-8d38-3920d7f406ef"
+                                      },
+                  "Boardsmill":  {
+                                     "clubberName":  "Boardsmill",
+                                     "clubberId":  "8f06afe1-5cd4-4b8a-8f1e-8d48d48a06a3"
+                                 },
+                  "Castletown":  {
+                                     "clubberName":  "Castletown",
+                                     "clubberId":  "33bce18d-50ca-432d-b9c3-42e76b182aa9"
+                                 },
+                  "Clann na nGael":  {
+                                         "clubberName":  "Clann na nGael",
+                                         "clubberId":  "153e14ad-980c-4f91-899b-0f08fb690191"
+                                     },
+                  "Donaghmore/Ashbourne":  {
+                                               "clubberName":  "Donaghmore / Ashbourne",
+                                               "clubberId":  "537b9c5d-a25c-4595-a2cf-e8e3f19d9594"
+                                           },
+                  "Drumbaragh":  {
+                                     "clubberName":  "Drumbaragh Emmets",
+                                     "clubberId":  "ee262bad-6ec1-40e0-98cb-7949d479f8e0"
+                                 },
+                  "Drumree":  {
+                                  "clubberName":  "Drumree",
+                                  "clubberId":  "ae09e93a-b0a1-4a3c-931d-bfb2bb35f61a"
+                              },
+                  "Duleek-Bellewstown":  {
+                                             "clubberName":  "Duleek / Bellewstown",
+                                             "clubberId":  "86ea3487-0094-4594-8814-b056520e4419"
+                                         },
+                  "Dunsany":  {
+                                  "clubberName":  "Dunsany",
+                                  "clubberId":  "aba99ec9-064b-4d03-baeb-e039209b9067"
+                              },
+                  "Dunshaughlin \u0026 Royal Gaels":  {
+                                                          "clubberName":  "Dunshaughlin",
+                                                          "clubberId":  "0f84902a-d94a-4e01-9281-b3152091819c"
+                                                      },
+                  "Gaeil Colmcille":  {
+                                          "clubberName":  "Gaeil Colmcille",
+                                          "clubberId":  "73c45984-52af-4bc9-af94-96354bc034be"
+                                      },
+                  "Kilbride":  {
+                                   "clubberName":  "Kilbride",
+                                   "clubberId":  "6cbd0b59-279b-478a-87cf-d0a7fb318fea"
+                               },
+                  "Kildalkey":  {
+                                    "clubberName":  "Kildalkey",
+                                    "clubberId":  "f6a2461f-8160-4371-8cc4-6083ec372032"
+                                },
+                  "Kilmessan":  {
+                                    "clubberName":  "Kilmessan",
+                                    "clubberId":  "5c1bf4fd-6b39-4a3f-847b-c8cb66d749f2"
+                                },
+                  "Kiltale":  {
+                                  "clubberName":  "Kiltale",
+                                  "clubberId":  "f2cc3d04-c2ae-47f5-ac17-dadf3fa34b19"
+                              },
+                  "Longwood":  {
+                                   "clubberName":  "Longwood",
+                                   "clubberId":  "d9858219-f6b6-414a-b557-fd762ded0ee1"
+                               },
+                  "Meath Hill":  {
+                                     "clubberName":  "Meath Hill",
+                                     "clubberId":  "e0ca45d7-d56d-4d6e-bb1c-d73069519425"
+                                 },
+                  "Moynalvey":  {
+                                    "clubberName":  "Moynalvey",
+                                    "clubberId":  "e359d5db-ed58-466a-8b7a-ca4ba048d521"
+                                },
+                  "Na Fianna":  {
+                                    "clubberName":  "Na Fianna",
+                                    "clubberId":  "e7e46df0-8e91-4017-8e32-73a8779c723e"
+                                },
+                  "Navan O\u0027Mahony\u0027s":  {
+                                                     "clubberName":  "Navan O\u0027Mahony\u0027s",
+                                                     "clubberId":  "ce8b2cc1-c33e-4daa-b506-c5ae54e0aacf"
+                                                 },
+                  "Oldcastle":  {
+                                    "clubberName":  "Oldcastle",
+                                    "clubberId":  "dd2172c7-9562-4f77-948b-19274486057c"
+                                },
+                  "Rathkenny":  {
+                                    "clubberName":  "Rathkenny",
+                                    "clubberId":  "cffa2ab2-4b6a-468d-822c-89a3555fc2b3"
+                                },
+                  "Rathmolyon":  {
+                                     "clubberName":  "Rathmolyon",
+                                     "clubberId":  "46a38e59-b9d8-4ae3-a4d0-908ac873b67f"
+                                 },
+                  "Ratoath":  {
+                                  "clubberName":  "Ratoath",
+                                  "clubberId":  "61d529b8-e056-4ccf-9d92-c6dca82766b8"
+                              },
+                  "Seneschalstown":  {
+                                         "clubberName":  "Seneschalstown",
+                                         "clubberId":  "25ee8e67-5db1-4c5e-81dc-274865d2159d"
+                                     },
+                  "Simonstown":  {
+                                     "clubberName":  "Simonstown Gaels",
+                                     "clubberId":  "4865ee07-e5fb-4490-8341-07e8807db814"
+                                 },
+                  "Skryne":  {
+                                 "clubberName":  "Skryne",
+                                 "clubberId":  "18bb15a0-4edd-42f4-a644-3d6480961cf4"
+                             },
+                  "St. Colmcille\u0027s":  {
+                                               "clubberName":  "St. Colmcille\u0027s",
+                                               "clubberId":  "84ee8698-e223-4635-a4d4-6497d6dda3ee"
+                                           },
+                  "St. Michael\u0027s":  {
+                                             "clubberName":  "St. Michael\u0027s",
+                                             "clubberId":  "093a7cfa-2399-4de9-ae86-2e71ffdf9dd7"
+                                         },
+                  "St. Patrick\u0027s":  {
+                                             "clubberName":  "St. Patrick\u0027s",
+                                             "clubberId":  "2bf5b042-f8c1-41ba-8ee5-592f8b43a370"
+                                         },
+                  "St. Peter\u0027s Dunboyne":  {
+                                                    "clubberName":  "St. Peterâ€™s Dunboyne",
+                                                    "clubberId":  "446b22cb-0117-4f87-bc8c-1b6540690ea6"
+                                                },
+                  "Summerhill":  {
+                                     "clubberName":  "Summerhill",
+                                     "clubberId":  "6f3e0116-b643-4663-9a61-1c2eb98d3314"
+                                 },
+                  "Trim":  {
+                               "clubberName":  "Trim",
+                               "clubberId":  "8ca511c6-00d9-413a-bb20-bdf197785bea"
+                           },
+                  "Walterstown":  {
+                                      "clubberName":  "Walterstown",
+                                      "clubberId":  "53376c92-6cad-4072-ae0e-c61d58b2f814"
+                                  }
+              },
+    "Roscommon":  {
+                      "Ballinameen":  {
+                                          "clubberName":  "Ballinameen",
+                                          "clubberId":  "87c69c0c-3cfe-48f2-8734-548832ad4b76"
+                                      },
+                      "Boyle":  {
+                                    "clubberName":  "Boyle",
+                                    "clubberId":  "5602dc03-93e7-484c-91e7-d2c9d3e61888"
+                                },
+                      "Castlerea St Kevins":  {
+                                                  "clubberName":  "Castlerea St. Kevins",
+                                                  "clubberId":  "bb0ae9b8-87c5-46ce-9d33-2cfb943fee14"
+                                              },
+                      "Clann na nGael":  {
+                                             "clubberName":  "Clann na nGael",
+                                             "clubberId":  "153e14ad-980c-4f91-899b-0f08fb690191"
+                                         },
+                      "Creggs":  {
+                                     "clubberName":  "Creggs",
+                                     "clubberId":  "1e14f09e-4b1d-4018-91b1-ee0bb2f53d34"
+                                 },
+                      "Ã‰ire Ã“g":  {
+                                        "clubberName":  "Eire Ã“g",
+                                        "clubberId":  "6b4eb3dd-c90a-41ef-b99b-06504cbaa31a"
+                                    },
+                      "Elphin":  {
+                                     "clubberName":  "Elphin",
+                                     "clubberId":  "b600af2e-b2bd-4309-92b1-699452871056"
+                                 },
+                      "Fuerty":  {
+                                     "clubberName":  "Fuerty",
+                                     "clubberId":  "f32b0581-868e-4302-8dc9-e70f76d1a998"
+                                 },
+                      "Kilbride":  {
+                                       "clubberName":  "Kilbride",
+                                       "clubberId":  "6cbd0b59-279b-478a-87cf-d0a7fb318fea"
+                                   },
+                      "Kilglass Gaels":  {
+                                             "clubberName":  "Kilglass GaelsÂ ",
+                                             "clubberId":  "a68149bf-bdf5-4f19-8f65-f6767b1325ed"
+                                         },
+                      "Kilmore":  {
+                                      "clubberName":  "Kilmore",
+                                      "clubberId":  "59646b44-cb42-461f-9310-5531073a3619"
+                                  },
+                      "Michael Glaveys":  {
+                                              "clubberName":  "Michael Glaveys",
+                                              "clubberId":  "c69f2f6b-91c9-465c-a0ca-c590f385ce16"
+                                          },
+                      "Naomh Bearrai":  {
+                                            "clubberName":  "St. Barrys",
+                                            "clubberId":  "cf74eeda-6e21-4194-9fda-340dcf5012b8"
+                                        },
+                      "Oran (Football)":  {
+                                              "clubberName":  "OranÂ Football",
+                                              "clubberId":  "89d60a33-44e4-4cb3-bc25-22abc460a09f"
+                                          },
+                      "PÃ¡draig Pearses GAA":  {
+                                                   "clubberName":  "Padraig Pearses",
+                                                   "clubberId":  "0eec32ec-95fb-474f-afb7-7c55612adc73"
+                                               },
+                      "Roscommon Gaels":  {
+                                              "clubberName":  "Roscommon Gaels",
+                                              "clubberId":  "5e982c86-091f-44b4-bf17-f0d5ebe6b54b"
+                                          },
+                      "Shannon Gaels":  {
+                                            "clubberName":  "Shannon Gaels",
+                                            "clubberId":  "46f349fb-59f8-45ac-b174-3d81ec099673"
+                                        },
+                      "St Brigids":  {
+                                         "clubberName":  "St. Brigids",
+                                         "clubberId":  "c8f8a0fb-eb88-4d85-a1d6-325ac39dbf72"
+                                     },
+                      "St. Aidans":  {
+                                         "clubberName":  "St. Aidans",
+                                         "clubberId":  "b3abc0d7-f067-4fc0-b973-7c7d7aac2c7f"
+                                     },
+                      "St. Croans":  {
+                                         "clubberName":  "St. Croans",
+                                         "clubberId":  "222cf501-d74a-4581-bae6-faa3f36c9cb5"
+                                     },
+                      "St. Dominics":  {
+                                           "clubberName":  "St. Dominics",
+                                           "clubberId":  "4085a4c2-371f-4f1f-b4d5-3202eb650d58"
+                                       },
+                      "St. Faithleachs":  {
+                                              "clubberName":  "St. Faithleachs",
+                                              "clubberId":  "6305ef57-5a00-41fd-9dd5-d61277578256"
+                                          },
+                      "St. Josephs":  {
+                                          "clubberName":  "St. Josephs",
+                                          "clubberId":  "7027c55f-ad2e-4d8f-bf22-adb901450c19"
+                                      },
+                      "St. Michaels":  {
+                                           "clubberName":  "St. Michael\u0027s",
+                                           "clubberId":  "093a7cfa-2399-4de9-ae86-2e71ffdf9dd7"
+                                       },
+                      "Strokestown":  {
+                                          "clubberName":  "Strokestown",
+                                          "clubberId":  "8a8ea574-b6a9-468d-b363-0e7b693f3406"
+                                      },
+                      "Tulsk Lord Edwards":  {
+                                                 "clubberName":  "Tulsk Lord Edwards",
+                                                 "clubberId":  "ec27488c-4464-492d-a8ab-577ee099f80e"
+                                             },
+                      "Western Gaels":  {
+                                            "clubberName":  "Western Gaels",
+                                            "clubberId":  "5b6128fe-8096-4bcf-81c4-f6f673239d8c"
+                                        }
+                  },
+    "Cork":  {
+                 "Aghabullogue":  {
+                                      "clubberName":  "Aghabullogue",
+                                      "clubberId":  "9aa7871b-4c23-40e9-857f-4c7af658848c"
+                                  },
+                 "Aghada":  {
+                                "clubberName":  "Aghada",
+                                "clubberId":  "6d5d5fd5-3dff-48cb-9650-2e17f7f147b9"
+                            },
+                 "BÃ©al Ãtha\u0027n Ghaorthaidh":  {
+                                                        "clubberName":  "Ballingeary",
+                                                        "clubberId":  "c324886b-0da8-4825-a501-d18eef3d49cb"
+                                                    },
+                 "Ballincollig":  {
+                                      "clubberName":  "Ballincollig",
+                                      "clubberId":  "f57719ab-dd41-4acd-8f42-df4b84734c88"
+                                  },
+                 "Ballinhassig":  {
+                                      "clubberName":  "Ballinhassig",
+                                      "clubberId":  "4a90f52b-823d-46ff-a4c4-2a7004e8e867"
+                                  },
+                 "Ballygiblin":  {
+                                     "clubberName":  "Ballygiblin",
+                                     "clubberId":  "3a5db2cd-5407-4214-b338-5163c5995b70"
+                                 },
+                 "Ballyhea":  {
+                                  "clubberName":  "Ballyhea",
+                                  "clubberId":  "be93d948-1e5d-461c-9930-d70a3db477f8"
+                              },
+                 "Ballymartle":  {
+                                     "clubberName":  "Ballymartle",
+                                     "clubberId":  "50f5d765-a63e-4a71-9562-62b10ccbe148"
+                                 },
+                 "Bandon":  {
+                                "clubberName":  "Bandon",
+                                "clubberId":  "31358503-422e-4c59-9511-f4030439f21b"
+                            },
+                 "Bishopstown":  {
+                                     "clubberName":  "Bishopstown",
+                                     "clubberId":  "d13af216-f8d0-4dbb-b4ea-e36b4f50b91a"
+                                 },
+                 "Blackrock":  {
+                                   "clubberName":  "Blackrock",
+                                   "clubberId":  "919c1ada-880c-490c-8a16-58e5f5743499"
+                               },
+                 "Blarney":  {
+                                 "clubberName":  "Blarney",
+                                 "clubberId":  "45ddb532-d6d4-433f-bb5c-28d1fa5dac8a"
+                             },
+                 "Bride Rovers":  {
+                                      "clubberName":  "Bride Rovers",
+                                      "clubberId":  "4c2dbe07-1e0e-49a4-8f81-326cb6af4c13"
+                                  },
+                 "Carbery Rangers":  {
+                                         "clubberName":  "Carbery Rangers",
+                                         "clubberId":  "ae10da6d-e731-4445-a121-30b45e98e2c1"
+                                     },
+                 "Carrigaline":  {
+                                     "clubberName":  "Carrigaline",
+                                     "clubberId":  "6bd7b01d-0eac-43c3-8e4d-0b3267aa1d38"
+                                 },
+                 "Carrigtwohill":  {
+                                       "clubberName":  "Carrigtwohill",
+                                       "clubberId":  "fb267f00-d393-4b4f-b125-0a1a59437ad2"
+                                   },
+                 "Castlehaven":  {
+                                     "clubberName":  "Castlehaven",
+                                     "clubberId":  "6629443f-60d8-4af0-8d7f-a571ea0017ad"
+                                 },
+                 "Castlelyons":  {
+                                     "clubberName":  "Castlelyons",
+                                     "clubberId":  "23f4ca47-8d92-46ce-854d-c36a6a32e488"
+                                 },
+                 "Castlemartyr":  {
+                                      "clubberName":  "Castlemartyr",
+                                      "clubberId":  "1cc5f3f4-0932-46af-b3f4-cf6fca735791"
+                                  },
+                 "Charleville":  {
+                                     "clubberName":  "Charleville",
+                                     "clubberId":  "f13408de-21fc-4c49-8035-9a4571348cea"
+                                 },
+                 "Cill na Martra":  {
+                                        "clubberName":  "Cill na Martra",
+                                        "clubberId":  "ad929e0c-433d-4311-8624-a927f7178a36"
+                                    },
+                 "Clonakilty":  {
+                                    "clubberName":  "Clonakilty",
+                                    "clubberId":  "2c5ada96-2754-4370-9ba6-ee1d76968d1c"
+                                },
+                 "Cloyne":  {
+                                "clubberName":  "Cloyne",
+                                "clubberId":  "3aa64a46-8d66-44b1-bb89-2f5873527663"
+                            },
+                 "Clyda Rovers":  {
+                                      "clubberName":  "Clyda Rovers",
+                                      "clubberId":  "87a4673d-f81b-4d6b-b6cb-a06e15bc56fe"
+                                  },
+                 "Courcey Rovers":  {
+                                        "clubberName":  "Courcey Rovers",
+                                        "clubberId":  "030d9ac0-3ed9-4fcd-8293-7fb74622e390"
+                                    },
+                 "Dohenys":  {
+                                 "clubberName":  "Dohenys / Sam Maguires",
+                                 "clubberId":  "148e61bf-4604-456f-a97d-dda99d93a3c8"
+                             },
+                 "Douglas":  {
+                                 "clubberName":  "Douglas",
+                                 "clubberId":  "38420ff2-dc93-4a66-a974-9197b7deaf6c"
+                             },
+                 "Dungourney":  {
+                                    "clubberName":  "Dungourney",
+                                    "clubberId":  "fa24ea00-a1f7-46c5-ac43-0e918c658520"
+                                },
+                 "Eire Og":  {
+                                 "clubberName":  "Ã‰ire Ã“g",
+                                 "clubberId":  "a525fee2-b687-45ec-830d-95aa44a61b29"
+                             },
+                 "Erins Own":  {
+                                   "clubberName":  "Erins Own",
+                                   "clubberId":  "3f9e44d6-469e-4eb6-b49d-2577ee0a8335"
+                               },
+                 "Fermoy":  {
+                                "clubberName":  "Fermoy",
+                                "clubberId":  "27712c66-128f-4a6c-bc61-beeda73451d7"
+                            },
+                 "Fr. O\u0027Neills":  {
+                                           "clubberName":  "Fr. O\u0027Neills",
+                                           "clubberId":  "757ee427-5e82-4f1a-9aec-9e49a8b60bd0"
+                                       },
+                 "Glen Rovers":  {
+                                     "clubberName":  "Glen Rovers",
+                                     "clubberId":  "c92f008b-9cee-4c58-92da-d8225f8f8921"
+                                 },
+                 "Inniscarra":  {
+                                    "clubberName":  "Inniscarra",
+                                    "clubberId":  "a7d8d8b8-75ea-4f15-87fc-4c09f5661655"
+                                },
+                 "Kanturk":  {
+                                 "clubberName":  "Kanturk",
+                                 "clubberId":  "4b8db670-b175-4b6a-9bb7-9dc655f6e787"
+                             },
+                 "Kilbrittain":  {
+                                     "clubberName":  "Kilbrittain",
+                                     "clubberId":  "96895c1b-4a02-4fb0-9abd-cf5b5cf9c499"
+                                 },
+                 "Kildorrery":  {
+                                    "clubberName":  "Kildorrery",
+                                    "clubberId":  "127d07f3-5df1-4447-ae5c-0fc43d576112"
+                                },
+                 "Killeagh":  {
+                                  "clubberName":  "Killeagh",
+                                  "clubberId":  "00ca3b0c-e8f5-4001-909f-d6591ac262a1"
+                              },
+                 "Kilshannig":  {
+                                    "clubberName":  "Kilshannig",
+                                    "clubberId":  "ff26e75c-8fc5-47a1-a97c-bf0dbe8938a5"
+                                },
+                 "Kilworth":  {
+                                  "clubberName":  "Kilworth",
+                                  "clubberId":  "edb67225-f7dc-4683-9526-0637d9847245"
+                              },
+                 "Knocknagree":  {
+                                     "clubberName":  "Knocknagree",
+                                     "clubberId":  "6735f4c7-9287-4e1c-a598-db5673d4de6e"
+                                 },
+                 "Lisgoold":  {
+                                  "clubberName":  "Lisgoold",
+                                  "clubberId":  "cd9ca82e-fc5d-4a14-abfc-6f9a0d67f865"
+                              },
+                 "Mallow":  {
+                                "clubberName":  "Mallow",
+                                "clubberId":  "f8498891-74ed-4bff-91f9-8eef414d8f0d"
+                            },
+                 "Midleton":  {
+                                  "clubberName":  "Midleton",
+                                  "clubberId":  "81821a1d-800a-4ff1-9abb-a5ccb39611f8"
+                              },
+                 "Na Piarsaigh":  {
+                                      "clubberName":  "Na Piarsaigh",
+                                      "clubberId":  "081b30cb-dd49-4ca5-b1bb-cb0166efd92c"
+                                  },
+                 "Nemo Rangers":  {
+                                      "clubberName":  "Nemo Rangers",
+                                      "clubberId":  "169fb23b-2a41-4163-894d-5223434f2fa2"
+                                  },
+                 "Newcestown":  {
+                                    "clubberName":  "Newcestown",
+                                    "clubberId":  "4b228ba8-173e-4bad-b1e3-361a4bac4196"
+                                },
+                 "Newmarket":  {
+                                   "clubberName":  "Newmarket",
+                                   "clubberId":  "78cda545-2b11-4598-b9bc-e3a663bbb96f"
+                               },
+                 "Newtownshandrum":  {
+                                         "clubberName":  "Newtownshandrum",
+                                         "clubberId":  "0a6215b5-0715-4535-a517-b699ec6f9fe8"
+                                     },
+                 "O\u0027Donovan Rossa":  {
+                                              "clubberName":  "O\u0027Donavan Rossa",
+                                              "clubberId":  "d440414d-0757-4c27-9a37-f668f741b8d1"
+                                          },
+                 "Russell Rovers":  {
+                                        "clubberName":  "Russell Rovers",
+                                        "clubberId":  "44763427-0e77-4ad5-910d-cd67f916a801"
+                                    },
+                 "Sarsfields":  {
+                                    "clubberName":  "Sarsfields",
+                                    "clubberId":  "852f5027-3fed-491e-9cfb-2447e24a3f1e"
+                                },
+                 "St Finbarrs":  {
+                                     "clubberName":  "St Finbarrs",
+                                     "clubberId":  "23bebc94-a4dc-4671-af90-3bf00846c625"
+                                 },
+                 "St Michaels":  {
+                                     "clubberName":  "St Michaels",
+                                     "clubberId":  "8c45a5de-53ab-498f-9175-0dc805a725dc"
+                                 },
+                 "Valley Rovers":  {
+                                       "clubberName":  "Valley Rovers",
+                                       "clubberId":  "19dd994d-24f3-46f9-815f-225f28152983"
+                                   },
+                 "Watergrasshill":  {
+                                        "clubberName":  "Watergrasshill",
+                                        "clubberId":  "004b27ac-044a-4ba1-b407-9e2bf32249a8"
+                                    },
+                 "Youghal":  {
+                                 "clubberName":  "Youghal",
+                                 "clubberId":  "7c948ab3-87d3-4a6d-aed0-eabcf8421ea6"
+                             }
+             },
+    "Kerry":  {
+                  "Abbeydorney":  {
+                                      "clubberName":  "Abbeydorney",
+                                      "clubberId":  "6d3ed806-99aa-4766-bcf7-21cce5dcc4ea"
+                                  },
+                  "An Ghaeltacht":  {
+                                        "clubberName":  "An Ghaeltacht",
+                                        "clubberId":  "5c3cc6ea-f2c2-4dbf-a6a2-1bd0e11a8846"
+                                    },
+                  "Austin Stacks":  {
+                                        "clubberName":  "Austin Stacks",
+                                        "clubberId":  "201bfe0b-5276-4806-a636-8e81c917be1a"
+                                    },
+                  "Ballydonoghue":  {
+                                        "clubberName":  "Ballydonoghue",
+                                        "clubberId":  "0571e3b9-3fa3-4232-868c-9fe2b6db3f9b"
+                                    },
+                  "Ballyduff":  {
+                                    "clubberName":  "Ballyduff",
+                                    "clubberId":  "1d87f0f1-a4a8-44c2-a5e6-c3aa4420a127"
+                                },
+                  "Ballylongford":  {
+                                        "clubberName":  "Ballylongford",
+                                        "clubberId":  "81695b92-d353-4e0d-a81a-84948efab324"
+                                    },
+                  "Ballymacelligott":  {
+                                           "clubberName":  "Ballymacelligott",
+                                           "clubberId":  "0247a235-d8fe-4f68-b147-c7e1e52255fa"
+                                       },
+                  "Beale":  {
+                                "clubberName":  "Beale",
+                                "clubberId":  "7107a2dc-f4fa-43c5-b81e-2bc6ce4112a2"
+                            },
+                  "Beaufort":  {
+                                   "clubberName":  "Beaufort",
+                                   "clubberId":  "164e5e0e-08fc-4d0c-823c-53839a53727f"
+                               },
+                  "Brosna":  {
+                                 "clubberName":  "Brosna",
+                                 "clubberId":  "86ebb800-fea9-445c-9416-1b4c4bc2d735"
+                             },
+                  "Castlegregory":  {
+                                        "clubberName":  "Castlegregory",
+                                        "clubberId":  "88b3ba44-bc6c-4e91-8788-b8335389d55c"
+                                    },
+                  "Castleisland Desmonds":  {
+                                                "clubberName":  "Castleisland Desmonds",
+                                                "clubberId":  "f41210c2-da23-4005-98d0-a86b2a6882e8"
+                                            },
+                  "Churchill":  {
+                                    "clubberName":  "Churchill",
+                                    "clubberId":  "f899ea89-76c5-43ae-856b-2d660ade8f04"
+                                },
+                  "CLG Lios PÃ³il":  {
+                                         "clubberName":  "Lispole",
+                                         "clubberId":  "dec3a809-1694-437e-8578-6825ecf87080"
+                                     },
+                  "Cordal":  {
+                                 "clubberName":  "Cordal",
+                                 "clubberId":  "89bdc860-4e46-407f-8ba3-7cd00f7e5e2c"
+                             },
+                  "Currow":  {
+                                 "clubberName":  "Currow",
+                                 "clubberId":  "44ad4120-ccf5-487d-ab7b-02026a87e44e"
+                             },
+                  "Dingle":  {
+                                 "clubberName":  "Dingle",
+                                 "clubberId":  "9c79e93f-d172-44a7-95b0-cd27bdfc0b27"
+                             },
+                  "Dr. Crokes":  {
+                                     "clubberName":  "Dr. Crokes",
+                                     "clubberId":  "08ee8390-a453-4899-93cd-1696ea75b916"
+                                 },
+                  "Duagh":  {
+                                "clubberName":  "Duagh",
+                                "clubberId":  "19cf7f59-d319-488f-b67c-51c96006426f"
+                            },
+                  "Finuge":  {
+                                 "clubberName":  "Finuge",
+                                 "clubberId":  "2555d29d-ac71-4536-bec3-a3ed51d83e22"
+                             },
+                  "Firies":  {
+                                 "clubberName":  "Firies",
+                                 "clubberId":  "20d7652f-013c-4a5d-914a-17eb8e25e6aa"
+                             },
+                  "Fossa":  {
+                                "clubberName":  "Fossa",
+                                "clubberId":  "35e40aba-bb26-4596-af56-a1abb1897c68"
+                            },
+                  "Glenbeigh/Glencar":  {
+                                            "clubberName":  "Glenbeigh/Glencar",
+                                            "clubberId":  "a14e1921-b63b-4511-b978-eda476d7d61d"
+                                        },
+                  "Glenflesk":  {
+                                    "clubberName":  "Glenflesk",
+                                    "clubberId":  "7cbeb7ea-71de-450c-a19e-c519de4dea1b"
+                                },
+                  "Gneeveguilla":  {
+                                       "clubberName":  "Gneeveguilla",
+                                       "clubberId":  "a9f230da-f1cc-4080-bd62-1d26309ea85e"
+                                   },
+                  "John Mitchels":  {
+                                        "clubberName":  "John Mitchels",
+                                        "clubberId":  "2ce79ff9-9fa1-4bb1-92f0-dbde26bdca23"
+                                    },
+                  "Keel":  {
+                               "clubberName":  "Keel",
+                               "clubberId":  "6f00a06c-dc60-48f2-a5ba-247147e4fb4c"
+                           },
+                  "Kerins O\u0027Rahillys":  {
+                                                 "clubberName":  "Kerins O\u0027Rahillys",
+                                                 "clubberId":  "3f0f9f2f-40b3-4355-a536-76446b1afc7b"
+                                             },
+                  "Kilcummin":  {
+                                    "clubberName":  "Kilcummin",
+                                    "clubberId":  "f13b4e63-687d-4788-8e23-d5679c0c61a4"
+                                },
+                  "Kilgarvan":  {
+                                    "clubberName":  "Kilgarvan",
+                                    "clubberId":  "5553e3c0-514d-45bb-9e31-13f630821291"
+                                },
+                  "Killarney Legion":  {
+                                           "clubberName":  "Killarney Legion",
+                                           "clubberId":  "985b5fdf-6e54-46c9-b819-d1587ccc47c3"
+                                       },
+                  "Knocknagoshel":  {
+                                        "clubberName":  "Knocknagoshel",
+                                        "clubberId":  "5e4806b2-edc2-4430-a6ff-c1b4a0ea6794"
+                                    },
+                  "Laune Rangers":  {
+                                        "clubberName":  "Laune Rangers",
+                                        "clubberId":  "538b22dc-1b3f-470a-8abd-e9f179ba22a8"
+                                    },
+                  "Listowel Emmets":  {
+                                          "clubberName":  "Listowel Emmets",
+                                          "clubberId":  "9568672b-7d6e-4ef5-b4b9-7635f4d56a54"
+                                      },
+                  "Listry":  {
+                                 "clubberName":  "Listry",
+                                 "clubberId":  "a1833888-2d6b-4670-84e2-ca091940523e"
+                             },
+                  "Milltown/Castlemaine":  {
+                                               "clubberName":  "Milltown/Castlemaine",
+                                               "clubberId":  "074d7de5-d734-427b-82df-a9478415c960"
+                                           },
+                  "Moyvane":  {
+                                  "clubberName":  "Moyvane",
+                                  "clubberId":  "bb1640dc-1330-4ab4-859e-8022544c83d0"
+                              },
+                  "Piarsaigh Na Dromoda":  {
+                                               "clubberName":  "Dromid Pearses",
+                                               "clubberId":  "ff19444b-2ffe-4cc1-b2bf-3cc9b1c9274d"
+                                           },
+                  "Rathmore":  {
+                                   "clubberName":  "Rathmore",
+                                   "clubberId":  "13ca8803-8fd5-48a0-8828-7ee6e95b96da"
+                               },
+                  "Reenard":  {
+                                  "clubberName":  "Reenard",
+                                  "clubberId":  "29216583-bef0-48bb-b937-fc407923ba52"
+                              },
+                  "Scartaglin":  {
+                                     "clubberName":  "Scartaglin",
+                                     "clubberId":  "f9482f2d-c802-48b9-909d-f0f93df8283a"
+                                 },
+                  "Skellig Rangers":  {
+                                          "clubberName":  "Skellig Rangers",
+                                          "clubberId":  "5226b45e-62cb-4cae-8277-3b5c05c5b586"
+                                      },
+                  "Sneem Derrynane":  {
+                                          "clubberName":  "Sneem Derrynane",
+                                          "clubberId":  "8b8bec2b-7b80-4788-bd9d-18a9e0460608"
+                                      },
+                  "Spa":  {
+                              "clubberName":  "Spa",
+                              "clubberId":  "2a0403e7-72a3-4f6b-b60a-35ab1040f805"
+                          },
+                  "St Brendans":  {
+                                      "clubberName":  "St. Brendan\u0027s",
+                                      "clubberId":  "7c13d135-c167-4135-ba02-220e387df538"
+                                  },
+                  "St Marys Cahersiveen":  {
+                                               "clubberName":  "St Mary\u0027s",
+                                               "clubberId":  "29af0704-9f1b-46aa-abce-873bc6a5cd8c"
+                                           },
+                  "St Michael\u0027s-Foilmore":  {
+                                                     "clubberName":  "St.Michaelâ€™s Foilmore",
+                                                     "clubberId":  "8c269e37-7ac7-4172-ba5f-b006b6196c9b"
+                                                 },
+                  "St Pats Blennerville":  {
+                                               "clubberName":  "Blennerville St. Pats",
+                                               "clubberId":  "501d1450-0434-428e-8402-f281a17ac85c"
+                                           },
+                  "St Senans":  {
+                                    "clubberName":  "St Senans",
+                                    "clubberId":  "43496a95-4cb8-4412-b1c0-2fae3e3a1668"
+                                },
+                  "Tarbert":  {
+                                  "clubberName":  "Tarbert",
+                                  "clubberId":  "bcc15d1a-06df-4a8e-81d0-7609e336eccf"
+                              },
+                  "Templenoe":  {
+                                    "clubberName":  "Templenoe",
+                                    "clubberId":  "b05ba004-16c6-41b1-a663-9c200d0f7649"
+                                },
+                  "Tuosist":  {
+                                  "clubberName":  "Tuosist",
+                                  "clubberId":  "0256e888-0d6d-4ed1-8cb4-2fe7f7eb78ba"
+                              },
+                  "Valentia":  {
+                                   "clubberName":  "Valentia",
+                                   "clubberId":  "696aebfb-ab9d-47fd-8275-76ff9c3672bc"
+                               },
+                  "Waterville":  {
+                                     "clubberName":  "Waterville",
+                                     "clubberId":  "82af9b50-ac96-4fdb-b580-63a3d5c317a1"
+                                 }
+              },
+    "Kilkenny":  {
+                     "Barrow Rangers":  {
+                                            "clubberName":  "Barrow Rangers",
+                                            "clubberId":  "f6b55ce6-df60-428b-9681-94b5e3d40fb8"
+                                        },
+                     "Bennettsbridge":  {
+                                            "clubberName":  "Bennettsbridge",
+                                            "clubberId":  "5013281e-5433-46c5-8eba-4dac3c5cd03c"
+                                        },
+                     "Blacks \u0026 Whites":  {
+                                                  "clubberName":  "Blacks \u0026 Whites",
+                                                  "clubberId":  "450a867e-460d-4aac-86b7-42dc50451bd1"
+                                              },
+                     "Carrickshock":  {
+                                          "clubberName":  "Carrickshock",
+                                          "clubberId":  "99e103a1-c6e8-4bfc-a40e-de8c2849c61d"
+                                      },
+                     "Clara":  {
+                                   "clubberName":  "Clara",
+                                   "clubberId":  "a2ac9178-4148-4ca6-aa55-1ef6fce62687"
+                               },
+                     "Cloneen":  {
+                                     "clubberName":  "Cloneen",
+                                     "clubberId":  "d454f10c-980e-4ea9-87c6-eb68087248fa"
+                                 },
+                     "Conahy Shamrocks":  {
+                                              "clubberName":  "Conahy Shamrocks",
+                                              "clubberId":  "431f13e9-15ce-4bfe-afef-de94bbc60aaf"
+                                          },
+                     "Danesfort":  {
+                                       "clubberName":  "Danesfort",
+                                       "clubberId":  "2838be5e-9659-4989-afd0-8ae6fa9b2971"
+                                   },
+                     "Dicksboro":  {
+                                       "clubberName":  "Dicksboro",
+                                       "clubberId":  "4ee3e744-78e5-4277-981e-a43c938c46a8"
+                                   },
+                     "Dunamaggin":  {
+                                        "clubberName":  "Dunnamaggin",
+                                        "clubberId":  "0fd5116d-9f7a-456b-a74c-5ea3a3c9ab6a"
+                                    },
+                     "Emeralds":  {
+                                      "clubberName":  "Emeralds",
+                                      "clubberId":  "cb51969e-6421-4aa1-b40c-f2b932cfc9a9"
+                                  },
+                     "Erin\u0027s Own":  {
+                                             "clubberName":  "Erins Own",
+                                             "clubberId":  "3f9e44d6-469e-4eb6-b49d-2577ee0a8335"
+                                         },
+                     "Fenians":  {
+                                     "clubberName":  "Fenians",
+                                     "clubberId":  "8e23dead-5f23-45c0-83fd-2f3f84183dc8"
+                                 },
+                     "Galmoy":  {
+                                    "clubberName":  "Galmoy",
+                                    "clubberId":  "72fb0708-02ff-475e-a723-53ba4a87cb29"
+                                },
+                     "Glenmore":  {
+                                      "clubberName":  "Glenmore",
+                                      "clubberId":  "77ac990a-dd98-44d3-b32e-b589e91f0cba"
+                                  },
+                     "Graignamanagh":  {
+                                           "clubberName":  "Graignamanagh",
+                                           "clubberId":  "c9ad79d7-dca7-4601-a652-3af91b2b0dca"
+                                       },
+                     "Graigue Ballycallan":  {
+                                                 "clubberName":  "Graigue Ballycallan",
+                                                 "clubberId":  "13e2d34e-8d36-4eea-a117-c326f9e2200c"
+                                             },
+                     "James Stephens":  {
+                                            "clubberName":  "James Stephens",
+                                            "clubberId":  "c5b1d02e-68cc-4d5b-945e-5b9b42657182"
+                                        },
+                     "John Lockes":  {
+                                         "clubberName":  "John Lockes",
+                                         "clubberId":  "005285dd-2817-400d-beab-1c9f8b431316"
+                                     },
+                     "Kilmacow":  {
+                                      "clubberName":  "Kilmacow",
+                                      "clubberId":  "80cb56aa-87d9-4a6c-adf9-1ded2394c6d2"
+                                  },
+                     "Lisdowney":  {
+                                       "clubberName":  "Lisdowney",
+                                       "clubberId":  "da758706-979d-4b7c-acfd-fc301100ccbf"
+                                   },
+                     "Mooncoin":  {
+                                      "clubberName":  "Mooncoin",
+                                      "clubberId":  "b3e99b79-d0ff-4303-8a25-67b0a42a6b51"
+                                  },
+                     "Mullinavat":  {
+                                        "clubberName":  "Mullinavat",
+                                        "clubberId":  "f6381e24-b04e-4d49-b85f-57eb379f5586"
+                                    },
+                     "O\u0027Loughlin Gaels":  {
+                                                   "clubberName":  "O\u0027Loughlin Gaels",
+                                                   "clubberId":  "5d35c0bd-1d66-4845-b677-4c0a0133e7b3"
+                                               },
+                     "Piltown":  {
+                                     "clubberName":  "Piltown",
+                                     "clubberId":  "ce97510e-5ca0-4a41-a551-5798d3b9dca7"
+                                 },
+                     "Rower Inistioge":  {
+                                             "clubberName":  "Rower Inistioge",
+                                             "clubberId":  "94c00e2c-1b87-4bec-8132-9a49d02f781d"
+                                         },
+                     "Shamrocks Ballyhale":  {
+                                                 "clubberName":  "Ballyhale Shamrocks",
+                                                 "clubberId":  "627dbc77-a509-42be-b1c9-29083be12ab8"
+                                             },
+                     "Slieverue":  {
+                                       "clubberName":  "Slieverue",
+                                       "clubberId":  "2e7f7ae2-ab95-40d3-8aee-db926a1a62c5"
+                                   },
+                     "St Patrick\u0027s":  {
+                                               "clubberName":  "St Patricks",
+                                               "clubberId":  "81a3b2a2-bd17-41b1-b242-15a93fd2c382"
+                                           },
+                     "St Lachtain\u0027s":  {
+                                                "clubberName":  "St Lachtain\u0027s",
+                                                "clubberId":  "35f8d93d-4e1a-4e77-9519-31d06c7518f7"
+                                            },
+                     "St Martin\u0027s":  {
+                                              "clubberName":  "St Martins",
+                                              "clubberId":  "6b794f67-5e03-4f67-ae5b-a9b02df7c090"
+                                          },
+                     "Thomastown":  {
+                                        "clubberName":  "Thomastown",
+                                        "clubberId":  "fc05ad62-8c0d-4397-b34e-8619e78dc7df"
+                                    },
+                     "Tullaroan":  {
+                                       "clubberName":  "Tullaroan",
+                                       "clubberId":  "750a8f76-abbd-4d0c-b532-dc2db5fec4f4"
+                                   },
+                     "Tullogher Rosbercon":  {
+                                                 "clubberName":  "Tullogher Rosbercon",
+                                                 "clubberId":  "8030ad50-1fdf-4ab0-83f9-31a9a9fe7042"
+                                             },
+                     "Windgap":  {
+                                     "clubberName":  "Windgap",
+                                     "clubberId":  "ae5a90f2-67c9-4186-947e-b3a9e51850fe"
+                                 },
+                     "Young Irelands":  {
+                                            "clubberName":  "Young Irelands",
+                                            "clubberId":  "3e0d932d-8bf2-425b-9417-4f6e2e2d7a69"
+                                        }
+                 },
+    "Offaly":  {
+                   "Ballinagar":  {
+                                      "clubberName":  "Ballinagar",
+                                      "clubberId":  "eb9d87ca-2048-40ea-96d8-6c27574e2b64"
+                                  },
+                   "Ballinamere":  {
+                                       "clubberName":  "Ballinamere",
+                                       "clubberId":  "535f5cf0-fd1b-48ad-b74d-c5101e07270b"
+                                   },
+                   "Ballycommon":  {
+                                       "clubberName":  "Ballycommon",
+                                       "clubberId":  "9c25fe12-fd33-4d53-9064-256762e63348"
+                                   },
+                   "Ballycumber":  {
+                                       "clubberName":  "Ballycumber",
+                                       "clubberId":  "d3fab378-d8de-4e25-9bd0-27cbd2f8589a"
+                                   },
+                   "Belmont":  {
+                                   "clubberName":  "Belmont",
+                                   "clubberId":  "9200c767-6e41-47bc-b5ad-c79bf23ecc4d"
+                               },
+                   "Birr":  {
+                                "clubberName":  "Birr",
+                                "clubberId":  "0e1d553d-bb54-4f6b-ad37-51130e6417eb"
+                            },
+                   "Bracknagh":  {
+                                     "clubberName":  "Bracknagh",
+                                     "clubberId":  "97aaface-b0dc-4a2f-b230-10dd94b1bb6b"
+                                 },
+                   "Brosna Gaels":  {
+                                        "clubberName":  "Brosna Gaels",
+                                        "clubberId":  "7949ce50-ce62-4dc3-ad6c-1a743046b3cb"
+                                    },
+                   "Cappincur":  {
+                                     "clubberName":  "Cappincur",
+                                     "clubberId":  "10decf24-b511-4ad6-bd95-cb47c7935ebb"
+                                 },
+                   "Carrig \u0026 Riverstown":  {
+                                                    "clubberName":  "Carrig \u0026 Riverstown",
+                                                    "clubberId":  "4cc5e320-7def-434e-8faf-a40f8d9d1b9f"
+                                                },
+                   "Clara":  {
+                                 "clubberName":  "Clara",
+                                 "clubberId":  "a2ac9178-4148-4ca6-aa55-1ef6fce62687"
+                             },
+                   "Clodiagh Gaels":  {
+                                          "clubberName":  "Clodiagh Gaels",
+                                          "clubberId":  "e3d92bff-783f-479b-ac33-08ebddc2566a"
+                                      },
+                   "Clonbullogue":  {
+                                        "clubberName":  "Clonbullogue",
+                                        "clubberId":  "23d5ca29-ad7b-4b8d-b435-be361919f69d"
+                                    },
+                   "Coolderry":  {
+                                     "clubberName":  "Coolderry",
+                                     "clubberId":  "860dd484-1949-4a86-b9ad-ab66f586fed3"
+                                 },
+                   "Daingean":  {
+                                    "clubberName":  "Daingean",
+                                    "clubberId":  "7e889ae2-c15f-4c9b-bef6-75b69234bbcc"
+                                },
+                   "Drumcullen":  {
+                                      "clubberName":  "Drumcullen",
+                                      "clubberId":  "54e4e19d-d5ee-4b6f-80c3-1959232a7133"
+                                  },
+                   "Durrow":  {
+                                  "clubberName":  "Durrow",
+                                  "clubberId":  "039ba85f-4cd3-47b6-9af5-7be64a1a032f"
+                              },
+                   "Edenderry":  {
+                                     "clubberName":  "Edenderry",
+                                     "clubberId":  "4f49272d-3558-4340-8c2a-14fbda783ff9"
+                                 },
+                   "Ferbane":  {
+                                   "clubberName":  "Ferbane",
+                                   "clubberId":  "86b31bc1-0ec5-41c0-bc3c-1c31542bc48c"
+                               },
+                   "Gracefield":  {
+                                      "clubberName":  "Gracefield",
+                                      "clubberId":  "911ed5f7-999d-4bb1-aa1e-293dc327bc2e"
+                                  },
+                   "Kilcormac / Killoughey":  {
+                                                  "clubberName":  "Kilcormac / Killoughey",
+                                                  "clubberId":  "ae24f6f5-62f0-4a32-9883-5f1bdb1ef6b5"
+                                              },
+                   "Kinnitty":  {
+                                    "clubberName":  "Kinnitty",
+                                    "clubberId":  "742c3cf8-1420-4695-b6f4-95b9208b93ce"
+                                },
+                   "Lusmagh":  {
+                                   "clubberName":  "Lusmagh",
+                                   "clubberId":  "89c33064-4a99-4cea-98c4-78cc43eeafd7"
+                               },
+                   "Raheen":  {
+                                  "clubberName":  "Raheen",
+                                  "clubberId":  "9f0fe987-aa16-4e5f-bb61-a40aa6f6df90"
+                              },
+                   "Rhode":  {
+                                 "clubberName":  "Rhode",
+                                 "clubberId":  "b1f2531d-cbdb-42d9-bad5-19ff1e6d630c"
+                             },
+                   "Seir Kieran":  {
+                                       "clubberName":  "Seir Kieran",
+                                       "clubberId":  "ed8bdb0d-1e40-410f-8559-9a64b41ead46"
+                                   },
+                   "Shamrocks":  {
+                                     "clubberName":  "Shamrocks",
+                                     "clubberId":  "6256e25f-9c3d-4a26-9491-fd101a61a264"
+                                 },
+                   "Shinrone":  {
+                                    "clubberName":  "Shinrone",
+                                    "clubberId":  "3d895842-6f7a-4cad-93a6-92c6e150a7b2"
+                                },
+                   "St. Brigid\u0027s":  {
+                                             "clubberName":  "St Brigids",
+                                             "clubberId":  "5419197a-2097-4268-94f0-ecaba4e20428"
+                                         },
+                   "St. Rynagh\u0027s":  {
+                                             "clubberName":  "St. Rynagh\u0027s",
+                                             "clubberId":  "bf276f82-0351-40fc-85f1-2ae554867bf5"
+                                         },
+                   "Tubber":  {
+                                  "clubberName":  "Tubber",
+                                  "clubberId":  "c1446d77-efbc-48ac-ab09-d61a94a8c883"
+                              },
+                   "Tullamore":  {
+                                     "clubberName":  "Tullamore",
+                                     "clubberId":  "eecc3bb8-93ac-4480-8550-d276e472fbe5"
+                                 },
+                   "Walsh Island":  {
+                                        "clubberName":  "Walsh Island",
+                                        "clubberId":  "3163491b-dc25-40f8-a1f7-daa93933957a"
+                                    }
+               },
+    "Tipperary":  {
+                      "Arravale Rovers":  {
+                                              "clubberName":  "Arravale Rovers",
+                                              "clubberId":  "89ef85a2-0788-4450-8bec-2daf59b25875"
+                                          },
+                      "Ballina":  {
+                                      "clubberName":  "Ballina",
+                                      "clubberId":  "2ce2f871-1b95-4c91-bdfa-031d6c740987"
+                                  },
+                      "Ballingarry":  {
+                                          "clubberName":  "Ballingarry",
+                                          "clubberId":  "96ece656-d1ef-4bc9-9997-ed750ce28ee1"
+                                      },
+                      "Ballybacon-Grange":  {
+                                                "clubberName":  "Ballybacon-Grange",
+                                                "clubberId":  "fd445149-9c64-483d-87e6-a88dfc0cb04b"
+                                            },
+                      "Boherlahan-Dualla":  {
+                                                "clubberName":  "Boherlahan-Dualla",
+                                                "clubberId":  "4d7b049c-1c84-4899-9700-7e0d0d9b8d2c"
+                                            },
+                      "Borris-Ileigh":  {
+                                            "clubberName":  "Borris-Ileigh",
+                                            "clubberId":  "309c3f80-12e7-41f7-a0a2-baff4ac20c17"
+                                        },
+                      "Borrisokane":  {
+                                          "clubberName":  "Borrisokane",
+                                          "clubberId":  "66a31bca-71a4-4b93-9892-4f4203ccfa79"
+                                      },
+                      "Burgess":  {
+                                      "clubberName":  "Burgess",
+                                      "clubberId":  "b77e7aaf-cb19-4172-930f-17a1220bffca"
+                                  },
+                      "Cappawhite":  {
+                                         "clubberName":  "Cappawhite",
+                                         "clubberId":  "d19e47a2-6373-4982-838f-b42045fa86f7"
+                                     },
+                      "Carrick Davins":  {
+                                             "clubberName":  "Carrick Davins",
+                                             "clubberId":  "f0612dac-7fb4-4d23-b160-6dfd32e04a3e"
+                                         },
+                      "Carrick Swan":  {
+                                           "clubberName":  "Carrick Swan",
+                                           "clubberId":  "68bc1d9b-9749-47bd-9ffc-01da5516dbc7"
+                                       },
+                      "Cashel King Cormacs":  {
+                                                  "clubberName":  "Cashel King Cormacs",
+                                                  "clubberId":  "622ce4b9-c6e5-4cbb-800b-e5390c6458ab"
+                                              },
+                      "Clonakenny":  {
+                                         "clubberName":  "Clonakenny",
+                                         "clubberId":  "15261d8c-6ad6-4e0a-afce-64b613c2d992"
+                                     },
+                      "Clonoulty-Rossmore":  {
+                                                 "clubberName":  "Clonoulty-Rossmore",
+                                                 "clubberId":  "6206cd1a-7c16-4dd2-8b20-4530180acff0"
+                                             },
+                      "Druimagus Inse":  {
+                                             "clubberName":  "Drom \u0026 Inch",
+                                             "clubberId":  "865a689d-57a6-49f2-b423-9920302f6039"
+                                         },
+                      "Ã‰ire Ã“g Annacarty":  {
+                                                  "clubberName":  "Ã‰ire Ã“g Annacarty",
+                                                  "clubberId":  "e728def1-5a94-4dc0-96c3-e1ba8c881089"
+                                              },
+                      "Golden-Kilfeacle":  {
+                                               "clubberName":  "Golden-Kilfeacle",
+                                               "clubberId":  "96e55ad9-0e0a-43f7-b8f6-3f2d9b24eba8"
+                                           },
+                      "Gortnahoe-Glengoole":  {
+                                                  "clubberName":  "Gortnahoe-Glengoole",
+                                                  "clubberId":  "195e3413-6336-4737-9eb5-751ee1b11c60"
+                                              },
+                      "Holycross-Ballycahill":  {
+                                                    "clubberName":  "Holycross-Ballycahill",
+                                                    "clubberId":  "bad629c1-83fd-4c83-a56c-0d1061ffbc94"
+                                                },
+                      "JK Brackens":  {
+                                          "clubberName":  "JK Brackens",
+                                          "clubberId":  "803e846f-8282-415d-914f-8b039c400845"
+                                      },
+                      "Kiladangan":  {
+                                         "clubberName":  "Kiladangan",
+                                         "clubberId":  "6011a27e-3348-49c3-b598-999f3f3f753b"
+                                     },
+                      "Killenaule":  {
+                                         "clubberName":  "Killenaule",
+                                         "clubberId":  "433d5529-8722-4d0a-a11e-a5d35ad72121"
+                                     },
+                      "Kilruane MacDonaghs":  {
+                                                  "clubberName":  "Kilruane MacDonaghs",
+                                                  "clubberId":  "c69386f8-ef6c-4647-bcc7-c61d4d73a4a6"
+                                              },
+                      "Kilsheelan-Kilcash":  {
+                                                 "clubberName":  "Kilsheelan-Kilcash",
+                                                 "clubberId":  "8018f78d-83ac-44cb-be11-7fc8374e4cfc"
+                                             },
+                      "Knockavilla Donaskeigh Kickhams":  {
+                                                              "clubberName":  "Knockavilla Donaskeigh Kickhams",
+                                                              "clubberId":  "d64a235f-f3fc-487f-b48f-ce306b735616"
+                                                          },
+                      "Lorrha - Dorrha":  {
+                                              "clubberName":  "Lorrha - Dorrha",
+                                              "clubberId":  "7c5c96ad-2175-4345-84c9-2399af05a060"
+                                          },
+                      "Loughmore-Castleiney":  {
+                                                   "clubberName":  "Loughmore-Castleiney",
+                                                   "clubberId":  "0db718e5-cc8e-49a8-891a-d1eb7ca38a29"
+                                               },
+                      "Moneygall":  {
+                                        "clubberName":  "Moneygall",
+                                        "clubberId":  "f32a8c64-7b62-4a63-81d3-b8fa028d6b87"
+                                    },
+                      "Moycarkey-Borris":  {
+                                               "clubberName":  "Moycarkey-Borris",
+                                               "clubberId":  "11a7e61b-d983-4d18-9a4c-c8219a42df7f"
+                                           },
+                      "Moyle Rovers":  {
+                                           "clubberName":  "Moyle Rovers",
+                                           "clubberId":  "57d14dd8-ef77-41c5-81ed-7e4a3449f267"
+                                       },
+                      "Moyne-Templetuohy":  {
+                                                "clubberName":  "Moyne-Templetuohy",
+                                                "clubberId":  "c9ef5ac9-5d7e-4673-9c6e-b65e456962c0"
+                                            },
+                      "Mullinahone":  {
+                                          "clubberName":  "Mullinahone",
+                                          "clubberId":  "3025400c-15de-45ad-ae41-4e395b41a973"
+                                      },
+                      "Nenagh Ã‰ire Ã“g":  {
+                                               "clubberName":  "Nenagh Ã‰ire Ã“g",
+                                               "clubberId":  "4de49ea7-bd1a-403c-95dc-e1addd783df8"
+                                           },
+                      "Newport":  {
+                                      "clubberName":  "Newport",
+                                      "clubberId":  "6321b66b-ce11-434c-9f69-c9a1f585eaa4"
+                                  },
+                      "Portroe":  {
+                                      "clubberName":  "Portroe",
+                                      "clubberId":  "0adf606c-7c54-42b3-bcc2-6e3bdf0e5373"
+                                  },
+                      "Roscrea":  {
+                                      "clubberName":  "Roscrea",
+                                      "clubberId":  "713aa426-bef2-4de2-b5a1-f3f714628af9"
+                                  },
+                      "Sean Treacys":  {
+                                           "clubberName":  "Sean Treacys",
+                                           "clubberId":  "6fa808cd-d7a1-4c22-a923-c1735cc5ae8f"
+                                       },
+                      "Shannon Rovers":  {
+                                             "clubberName":  "Shannon Rovers",
+                                             "clubberId":  "6d3d8a6b-533c-44d2-a1ed-da69e0b59380"
+                                         },
+                      "Silvermines":  {
+                                          "clubberName":  "Silvermines",
+                                          "clubberId":  "076acf38-7dc0-4561-ba32-13d2a3c24653"
+                                      },
+                      "Skeheenarinky":  {
+                                            "clubberName":  "Skeheenarinky",
+                                            "clubberId":  "d0fa91b4-13df-4e0b-8cb1-743442289fc2"
+                                        },
+                      "St. Marys Clonmel":  {
+                                                "clubberName":  "St Mary\u0027s",
+                                                "clubberId":  "29af0704-9f1b-46aa-abce-873bc6a5cd8c"
+                                            },
+                      "Templederry Kenyons":  {
+                                                  "clubberName":  "Templederry Kenyons",
+                                                  "clubberId":  "bb23cd53-4f6e-4f41-826d-0e9d72726a24"
+                                              },
+                      "Thurles Sarsfields":  {
+                                                 "clubberName":  "Thurles Sarsfields",
+                                                 "clubberId":  "b4ea7f6b-7fe5-4532-9935-46c68f44e039"
+                                             },
+                      "Toomevara":  {
+                                        "clubberName":  "Toomevara",
+                                        "clubberId":  "dfd7e723-65fa-4e8d-8f13-055ed2f03dfc"
+                                    },
+                      "Upperchurch-Drombane":  {
+                                                   "clubberName":  "Upperchurch-Drombane",
+                                                   "clubberId":  "a9dafcfd-6e1d-4f6a-b81e-067fd2b462cf"
+                                               }
+                  },
+    "Waterford":  {
+                      "Abbeyside / Ballinacourty":  {
+                                                        "clubberName":  "Abbeyside / Ballinacourty",
+                                                        "clubberId":  "ef6ad607-f0f2-41a4-b936-94b31a91d7d2"
+                                                    },
+                      "Affane/Cappoquin/Tourin":  {
+                                                      "clubberName":  "Cappoquin / Affane / Tourin",
+                                                      "clubberId":  "5c2bc184-7783-4680-9bcb-b5ade134911a"
+                                                  },
+                      "An Rinn":  {
+                                      "clubberName":  "An Rinn",
+                                      "clubberId":  "1ceca09d-7f2a-4bb9-9346-636c7733d621"
+                                  },
+                      "Ballygunner":  {
+                                          "clubberName":  "Ballygunner",
+                                          "clubberId":  "704e1a71-3402-4fd4-9bed-71e993aeba36"
+                                      },
+                      "Ballygunner B":  {
+                                            "clubberName":  "Ballygunner B",
+                                            "clubberId":  "d7ca2e84-467e-4566-afbf-c78d986cad61"
+                                        },
+                      "Ballysaggart":  {
+                                           "clubberName":  "Ballysaggart",
+                                           "clubberId":  "2bedccc9-ba64-47e8-b954-ecfe5af5b56d"
+                                       },
+                      "Brickey Rangers":  {
+                                              "clubberName":  "Brickey Rangers",
+                                              "clubberId":  "7da182e8-4f1f-425f-81f5-a199cf13d51f"
+                                          },
+                      "Clashmore / Kinsalebeg":  {
+                                                     "clubberName":  "Clashmore / Kinsalebeg",
+                                                     "clubberId":  "c7ab92b2-c4aa-48b9-94de-8e319214b623"
+                                                 },
+                      "Clonea":  {
+                                     "clubberName":  "Clonea",
+                                     "clubberId":  "07325ee1-5b7a-40e8-9ecd-6ef16a437f98"
+                                 },
+                      "De La Salle":  {
+                                          "clubberName":  "De La Salle",
+                                          "clubberId":  "15d23bc7-95ac-4fbe-845c-3c58b7aa9676"
+                                      },
+                      "DÃºn Garbhan":  {
+                                           "clubberName":  "Dungarvan",
+                                           "clubberId":  "94a32052-7ca9-4115-8040-b42da70d320e"
+                                       },
+                      "Ferrybank":  {
+                                        "clubberName":  "Ferrybank",
+                                        "clubberId":  "6c85b64a-89d7-42e2-a8c0-e1d987b4d2ba"
+                                    },
+                      "Lismore":  {
+                                      "clubberName":  "Lismore",
+                                      "clubberId":  "a1dccd52-83f3-4184-aee9-f11157540011"
+                                  },
+                      "Mount Sion":  {
+                                         "clubberName":  "MountÂ Sion",
+                                         "clubberId":  "daccd71c-0f1c-4f38-a422-90847c4160db"
+                                     },
+                      "Passage":  {
+                                      "clubberName":  "Passage",
+                                      "clubberId":  "de14bb96-b447-4b14-b2cf-91add11e1c0c"
+                                  },
+                      "Portlaw":  {
+                                      "clubberName":  "Portlaw",
+                                      "clubberId":  "af43faf9-0017-4654-9bbe-1cc62242ebef"
+                                  },
+                      "Roanmore":  {
+                                       "clubberName":  "Roanmore",
+                                       "clubberId":  "d710245c-0929-491c-a533-dcd6537aaad3"
+                                   },
+                      "Shamrocks":  {
+                                        "clubberName":  "Shamrocks",
+                                        "clubberId":  "6256e25f-9c3d-4a26-9491-fd101a61a264"
+                                    },
+                      "The Nire/Fourmilewater":  {
+                                                     "clubberName":  "The Nire/Fourmilewater",
+                                                     "clubberId":  "cad42736-c349-4adb-8d7c-78eb7028daca"
+                                                 },
+                      "Tulach An Iarainn":  {
+                                                "clubberName":  "Tallow",
+                                                "clubberId":  "ee1caaff-a2da-4999-ae0d-b7976fca4cd2"
+                                            }
+                  },
+    "Wexford":  {
+                    "Askamore":  {
+                                     "clubberName":  "Askamore-Kilrush",
+                                     "clubberId":  "a4dcd418-24bb-4935-ac72-46fef11c27d9"
+                                 },
+                    "Ballyfad":  {
+                                     "clubberName":  "Kilanerin-Ballyfad",
+                                     "clubberId":  "cab180b8-165b-4b7c-a0d6-aef04180be1d"
+                                 },
+                    "Ballyhogue":  {
+                                       "clubberName":  "Ballyhogue",
+                                       "clubberId":  "e0b294f4-34ad-4672-991b-760246b4cf08"
+                                   },
+                    "Bannow-Ballymitty":  {
+                                              "clubberName":  "Bannow Ballymitty",
+                                              "clubberId":  "33c83c4e-adb6-478c-852c-16641349c3a7"
+                                          },
+                    "Buffers Alley":  {
+                                          "clubberName":  "Buffers Alley",
+                                          "clubberId":  "4d3a7322-177a-4260-8fd6-5dd5d36ecf25"
+                                      },
+                    "Castletown":  {
+                                       "clubberName":  "Castletown Liam Mellows",
+                                       "clubberId":  "172d171a-5ca9-48e8-9cae-6817137e8509"
+                                   },
+                    "CLGNaomh PÃ¡draig":  {
+                                              "clubberName":  null,
+                                              "clubberId":  "66dcaacb-aa86-4339-8228-d5adfe3965ef"
+                                          },
+                    "Clongeen":  {
+                                     "clubberName":  "Clongeen",
+                                     "clubberId":  "bd9ee618-d579-4b60-9f55-eadb169e4699"
+                                 },
+                    "Cloughbawn":  {
+                                       "clubberName":  "Cloughbawn",
+                                       "clubberId":  "4705744a-156c-48cd-9ff6-76febd705371"
+                                   },
+                    "Crossabeg-Ballymurn":  {
+                                                "clubberName":  "Crossabeg-Ballymurn",
+                                                "clubberId":  "2d4e0001-0b92-4b68-a3c9-b54f8c8d8784"
+                                            },
+                    "Davidstown Courtnacuddy GAA":  {
+                                                        "clubberName":  "Davidstown-Courtnacuddy",
+                                                        "clubberId":  "c33d47ce-7e67-4cd6-8848-f0f3b5f1f6db"
+                                                    },
+                    "Duffry Rovers/Feannairena Dubh TÃ­re":  {
+                                                                 "clubberName":  "Duffry Rovers",
+                                                                 "clubberId":  "eb50357d-3be5-443d-ab7d-43d45bde261e"
+                                                             },
+                    "Faythe Harriers":  {
+                                            "clubberName":  "Faythe Harriers",
+                                            "clubberId":  "db2f4eb6-f57c-4381-873b-69bbf337d2dc"
+                                        },
+                    "Ferns St Aidans":  {
+                                            "clubberName":  "Ferns St. Aidans",
+                                            "clubberId":  "0abc8765-ee4e-4a03-b097-b1dfa0b88683"
+                                        },
+                    "Fr O`Regans Craanford":  {
+                                                  "clubberName":  "Craanford Fr. O\u0027Regans",
+                                                  "clubberId":  "6ae63658-1906-435b-8562-a3f446cf70fe"
+                                              },
+                    "Glynn-Barntown":  {
+                                           "clubberName":  "Glynn-Barntown",
+                                           "clubberId":  "5c9350e8-d955-4d0f-864a-ce01507cd2dd"
+                                       },
+                    "Gusserane-O`Rahilly\u0027s":  {
+                                                       "clubberName":  "Gusserane O\u0027Rahillys",
+                                                       "clubberId":  "5b1a10e4-5de7-46fa-a7f3-f299c98ae24d"
+                                                   },
+                    "Horeswood G.A.A.Club":  {
+                                                 "clubberName":  "Horeswood",
+                                                 "clubberId":  "6508e047-6b23-40c7-981c-3dbd39247f10"
+                                             },
+                    "HWHBunclody/Tig Leath SlÃ­Bun ClÃ³idÃ­":  {
+                                                                   "clubberName":  "Half Way House Bunclody",
+                                                                   "clubberId":  "37974fc5-da20-40f4-ab91-9aec11c8fef3"
+                                                               },
+                    "Kilanerin":  {
+                                      "clubberName":  "Kilanerin-Ballyfad",
+                                      "clubberId":  "cab180b8-165b-4b7c-a0d6-aef04180be1d"
+                                  },
+                    "Kilmore":  {
+                                    "clubberName":  "Kilmore",
+                                    "clubberId":  "59646b44-cb42-461f-9310-5531073a3619"
+                                },
+                    "Kilrush":  {
+                                    "clubberName":  "Askamore-Kilrush",
+                                    "clubberId":  "a4dcd418-24bb-4935-ac72-46fef11c27d9"
+                                },
+                    "Liam Mellows":  {
+                                         "clubberName":  "Castletown Liam Mellows",
+                                         "clubberId":  "172d171a-5ca9-48e8-9cae-6817137e8509"
+                                     },
+                    "Marshalstown-Castledockrell":  {
+                                                        "clubberName":  "Marshalstown Castledockrell",
+                                                        "clubberId":  "c4314903-594f-4912-a0e7-0f0f6d5f8f2e"
+                                                    },
+                    "Monageer-Boolavogue":  {
+                                                "clubberName":  "Monageer-Boolavogue",
+                                                "clubberId":  "32231999-c9d8-44ce-88fb-d7e57f7904d7"
+                                            },
+                    "Na SairsÃ©alaigh/Sarsfields":  {
+                                                        "clubberName":  null,
+                                                        "clubberId":  "f795a7e5-2e55-407f-bb7e-18a96bb82158"
+                                                    },
+                    "NaomhÃanna":  {
+                                        "clubberName":  "Naomh Eanna",
+                                        "clubberId":  "42a3a58b-2a91-4f23-ab3c-8fa6fbc6b237"
+                                    },
+                    "Oulart-The Ballagh":  {
+                                               "clubberName":  "Oulart The Ballagh",
+                                               "clubberId":  "eba4d544-3268-4b80-99d4-42dc020e9c03"
+                                           },
+                    "Oylegate-Glenbrien":  {
+                                               "clubberName":  "Oylegate-Glenbrien",
+                                               "clubberId":  "de7276d6-7576-4d9b-8989-34fc78667984"
+                                           },
+                    "Rapparees":  {
+                                      "clubberName":  "Rapparees-Starlights",
+                                      "clubberId":  "ef8bad69-bfb4-4aba-84e1-9b417d4603e2"
+                                  },
+                    "Rathgarogue-Cushinstown":  {
+                                                    "clubberName":  "Rathgarogue-Cushinstown",
+                                                    "clubberId":  "39eba9cd-c293-4d32-b73e-b770907c224e"
+                                                },
+                    "Rathnure":  {
+                                     "clubberName":  "Rathnure St. Annes",
+                                     "clubberId":  "0757f79b-b56d-4d6c-9884-a68571e48fe8"
+                                 },
+                    "Shelmaliers":  {
+                                        "clubberName":  "Shelmaliers",
+                                        "clubberId":  "08f01877-a8c6-4854-b5d4-917cbc8bd826"
+                                    },
+                    "St Abban\u0027s Adamstown":  {
+                                                      "clubberName":  "St. Abbans Adamstown",
+                                                      "clubberId":  "a2518b97-3388-4d3c-a503-3181dac1f53f"
+                                                  },
+                    "St Anne\u0027s Rathangan":  {
+                                                     "clubberName":  "St. Annes Rathangan",
+                                                     "clubberId":  "6e614c63-8c33-4482-8da7-b802f76781f7"
+                                                 },
+                    "St Brigid\u0027s Blackwater":  {
+                                                        "clubberName":  "St. Brigids Blackwater",
+                                                        "clubberId":  "a60626ef-d406-474b-b5e8-0ab5ca7ff978"
+                                                    },
+                    "St Fintan\u0027s G.A.AClub":  {
+                                                       "clubberName":  "St. Fintans",
+                                                       "clubberId":  "3a3e423c-2af5-446d-aa0d-ef5246388bf7"
+                                                   },
+                    "St James\u0027":  {
+                                           "clubberName":  "St James\u0027",
+                                           "clubberId":  "42c557fe-7bd8-4ed0-b42c-3e632a6cf3a9"
+                                       },
+                    "St John\u0027s Volunteers":  {
+                                                      "clubberName":  "St. Johns Volunteers",
+                                                      "clubberId":  "50231288-02c9-4f31-a995-1e4a440b35d4"
+                                                  },
+                    "St Martin\u0027s":  {
+                                             "clubberName":  "St Martin\u0027s",
+                                             "clubberId":  "11c913a5-3ab1-49c8-a9b5-8ff7fd180a8b"
+                                         },
+                    "St Mary\u0027s Maudlintown":  {
+                                                       "clubberName":  "St Marys Maudlintown",
+                                                       "clubberId":  "1860ad7f-2c9f-41cf-a9a3-edc7e71055f0"
+                                                   },
+                    "St Mary\u0027s Rosslare":  {
+                                                    "clubberName":  "St Marys Rosslare",
+                                                    "clubberId":  "fe19efac-15d6-40b4-be67-37de1cc48fd6"
+                                                },
+                    "St Mogue\u0027s Fethard":  {
+                                                    "clubberName":  "St. Mogues Fethard on Sea",
+                                                    "clubberId":  "c2b628c8-c8e0-4459-982c-8a3e3959684f"
+                                                },
+                    "Starlights":  {
+                                       "clubberName":  "Rapparees-Starlights",
+                                       "clubberId":  "ef8bad69-bfb4-4aba-84e1-9b417d4603e2"
+                                   },
+                    "Taghmon-Camross":  {
+                                            "clubberName":  "Taghmon/Camross",
+                                            "clubberId":  "ee9f58ea-266b-442f-bdc2-05cf2d1eff6e"
+                                        }
+                },
+    "Laois":  {
+                  "Abbeyleix St Lazarians GAA\u0026Camogie":  {
+                                                                  "clubberName":  "St Lazerianâ€™s Abbeyleix",
+                                                                  "clubberId":  "2ba8b055-fdfe-48a0-aa30-7acb3ac8fb3c"
+                                                              },
+                  "An Fraoch":  {
+                                    "clubberName":  "The Heath",
+                                    "clubberId":  "234630e4-f5e6-4684-89dc-102ea64bea88"
+                                },
+                  "Annanough":  {
+                                    "clubberName":  "Annanough",
+                                    "clubberId":  "d77fba03-cc8b-48ca-8ecf-ab5cb15ff6ac"
+                                },
+                  "Ard Lios Cill Chruis":  {
+                                               "clubberName":  "Arles-Kilcruise",
+                                               "clubberId":  "a23dc6df-5cfd-4fbd-8b98-c9d0f4d941fe"
+                                           },
+                  "Arles/Killeen":  {
+                                        "clubberName":  "Arles-Killeen",
+                                        "clubberId":  "bcbf29f2-149c-47f3-ae86-cca5fbdb2059"
+                                    },
+                  "Bailena Coille CLG":  {
+                                             "clubberName":  "Ballinakill",
+                                             "clubberId":  "12110930-ecee-47f9-b2a9-bb686df2056e"
+                                         },
+                  "Ballyfin CLG":  {
+                                       "clubberName":  "Ballyfin",
+                                       "clubberId":  "0b635fcb-9e4c-4b3c-a270-bf7e42f91ada"
+                                   },
+                  "Ballylinan":  {
+                                     "clubberName":  "Ballylinan",
+                                     "clubberId":  "e3b691d7-e43c-438d-976f-970ef13827c5"
+                                 },
+                  "Ballypickas/Baile Piocas":  {
+                                                   "clubberName":  "Ballypickas",
+                                                   "clubberId":  "e6eb6607-97f7-4e12-919a-19c36b9e010d"
+                                               },
+                  "Borrisin Ossory Kilcotton":  {
+                                                    "clubberName":  "Borris-in-Ossory-Kilcotton",
+                                                    "clubberId":  "0ccf146e-a1a9-431c-ac8f-de9b7c77c128"
+                                                },
+                  "Camross GAAClub":  {
+                                          "clubberName":  "Camross",
+                                          "clubberId":  "526cbfe4-d9f9-482c-8e90-f9a1c48b007f"
+                                      },
+                  "Castletown":  {
+                                     "clubberName":  "Castletown",
+                                     "clubberId":  "33bce18d-50ca-432d-b9c3-42e76b182aa9"
+                                 },
+                  "Clonad GAAand Camogie Club":  {
+                                                     "clubberName":  "Clonad",
+                                                     "clubberId":  "30f45453-f9a7-4542-88f8-4a4d293ff151"
+                                                 },
+                  "Clonaslee St Manmans/Cluainna SlÃ­Naomh Meanmain":  {
+                                                                           "clubberName":  "Clonaslee St Manmanâ€™s",
+                                                                           "clubberId":  "85d857c2-439f-402d-ab3d-036bba62bd73"
+                                                                       },
+                  "Clough/Ballacolla":  {
+                                            "clubberName":  "Clough Ballacolla",
+                                            "clubberId":  "c00d2821-9d01-48de-b42b-4f17db6dc993"
+                                        },
+                  "Colt Shanahoe":  {
+                                        "clubberName":  "Colt Shanahoe",
+                                        "clubberId":  "6c44fac4-09cf-47e7-929a-438b8e954c90"
+                                    },
+                  "Kilcavan":  {
+                                   "clubberName":  "Kilcavan",
+                                   "clubberId":  "da7dbfd1-46d8-4e17-8bb8-4fb728c14408"
+                               },
+                  "Mainistir BÃ©al Athaan RÃ³ine/Ballyroan Abbey":  {
+                                                                        "clubberName":  "Ballyroan Abbey",
+                                                                        "clubberId":  "98014404-d6bd-4d64-9ecf-d585f7836e89"
+                                                                    },
+                  "Mountmellick":  {
+                                       "clubberName":  "Mountmellick",
+                                       "clubberId":  "567af47b-3212-4ced-ab6a-02a58e88a0ca"
+                                   },
+                  "Naomh FiontÃ¡in Maighean RÃ¡tha":  {
+                                                          "clubberName":  "St Fintanâ€™s Mountrath",
+                                                          "clubberId":  "a55e897e-e251-4f79-89bb-066ddec87dd4"
+                                                      },
+                  "Park Ratheniska":  {
+                                          "clubberName":  "Park Ratheniska",
+                                          "clubberId":  "1028ee5c-dd2a-43c4-b8d8-bc837e81cb9c"
+                                      },
+                  "Portarlington":  {
+                                        "clubberName":  "Portarlington",
+                                        "clubberId":  "91354355-bb30-4dc5-9ab3-2bd52489dfd2"
+                                    },
+                  "Portlaoise":  {
+                                     "clubberName":  "Portlaoise",
+                                     "clubberId":  "7cd0273f-1aa2-451b-831f-9ce56b40a0ae"
+                                 },
+                  "Rathdowney Errill":  {
+                                            "clubberName":  "Rathdowney Errill",
+                                            "clubberId":  "f50d4048-e201-4549-bd52-dc07a808682c"
+                                        },
+                  "Rosenallis":  {
+                                     "clubberName":  "Rosenallis",
+                                     "clubberId":  "7368b5f3-56c7-4433-8790-ee4dc764db18"
+                                 },
+                  "Slieve Bloom":  {
+                                       "clubberName":  "Slieve Bloom",
+                                       "clubberId":  "7df04a9d-a79f-4417-861b-1ea992966079"
+                                   },
+                  "The Harps":  {
+                                    "clubberName":  "The Harps",
+                                    "clubberId":  "d6304e28-9f1e-481b-ab9a-f6f335d7eae4"
+                                },
+                  "Tromaire/Trumera":  {
+                                           "clubberName":  "Trumera",
+                                           "clubberId":  "ecb376ed-b982-4c57-b9a6-a46cb1328a64"
+                                       }
+              }
+}

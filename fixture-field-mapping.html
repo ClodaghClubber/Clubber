@@ -1,0 +1,548 @@
+<title>Clubber Fixture Creation — Field Mapping Spec</title>
+<style>
+  :root {
+    --bg: #0b0f18;
+    --surface: #141b28;
+    --surface2: #1c2538;
+    --border: #252f42;
+    --text: #e8ecf4;
+    --muted: #8895b0;
+    --accent: #f0e130;
+    --green: #22c97a;
+    --green-bg: #0d2b1e;
+    --amber: #f5a623;
+    --amber-bg: #2b1f0d;
+    --slate: #607090;
+    --slate-bg: #141b28;
+    --red: #e05555;
+    --red-bg: #2b1212;
+    --mono: 'Menlo', 'Consolas', 'Monaco', monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f0f3f8;
+      --surface: #ffffff;
+      --surface2: #f7f9fc;
+      --border: #dde3ee;
+      --text: #1a2035;
+      --muted: #5a6a8a;
+      --green-bg: #e6f9f0;
+      --amber-bg: #fdf4e3;
+      --slate-bg: #f0f3f8;
+      --red-bg: #fde8e8;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f0f3f8; --surface: #ffffff; --surface2: #f7f9fc;
+    --border: #dde3ee; --text: #1a2035; --muted: #5a6a8a;
+    --green-bg: #e6f9f0; --amber-bg: #fdf4e3; --slate-bg: #f0f3f8; --red-bg: #fde8e8;
+  }
+  :root[data-theme="dark"] {
+    --bg: #0b0f18; --surface: #141b28; --surface2: #1c2538;
+    --border: #252f42; --text: #e8ecf4; --muted: #8895b0;
+    --green-bg: #0d2b1e; --amber-bg: #2b1f0d; --slate-bg: #141b28; --red-bg: #2b1212;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 32px 24px 64px;
+  }
+
+  .header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .header-left {}
+  .wordmark {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+  .subtitle {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .legend {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: 4px;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.04em;
+  }
+  .badge.mapped   { background: var(--green-bg); color: var(--green); }
+  .badge.default  { background: var(--amber-bg); color: var(--amber); }
+  .badge.blank    { background: var(--slate-bg); color: var(--muted); border: 1px solid var(--border); }
+  .badge.lookup   { background: #1a1040; color: #a78bfa; }
+  :root[data-theme="light"] .badge.lookup, @media (prefers-color-scheme: light) { }
+
+  section {
+    margin-bottom: 32px;
+  }
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+    padding-left: 2px;
+  }
+
+  .table-wrap { overflow-x: auto; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  thead th {
+    background: var(--surface2);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+  td {
+    padding: 11px 14px;
+    vertical-align: top;
+    font-size: 13px;
+  }
+  td:first-child {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
+    width: 160px;
+  }
+  td.source {
+    white-space: nowrap;
+    width: 140px;
+  }
+  td.value {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--green);
+  }
+  td.note {
+    color: var(--muted);
+    font-size: 12px;
+    max-width: 320px;
+  }
+  code {
+    font-family: var(--mono);
+    font-size: 11px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--text);
+  }
+
+  .notice {
+    background: var(--amber-bg);
+    border: 1px solid color-mix(in srgb, var(--amber) 30%, transparent);
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: var(--amber);
+    margin-bottom: 24px;
+    line-height: 1.6;
+  }
+  .notice strong { font-weight: 700; }
+
+  .files-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .file-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .file-card-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .file-card-name {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .file-card-desc {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .grade-table {
+    margin-top: 8px;
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .grade-table td { padding: 4px 8px; border-bottom: 1px solid var(--border); font-family: var(--mono); }
+  .grade-table tr:last-child td { border-bottom: none; }
+  .grade-table .arrow { color: var(--muted); }
+  .grade-table .val { color: var(--green); }
+  .grade-table .warn { color: var(--amber); }
+
+  .purple { color: #a78bfa; }
+</style>
+
+<div class="header">
+  <div class="header-left">
+    <div class="wordmark">Clubber</div>
+    <h1>Fixture Creation — Field Mapping Spec</h1>
+    <div class="subtitle">Maps county board fixture data to the Clubber Create Fixture API</div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+    <div class="legend">
+      <span class="badge mapped">● Auto-mapped</span>
+      <span class="badge default">● Fixed default</span>
+      <span class="badge lookup">● Lookup file</span>
+      <span class="badge blank">● Leave blank</span>
+    </div>
+  </div>
+</div>
+
+<div class="notice">
+  <strong>Grade field:</strong> County board competition names contain grade info (e.g. "Senior Football Championship") but the mapping to Clubber's grade values (Senior 1 / Senior 2 / Intermediate 1 etc.) is ambiguous — we can't reliably distinguish Senior 1 from Senior 2 from the board name alone. <strong>Leave Grade blank</strong> unless Clubber can confirm the correct value per competition, or the API allows it to be omitted.
+</div>
+
+<div class="section-label">Reference files</div>
+<div class="files-grid">
+  <div class="file-card">
+    <div class="file-card-label">Club lookup</div>
+    <div class="file-card-name">club-lookup.json</div>
+    <div class="file-card-desc">Maps board club name → <code>clubberId</code> (UUID) and canonical Clubber name, keyed by county. 472 clubs, 472/472 resolved.</div>
+  </div>
+  <div class="file-card">
+    <div class="file-card-label">Competition lookup</div>
+    <div class="file-card-name">competitionLookup.json</div>
+    <div class="file-card-desc">Clubber's own competition list. Each county maps to a GAA competition entry by <code>preferredCounty</code>. Use <code>routeName</code> as the competition identifier.</div>
+  </div>
+  <div class="file-card">
+    <div class="file-card-label">Fixture data source</div>
+    <div class="file-card-name">Worker API response</div>
+    <div class="file-card-desc">Each fixture object exposes: <code>county</code>, <code>sport</code>, <code>grade</code>, <code>teamA</code>, <code>teamB</code>, <code>date</code>, <code>time</code>, <code>venue</code>.</div>
+  </div>
+</div>
+
+<section>
+  <div class="section-label">Competition</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Form field</th>
+          <th>Source</th>
+          <th>Value / Logic</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>scope</td>
+          <td class="source"><span class="badge default">Fixed default</span></td>
+          <td class="value">"Club"</td>
+          <td class="note">Always Club for county board fixtures.</td>
+        </tr>
+        <tr>
+          <td>sport</td>
+          <td class="source"><span class="badge default">Fixed default</span></td>
+          <td class="value">"GAA"</td>
+          <td class="note">Always GAA.</td>
+        </tr>
+        <tr>
+          <td>code</td>
+          <td class="source"><span class="badge mapped">Auto-mapped</span></td>
+          <td class="value">fixture.sport</td>
+          <td class="note">Worker value is lowercase — capitalise first letter. <code>"hurling"</code> → <code>"Hurling"</code>, <code>"football"</code> → <code>"Football"</code>. Allowed values: Hurling, Football, Camogie, LGFA.</td>
+        </tr>
+        <tr>
+          <td>competition</td>
+          <td class="source"><span class="badge lookup">Lookup file</span></td>
+          <td class="value">competitionLookup.json</td>
+          <td class="note">Find the GAA sport entry, then find the competition where <code>preferredCounty === fixture.county</code>. Use that entry's <code>routeName</code> as the competition identifier (e.g. Cork → <code>"cork"</code>, Kerry → <code>"kerry"</code>).</td>
+        </tr>
+        <tr>
+          <td>season</td>
+          <td class="source"><span class="badge default">Fixed default</span></td>
+          <td class="value">"Season 26"</td>
+          <td class="note">All fixtures are 2026 season.</td>
+        </tr>
+        <tr>
+          <td>grade</td>
+          <td class="source"><span class="badge blank">Leave blank</span></td>
+          <td class="value" style="color:var(--muted)">—</td>
+          <td class="note">See notice above. Raw value from <code>fixture.grade</code> is available if Clubber can define the mapping later. Partial guidance below.</td>
+        </tr>
+        <tr>
+          <td>round</td>
+          <td class="source"><span class="badge blank">Leave blank</span></td>
+          <td class="value" style="color:var(--muted)">—</td>
+          <td class="note">Not reliably available from county board data.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="margin-top:12px; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:14px 16px;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Grade — partial mapping (for future use)</div>
+    <table class="grade-table">
+      <tr><td><code>fixture.grade</code> value</td><td class="arrow">→</td><td>Suggested Clubber grade</td><td>Confidence</td></tr>
+      <tr><td>"senior"</td><td class="arrow">→</td><td class="val">"Senior 1"</td><td class="warn">⚠ Uncertain (could be Senior 2)</td></tr>
+      <tr><td>"intermediate"</td><td class="arrow">→</td><td class="val">"Intermediate 1"</td><td class="warn">⚠ Uncertain</td></tr>
+      <tr><td>"junior"</td><td class="arrow">→</td><td class="val">"Junior 1"</td><td class="warn">⚠ Uncertain</td></tr>
+      <tr><td>"minor"</td><td class="arrow">→</td><td class="val">"Minor"</td><td style="color:var(--green)">✓ Safe</td></tr>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="section-label">Teams</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Form field</th>
+          <th>Source</th>
+          <th>Value / Logic</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>county</td>
+          <td class="source"><span class="badge mapped">Auto-mapped</span></td>
+          <td class="value">fixture.county</td>
+          <td class="note">County of Team A. e.g. <code>"Cork"</code></td>
+        </tr>
+        <tr>
+          <td>v county</td>
+          <td class="source"><span class="badge mapped">Auto-mapped</span></td>
+          <td class="value">fixture.county</td>
+          <td class="note">Same as county — both clubs are from the same county board. Each club's Clubber record independently carries its county association, so cross-county fixtures (if they arise) will resolve correctly via the club ID.</td>
+        </tr>
+        <tr>
+          <td>club</td>
+          <td class="source"><span class="badge lookup">Lookup file</span></td>
+          <td class="value">club-lookup.json</td>
+          <td class="note">Look up <code>club-lookup.json[county][fixture.teamA].clubberId</code> — returns Clubber UUID. Pass UUID to API.</td>
+        </tr>
+        <tr>
+          <td>v club</td>
+          <td class="source"><span class="badge lookup">Lookup file</span></td>
+          <td class="value">club-lookup.json</td>
+          <td class="note">Same as above using <code>fixture.teamB</code>.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="section-label">Fixture</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Form field</th>
+          <th>Source</th>
+          <th>Value / Logic</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>date</td>
+          <td class="source"><span class="badge mapped">Auto-mapped</span></td>
+          <td class="value">fixture.date</td>
+          <td class="note">Confirm expected format with Clubber API (ISO 8601 recommended: <code>YYYY-MM-DD</code>).</td>
+        </tr>
+        <tr>
+          <td>time</td>
+          <td class="source"><span class="badge mapped">Auto-mapped</span></td>
+          <td class="value">fixture.time</td>
+          <td class="note">24-hour format from board data. Confirm API expects <code>HH:MM</code>.</td>
+        </tr>
+        <tr>
+          <td>price</td>
+          <td class="source"><span class="badge default">Fixed default</span></td>
+          <td class="value">14.99</td>
+          <td class="note">Default price in euros. Should be configurable per county or competition if needed.</td>
+        </tr>
+        <tr>
+          <td>ppv_only</td>
+          <td class="source"><span class="badge default">Fixed default</span></td>
+          <td class="value">false</td>
+          <td class="note">Unchecked by default.</td>
+        </tr>
+        <tr>
+          <td>title</td>
+          <td class="source"><span class="badge blank">Leave blank</span></td>
+          <td class="value" style="color:var(--muted)">—</td>
+          <td class="note">Optional. Could be auto-generated as <code>TeamA v TeamB</code> if the API requires a non-null value.</td>
+        </tr>
+        <tr>
+          <td>description</td>
+          <td class="source"><span class="badge blank">Leave blank</span></td>
+          <td class="value" style="color:var(--muted)">—</td>
+          <td class="note">Optional.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="section-label">Broadcast &amp; Other</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Form field</th>
+          <th>Source</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>monitoring</td>
+          <td class="source"><span class="badge blank">Leave blank</span></td>
+          <td class="note">Not set via this integration.</td>
+        </tr>
+        <tr>
+          <td>videographer</td>
+          <td class="source"><span class="badge blank">Leave blank</span></td>
+          <td class="note"></td>
+        </tr>
+        <tr>
+          <td>commentator</td>
+          <td class="source"><span class="badge blank">Leave blank</span></td>
+          <td class="note"></td>
+        </tr>
+        <tr>
+          <td>unit_type</td>
+          <td class="source"><span class="badge blank">Leave blank</span></td>
+          <td class="note"></td>
+        </tr>
+        <tr>
+          <td>unit_name</td>
+          <td class="source"><span class="badge blank">Leave blank</span></td>
+          <td class="note"></td>
+        </tr>
+        <tr>
+          <td>create_easylive</td>
+          <td class="source"><span class="badge blank">Leave blank</span></td>
+          <td class="note"></td>
+        </tr>
+        <tr>
+          <td>use_clubbers_units</td>
+          <td class="source"><span class="badge blank">Leave blank</span></td>
+          <td class="note"></td>
+        </tr>
+        <tr>
+          <td>hero_section</td>
+          <td class="source"><span class="badge blank">Leave blank</span></td>
+          <td class="note"></td>
+        </tr>
+        <tr>
+          <td>clubber_picks</td>
+          <td class="source"><span class="badge blank">Leave blank</span></td>
+          <td class="note"></td>
+        </tr>
+        <tr>
+          <td>send_to_magnifi</td>
+          <td class="source"><span class="badge blank">Leave blank</span></td>
+          <td class="note"></td>
+        </tr>
+        <tr>
+          <td>scoreboard_only</td>
+          <td class="source"><span class="badge blank">Leave blank</span></td>
+          <td class="note"></td>
+        </tr>
+        <tr>
+          <td>hide_from_fans</td>
+          <td class="source"><span class="badge blank">Leave blank</span></td>
+          <td class="note"></td>
+        </tr>
+        <tr>
+          <td>show_scoreboard</td>
+          <td class="source"><span class="badge blank">Leave blank</span></td>
+          <td class="note"></td>
+        </tr>
+        <tr>
+          <td>has_sponsored</td>
+          <td class="source"><span class="badge blank">Leave blank</span></td>
+          <td class="note"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="section-label">Open questions for Clubber engineering</div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px 18px;">
+    <ol style="padding-left:18px;display:flex;flex-direction:column;gap:10px;font-size:13px;color:var(--text);line-height:1.6;">
+      <li>What is the API endpoint and HTTP method for creating a fixture?</li>
+      <li>What is the exact field name / accepted format for <strong>competition</strong> — is it the <code>routeName</code> string, an internal ID, or something else from <code>competitionLookup.json</code>?</li>
+      <li>Are <strong>club</strong> and <strong>v club</strong> passed as the UUID from <code>sportsCountiesLookup.json</code>, or a different identifier?</li>
+      <li>What date and time formats does the API expect?</li>
+      <li>Is <strong>Grade</strong> required, or can it be omitted? If required, can Clubber define the correct grade value per competition?</li>
+      <li>What authentication scheme does the API use?</li>
+    </ol>
+  </div>
+</section>
