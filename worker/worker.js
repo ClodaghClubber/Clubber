@@ -159,15 +159,21 @@ const CAC_TOKEN_RE =
 
 function classifyCacComp(compRaw, targets) {
   if (/Junior/i.test(compRaw)) return null;
+  const relegationMatch = compRaw.match(/Relegation[^\n]*/i);
   for (const t of targets) {
     if (compRaw.includes(t.match)) {
       let competition = t.name;
       const groupMatch = compRaw.match(/Group\s+([AB])/);
       if (groupMatch) competition += ` Group ${groupMatch[1]}`;
       const roundMatch = compRaw.match(/(?:Round|Rd\.?)\s+(\d+)/i);
-      const round = roundMatch ? `R${roundMatch[1]}` : '';
+      const round = relegationMatch ? relegationMatch[0].trim()
+        : roundMatch ? `R${roundMatch[1]}` : '';
       return { competition, round };
     }
+  }
+  // Don't drop relegation fixtures even if no target matches — use raw comp name
+  if (relegationMatch) {
+    return { competition: compRaw.trim(), round: relegationMatch[0].trim() };
   }
   return null;
 }
