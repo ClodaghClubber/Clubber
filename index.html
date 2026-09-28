@@ -65,6 +65,7 @@
   .cr-boston         {background:#2E86AB;color:#fff;}
   .cr-usgaa          {background:#8E44AD;color:#fff;}
   .cr-champ          {background:#1B4532;color:#d4f0e0;}
+  .cr-ace            {background:#003087;color:#fff;}
   /* Rejected badge overrides for dark/vivid county rows */
   .cr-cork .status-rejected,
   .cr-waterford .status-rejected,
@@ -1961,7 +1962,7 @@ const exportBtn=document.getElementById('exportBtn');
 const markClubberBtn=document.getElementById('markClubberBtn');
 const clubberIeBtn=document.getElementById('clubberIeBtn');
 const clubberUkBtn=document.getElementById('clubberUkBtn');
-function isRugbyFixture(f){ return f.sport==='Rugby' || f.county==='BUCS' || f.county==='Champ'; }
+function isRugbyFixture(f){ return f.sport==='Rugby' || f.county==='BUCS' || f.county==='Champ' || f.county==='ACE'; }
 const loadStatusText=document.getElementById('loadStatusText');
 const loadSpinner=document.getElementById('loadSpinner');
 const loadStatus={
@@ -3211,7 +3212,7 @@ function buildGamePayload(f) {
     }
   });
 
-  const isRugby = (f.county === 'Champ' || f.county === 'BUCS' || (f.code || '').toLowerCase() === 'rugby');
+  const isRugby = (f.county === 'Champ' || f.county === 'BUCS' || f.county === 'ACE' || (f.code || '').toLowerCase() === 'rugby');
 
   const grade = isRugby ? '' : deriveGrade(f.county, f.competition);
   if (!isRugby && !grade) errors.push(`grade could not be derived from competition "${f.competition}"`);
@@ -3256,7 +3257,7 @@ function buildGamePayload(f) {
   const utcTime = rawTime && rawTime.includes(':') ? dublinToUtc(f.date, rawTime) : '';
 
   const payload = {
-    gameScope: f.county === 'BUCS' ? 'University' : 'Club',
+    gameScope: f.county === 'BUCS' ? 'University' : f.county === 'ACE' ? 'School' : 'Club',
     date: f.date,
     time: utcTime,
     county,
