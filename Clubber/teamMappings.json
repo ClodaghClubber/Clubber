@@ -1861,5 +1861,55 @@
     "Loughborough": "ccd8557b-45e7-4bf2-8e79-c645fe4db45c",
     "Nottingham": "65f098ac-2a77-40bf-9c9d-5c4cb1a8a0fd",
     "Surrey": "91db5678-4aec-4a5d-8336-af21be7aa64f"
+  },
+  "ACE": {
+    "Bishop Burton": {
+      "id": "fd5114ac-7a17-448a-9139-53b5695b5390",
+      "name": "Bishop Burton College"
+    },
+    "Oaklands": {
+      "id": "f615277c-8485-4efe-8f68-8cffbc09d01d",
+      "name": "Oaklands College"
+    },
+    "Gosforth": {
+      "id": "862f3bd0-65cc-4907-b8a6-ad45df03282f",
+      "name": "Gosforth Academy"
+    },
+    "Moulton": {
+      "id": "97741b9f-9c81-4303-9e1b-cdba2bd13b43",
+      "name": "Moulton College"
+    },
+    "Severn Vale": {
+      "id": "ed9a3806-b24d-43f5-9ef8-e2a0c7f7c138",
+      "name": "Severn Vale"
+    },
+    "Truro": {
+      "id": "02e95ae3-43e1-4d74-af34-3b3293432059",
+      "name": "Truro College"
+    },
+    "Gordons": {
+      "id": "61174ee6-e49d-4c1d-9690-6f6e1592a7c0",
+      "name": "Gordons School"
+    },
+    "Beechen Cliff": {
+      "id": "22ec43a6-3b24-4b61-a3ef-9766f0401c0d",
+      "name": "Beechen Cliff School"
+    },
+    "Loughborough": {
+      "id": "631b39cb-ff7f-40eb-a2c3-0a404d04723d",
+      "name": "Loughborough College"
+    },
+    "Exeter": {
+      "id": "ac5e8b8d-90f7-4bfb-8ffe-fba0ec52b66e",
+      "name": "Exeter College"
+    },
+    "Hartpury": {
+      "id": "bf90fea7-8af7-40fb-9a8b-f65cb6db1ea1",
+      "name": "Hartpury College"
+    },
+    "SGS": {
+      "id": "39cdb3b0-d133-4ec9-ace1-031fe5016cc3",
+      "name": "SGS College"
+    }
   }
 }
