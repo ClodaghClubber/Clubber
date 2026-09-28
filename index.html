@@ -3256,7 +3256,7 @@ function buildGamePayload(f) {
   const utcTime = rawTime && rawTime.includes(':') ? dublinToUtc(f.date, rawTime) : '';
 
   const payload = {
-    gameScope: 'Club',
+    gameScope: f.county === 'BUCS' ? 'University' : 'Club',
     date: f.date,
     time: utcTime,
     county,
