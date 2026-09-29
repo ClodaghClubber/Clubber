@@ -271,7 +271,23 @@
     "Holycross / Ballycahill": "bad629c1-83fd-4c83-a56c-0d1061ffbc94",
     "Moycarkey Borris": "11a7e61b-d983-4d18-9a4c-c8219a42df7f",
     "Nenagh": "4de49ea7-bd1a-403c-95dc-e1addd783df8",
-    "Newport / Ballinahinch": "6321b66b-ce11-434c-9f69-c9a1f585eaa4"
+    "Newport / Ballinahinch": "6321b66b-ce11-434c-9f69-c9a1f585eaa4",
+    "Arravale": {
+      "id": "89ef85a2-0788-4450-8bec-2daf59b25875",
+      "name": "Arravale Rovers"
+    },
+    "Lattin Cullen Emly": {
+      "id": "8f05023a-4f81-4fc6-a910-a1a4bc3936ab",
+      "name": "Lattin-Cullen"
+    },
+    "Galtee Rovers St. Pecauns": {
+      "id": "33e98183-f5dc-4b0e-b238-537ff93758a2",
+      "name": "Galtee Rovers"
+    },
+    "Templemore": {
+      "id": "06a958c2-80da-448d-95ea-ac5a7433ce36",
+      "name": "Templemore"
+    }
   },
   "Offaly": {
     "SBK": {
@@ -1098,6 +1114,14 @@
     "St Colmcille's": {
       "id": "8280b691-108e-48df-9aa0-47fdbc632f6c",
       "name": "St. Colmcille's"
+    },
+    "Dunshaughlin Royal Gaels": {
+      "id": "0f84902a-d94a-4e01-9281-b3152091819c",
+      "name": "Dunshaughlin"
+    },
+    "St Ultans": {
+      "id": "da5011a7-4003-486a-af00-27c8d4e55a9d",
+      "name": "St. Ultan's"
     }
   },
   "Longford": {
@@ -1162,6 +1186,10 @@
     "Seán Connollys": {
       "id": "77a08c51-a4ff-4ae3-b4ad-61e819a40f20",
       "name": "Seán Conollys"
+    },
+    "Ballymahon/Forgney": {
+      "id": "5fe25342-c78b-4eae-8147-94a789557242",
+      "name": "Ballymahon Forgney"
     }
   },
   "Roscommon": {
@@ -1919,40 +1947,5 @@
       "id": "39cdb3b0-d133-4ec9-ace1-031fe5016cc3",
       "name": "SGS College"
     }
-  },
-  "Longford LGFA": {
-    "Ballymahon/Forgney": {
-      "id": "5fe25342-c78b-4eae-8147-94a789557242",
-      "name": "Ballymahon Forgney"
-    }
-  },
-  "Meath LGFA": {
-    "Dunshaughlin Royal Gaels": {
-      "id": "0f84902a-d94a-4e01-9281-b3152091819c",
-      "name": "Dunshaughlin"
-    },
-    "St Ultans": {
-      "id": "da5011a7-4003-486a-af00-27c8d4e55a9d",
-      "name": "St. Ultan's"
-    }
-  },
-  "Tipperary LGFA": {
-    "Arravale": {
-      "id": "89ef85a2-0788-4450-8bec-2daf59b25875",
-      "name": "Arravale Rovers"
-    },
-    "Lattin Cullen Emly": {
-      "id": "8f05023a-4f81-4fc6-a910-a1a4bc3936ab",
-      "name": "Lattin-Cullen"
-    },
-    "Galtee Rovers St. Pecauns": {
-      "id": "33e98183-f5dc-4b0e-b238-537ff93758a2",
-      "name": "Galtee Rovers"
-    },
-    "Templemore": {
-      "id": "06a958c2-80da-448d-95ea-ac5a7433ce36",
-      "name": "Templemore"
-    }
-  },
-  "Roscommon LGFA": {}
+  }
 }
