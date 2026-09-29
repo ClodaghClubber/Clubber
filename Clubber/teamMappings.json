@@ -1919,5 +1919,36 @@
       "id": "39cdb3b0-d133-4ec9-ace1-031fe5016cc3",
       "name": "SGS College"
     }
-  }
+  },
+  "Longford LGFA": {
+    "Ballymahon/Forgney": {
+      "id": "5fe25342-c78b-4eae-8147-94a789557242",
+      "name": "Ballymahon Forgney"
+    }
+  },
+  "Meath LGFA": {
+    "Dunshaughlin Royal Gaels": {
+      "id": "0f84902a-d94a-4e01-9281-b3152091819c",
+      "name": "Dunshaughlin"
+    },
+    "St Ultans": {
+      "id": "da5011a7-4003-486a-af00-27c8d4e55a9d",
+      "name": "St. Ultan's"
+    }
+  },
+  "Tipperary LGFA": {
+    "Arravale": {
+      "id": "89ef85a2-0788-4450-8bec-2daf59b25875",
+      "name": "Arravale Rovers"
+    },
+    "Lattin Cullen Emly": {
+      "id": "8f05023a-4f81-4fc6-a910-a1a4bc3936ab",
+      "name": "Lattin-Cullen"
+    },
+    "Galtee Rovers St. Pecauns": {
+      "id": "33e98183-f5dc-4b0e-b238-537ff93758a2",
+      "name": "Galtee Rovers"
+    }
+  },
+  "Roscommon LGFA": {}
 }
