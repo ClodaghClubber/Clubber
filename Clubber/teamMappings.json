@@ -71,7 +71,15 @@
       "name": "St. Patrick's"
     },
     "Rathvilly/Rathbhile": "8eb2f899-3203-47ca-b7ac-b96b9f5bb23d",
-    "Burren Rangers": "cc0f9dca-5429-459b-b212-6a75d44fd9a8"
+    "Burren Rangers": "cc0f9dca-5429-459b-b212-6a75d44fd9a8",
+    "O'Hanrahans/Ó Hanracháin": {
+      "id": "232363eb-1b0b-40e6-a149-8b6c609d593d",
+      "name": "O'Hanrahan's"
+    },
+    "OldLeighlin": {
+      "id": "4ef987ef-5ede-454e-bb4f-d13c02f0122c",
+      "name": "Old Leighlin"
+    }
   },
   "Tipperary": {
     "Drom-Inch": {
