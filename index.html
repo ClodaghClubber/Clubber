@@ -3260,7 +3260,7 @@ function buildGamePayload(f) {
     else if (/semi.?final|^\bsf\b/.test(roundNorm)) price = 16.99;
   }
 
-  const county = isRugby ? 'UK' : f.county;
+  const county = isRugby ? 'UK' : (f.county || '').replace(/ LGFA$/i, '');
 
   const rawTime = f.time ? from12h(f.time) : '';
   const utcTime = rawTime && rawTime.includes(':') ? dublinToUtc(f.date, rawTime) : '';
