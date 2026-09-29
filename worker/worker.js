@@ -32,11 +32,19 @@ const WATERFORD_COMPETITIONS = [
   { id: '218649', name: 'Junior C Hurling Championship' },
   { id: '214349', name: 'Senior FC Group A' },
   { id: '214348', name: 'Senior FC Group B' },
+  { id: '220283', name: 'Senior FC KO' },
   { id: '214351', name: 'Premier Intermediate FC Group A' },
   { id: '214350', name: 'Premier Intermediate FC Group B' },
+  { id: '220282', name: 'Premier Intermediate FC KO' },
   { id: '218915', name: 'Intermediate FC' },
+  { id: '218916', name: 'Eastern Intermediate FC KO' },
+  { id: '219999', name: 'Western Intermediate FC Cup' },
+  { id: '220008', name: 'Western Intermediate FC Cup 2' },
+  { id: '219125', name: 'Eastern Junior A FC KO' },
+  { id: '219171', name: 'Eastern Junior B/C FC KO' },
+  { id: '219170', name: 'Western Junior C FC' },
+  { id: '220009', name: 'Western Junior A FC Cup' },
   { id: '219169', name: 'Junior B/C HC' },
-  { id: '219171', name: 'Junior B/C HC Cup' },
 ];
 
 
