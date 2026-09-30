@@ -421,6 +421,10 @@
       <option value="changes">Changes only</option>
     </select>
   </div>
+  <div style="display:flex;align-items:center;gap:6px;">
+    <label for="rugbyToggle" style="cursor:pointer;user-select:none;">Include Rugby</label>
+    <input type="checkbox" id="rugbyToggle" style="cursor:pointer;width:16px;height:16px;">
+  </div>
   <div class="actions">
     <button class="btn-approve" id="approveBtn" disabled>Approve</button>
     <button class="btn-reject" id="rejectBtn" disabled>Reject</button>
@@ -2002,7 +2006,9 @@ function getFiltered(){
   const selCodes=msGetValues('codeFilter');
   const selComps=msGetValues('compFilter');
   const selStatuses=msGetValues('statusFilter');
+  const includeRugby=document.getElementById('rugbyToggle').checked;
   let list=fixtures.filter(f=>{
+    if(!includeRugby && isRugbyFixture(f)) return false;
     if(selCounties.length && !selCounties.includes(f.county)) return false;
     if(selCodes.length && !selCodes.includes(f.code)) return false;
     if(selComps.length && !selComps.includes(extractGrade(f.competition))) return false;
@@ -2474,6 +2480,7 @@ dateTo.addEventListener('change',()=>{
   const savedBf=localStorage.getItem('gaaFilter_clubberFilter');
   if(savedCf){ cf.value=savedCf; changesOnlyFilter=savedCf==='changes'; }
   if(savedBf){ bf.value=savedBf; clubberFilterVal=savedBf; }
+  document.getElementById('rugbyToggle').addEventListener('change', render);
   cf.addEventListener('change',e=>{
     changesOnlyFilter=e.target.value==='changes';
     localStorage.setItem('gaaFilter_changesFilter',e.target.value);
