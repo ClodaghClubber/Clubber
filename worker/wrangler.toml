@@ -7,4 +7,4 @@ binding = "FIXTURE_STATUS"
 id = "978753aac88b476bbe43afd5b69cdb45"
 
 [triggers]
-crons = ["0 * * * *"]
+crons = ["0 * * * *", "12 * * * *", "24 * * * *", "36 * * * *", "48 * * * *"]

@@ -2221,6 +2221,11 @@ const STATUS_HISTORY_KV_KEY = 'statusHistory';
 const STATUS_HISTORY_MAX = 500;
 const CLUBBER_SNAPSHOT_KV_KEY = 'clubberSnapshot';
 const FIXTURE_CACHE_KV_KEY = 'fixtureCache';
+const CACHE_A_KEY = 'cache_A'; // Cork, Waterford
+const CACHE_B_KEY = 'cache_B'; // Laois, Wexford, Kildare, Carlow, Louth
+const CACHE_C_KEY = 'cache_C'; // Kerry, Offaly, Tipperary GAA
+const CACHE_D_KEY = 'cache_D'; // Kilkenny, Meath, Monaghan, Roscommon, Longford
+const CACHE_E_KEY = 'cache_E'; // Tipperary Camogie, Kilkenny Camogie
 
 // Same composite key the dashboard uses client-side to match a fixture
 // across reloads (county|competition|teamA|teamB|date), so Approve/Reject/
@@ -2358,74 +2363,212 @@ async function sendTeamsNotification(webhookUrl, changes) {
 
 const TRACKED_FIELDS = ['date', 'time', 'venue'];
 
+// ---- Shared helpers for per-group scraping ----
+
+const fixCamel = s => s
+  .replace(/([a-z])([A-Z])/g, '$1 $2')
+  .replace(/([A-Z]{2,})([A-Z][a-z])/g, '$1 $2');
+const fixNames = f => ({ ...f, teamA: fixCamel(f.teamA), teamB: fixCamel(f.teamB), venue: fixCamel(f.venue) });
+
+function deduplicateFixtures(fixtures) {
+  const seen = new Map();
+  for (const f of fixtures) {
+    const key = `${f.county}|${f.competition}|${f.teamA}|${f.teamB}|${toIsoDate(f.date)}|${(f.time || '').toLowerCase().trim()}`;
+    if (!seen.has(key)) {
+      seen.set(key, f);
+    } else {
+      const existing = seen.get(key);
+      const existingScore = (existing.round ? 2 : 0) + (existing.venue || '').length;
+      const newScore = (f.round ? 2 : 0) + (f.venue || '').length;
+      if (newScore > existingScore) seen.set(key, f);
+    }
+  }
+  return [...seen.values()];
+}
+
+async function writeGroupCache(kv, key, fixtures) {
+  const deduped = deduplicateFixtures(fixtures);
+  await kv.put(key, JSON.stringify({ cachedAt: new Date().toISOString(), fixtures: deduped }));
+}
+
+async function readGroupCache(kv, key) {
+  try {
+    const raw = await kv.get(key);
+    return raw ? JSON.parse(raw).fixtures || [] : [];
+  } catch (_) { return []; }
+}
+
+async function getAllCachedFixtures(kv) {
+  const [a, b, c, d, e] = await Promise.all([
+    readGroupCache(kv, CACHE_A_KEY),
+    readGroupCache(kv, CACHE_B_KEY),
+    readGroupCache(kv, CACHE_C_KEY),
+    readGroupCache(kv, CACHE_D_KEY),
+    readGroupCache(kv, CACHE_E_KEY),
+  ]);
+  return [...a, ...b, ...c, ...d, ...e];
+}
+
+// Group A: Cork + Waterford
+async function scrapeGroupA(kv) {
+  const [corkResults, waterfordResults] = await Promise.all([
+    Promise.all(CORK_COMPETITIONS.map(fetchCorkCompetition)).catch(() => []),
+    Promise.all(WATERFORD_COMPETITIONS.map(fetchWaterfordCompetition)).catch(() => []),
+  ]);
+  const fixtures = [
+    ...corkResults.flat().map(f => fixNames({ ...f, teamA: fixCorkName(f.teamA), teamB: fixCorkName(f.teamB), venue: fixCorkName(f.venue) })),
+    ...waterfordResults.flat().map(fixNames),
+  ];
+  await writeGroupCache(kv, CACHE_A_KEY, fixtures);
+}
+
+// Group B: Laois, Wexford, Kildare, Carlow, Louth
+async function scrapeGroupB(kv) {
+  const cacDebug = [];
+  const [laoisResults, wexfordResults, kildareResults, carlowLiveResults, louthLiveResults] = await Promise.all([
+    fetchLaoisCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Laois', 'laoisgaa.ie', c, cacDebug)))).catch(() => []),
+    fetchWexfordCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Wexford', 'wexford.clubandcounty.com', c, cacDebug)))).catch(() => []),
+    fetchKildare(cacDebug).catch(() => []),
+    fetchCarlowFixtures().catch(() => []),
+    fetchLouthFixtures().catch(() => []),
+  ]);
+  const fixtures = [
+    ...laoisResults.flat().map(fixNames),
+    ...wexfordResults.flat().map(fixNames),
+    ...kildareResults.map(fixNames),
+    ...KILDARE_FIXTURES,
+    ...(carlowLiveResults.length > 0 ? carlowLiveResults : CARLOW_FIXTURES),
+    ...(louthLiveResults.length > 0 ? louthLiveResults : LOUTH_FIXTURES.filter(f => !/^Winner|^Loser/i.test(f.teamA) && !/^Winner|^Loser/i.test(f.teamB))),
+  ];
+  await writeGroupCache(kv, CACHE_B_KEY, fixtures);
+}
+
+// Group C: Kerry, Offaly, Tipperary GAA (hurling + football)
+async function scrapeGroupC(kv) {
+  const cacDebug = [];
+  const [kerryResults, offalyResults, tipperaryResults, tipperaryFootballResults] = await Promise.all([
+    fetchKerryCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Kerry', 'www.kerrygaa.ie', c, cacDebug)))).catch(() => []),
+    fetchOffalyCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Offaly', 'offaly.gaa.ie', c, cacDebug)))).catch(() => []),
+    fetchTipperaryHurlingCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Tipperary', 'tipperary.gaa.ie', c, cacDebug)))).catch(() => []),
+    fetchTipperaryFootball(cacDebug).catch(() => []),
+  ]);
+  const fixtures = [
+    ...kerryResults.flat().map(f => { const g = fixNames({ ...f, teamA: fixKerryName(f.teamA), teamB: fixKerryName(f.teamB), venue: fixKerryName(f.venue) }); return { ...g, teamA: fixKerryName(g.teamA), teamB: fixKerryName(g.teamB), venue: fixKerryName(g.venue) }; }),
+    ...offalyResults.flat().map(fixNames),
+    ...tipperaryResults.flat().map(fixNames),
+    ...tipperaryFootballResults.map(fixNames),
+    ...TIPPERARY_FIXTURES,
+    ...KERRY_STATIC_FIXTURES,
+    ...OFFALY_STATIC_FIXTURES,
+  ];
+  await writeGroupCache(kv, CACHE_C_KEY, fixtures);
+}
+
+// Group D: Kilkenny GAA, Meath, Monaghan, Roscommon, Longford + Rugby static
+async function scrapeGroupD(kv, env) {
+  const cacDebug = [];
+  const [kilkennyResults, monaghanResults, meathResults, roscommonFootballResults, roscommonHurlingResults, longfordResults] = await Promise.all([
+    fetchKilkennyCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Kilkenny', 'kilkennygaa.ie', c, cacDebug)))).catch(() => []),
+    fetchMonaghanCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Monaghan', 'www.monaghangaa.ie', c, cacDebug)))).catch(() => []),
+    fetchMeathCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Meath', 'meath.gaa.ie', c, cacDebug)))).catch(() => []),
+    fetchRoscommonFootball().catch(() => []),
+    fetchRoscommonSport('hurling').catch(() => []),
+    fetchLongford(env.FOIREANN_API_KEY).catch(() => []),
+  ]);
+  const fixtures = [
+    ...kilkennyResults.flat().map(fixNames),
+    ...monaghanResults.flat().map(fixNames),
+    ...meathResults.flat().map(fixNames),
+    ...roscommonFootballResults.map(fixNames),
+    ...roscommonHurlingResults.map(fixNames),
+    ...(longfordResults.length > 0 ? longfordResults : LONGFORD_FIXTURES),
+    ...RUGBY_FIXTURES,
+  ];
+  await writeGroupCache(kv, CACHE_D_KEY, fixtures);
+}
+
+// Group E: Tipperary Camogie, Kilkenny Camogie — then run Teams alert
+async function scrapeGroupE(kv) {
+  const cacDebug = [];
+  const [tipperaryCamogieResults, kilkennyCamogieResults] = await Promise.all([
+    fetchTipperaryCamogieFixtures().catch(() => []),
+    fetchKilkennyAmogieCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Kilkenny', 'kilkennycamogie.ie', c, cacDebug)))).catch(() => []),
+  ]);
+  const fixtures = [
+    ...tipperaryCamogieResults,
+    ...kilkennyCamogieResults.flat().map(f => ({ ...fixNames(f), sport: 'Camogie' })),
+  ];
+  await writeGroupCache(kv, CACHE_E_KEY, fixtures);
+}
+
+async function runTeamsAlert(kv, env) {
+  const baseFixtures = await getAllCachedFixtures(kv);
+  const [snapshot, statusMap] = await Promise.all([
+    getClubberSnapshot(kv),
+    getStatusMap(kv),
+  ]);
+  const changes = [];
+  const newSnapshot = { ...snapshot };
+
+  for (const f of baseFixtures) {
+    const key = fixtureKey(f);
+    const status = statusMap[key] || f.status || 'Proposed';
+    if (status !== 'Approved') continue;
+
+    const norm = {
+      date: toIsoDate(f.date),
+      time: normaliseTime(f.time),
+      venue: normaliseVenue(f.venue),
+      round: (f.round || '').trim(),
+    };
+    const raw = { date: toIsoDate(f.date), time: norm.time, venue: f.venue || '', round: f.round || '' };
+    const prev = snapshot[key];
+
+    if (prev) {
+      const prevNorm = prev.norm
+        ? prev.norm
+        : { date: prev.date, time: normaliseTime(prev.time), venue: normaliseVenue(prev.venue), round: (prev.round||'').trim() };
+      const prevRaw = prev.raw || prev;
+      const diffs = TRACKED_FIELDS
+        .filter(field => prevNorm[field] !== norm[field])
+        .map(field => ({ field: field.charAt(0).toUpperCase() + field.slice(1), from: prevRaw[field], to: raw[field] }));
+      if (diffs.length) {
+        changes.push({ teamA: f.teamA, teamB: f.teamB, county: f.county, competition: f.competition, date: norm.date, diffs });
+      }
+    }
+    newSnapshot[key] = { norm, raw };
+  }
+
+  await kv.put(CLUBBER_SNAPSHOT_KV_KEY, JSON.stringify(newSnapshot));
+
+  if (changes.length && env.TEAMS_WEBHOOK_URL) {
+    try {
+      await sendTeamsNotification(env.TEAMS_WEBHOOK_URL, changes);
+    } catch (e) {
+      console.error('Cron: Teams notification failed', e);
+    }
+  }
+}
+
 export default {
-  // Cron handler: runs every hour, fetches all fixtures, diffs against the
-  // stored snapshot for Approved fixtures, and sends a Teams alert if anything changed.
+  // Cron handler: staggered across 5 time slots, each scraping a county group.
+  // Group E (minute 48) also runs the Teams alert check.
   async scheduled(event, env, ctx) {
     const kv = env.FIXTURE_STATUS;
     if (!kv) return;
 
-    // Re-use the existing fetch handler to get the full fixtures payload — this
-    // keeps the scraping + merging logic in one place with no duplication.
-    let payload;
+    const cron = event.cron;
     try {
-      const resp = await this.fetch(new Request('https://internal/fixtures'), env);
-      payload = await resp.json();
+      if (cron === '0 * * * *')  await scrapeGroupA(kv);
+      else if (cron === '12 * * * *') await scrapeGroupB(kv);
+      else if (cron === '24 * * * *') await scrapeGroupC(kv);
+      else if (cron === '36 * * * *') await scrapeGroupD(kv, env);
+      else if (cron === '48 * * * *') {
+        await scrapeGroupE(kv);
+        await runTeamsAlert(kv, env);
+      }
     } catch (e) {
-      console.error('Cron: fixture fetch failed', e);
-      return;
-    }
-
-    const fixtures = payload.fixtures || [];
-
-    const [snapshot, statusMap] = await Promise.all([
-      getClubberSnapshot(kv),
-      getStatusMap(kv),
-    ]);
-    const changes = [];
-    const newSnapshot = { ...snapshot };
-
-    for (const f of fixtures) {
-      const key = fixtureKey(f);
-      const status = statusMap[key] || f.status || 'Proposed';
-      if (status !== 'Approved') continue;
-
-      // Normalised values used for comparison (strips formatting differences)
-      const norm = {
-        date: toIsoDate(f.date),
-        time: normaliseTime(f.time),
-        venue: normaliseVenue(f.venue),
-        round: (f.round || '').trim(),
-      };
-      // Raw values used for display in the Teams card — store time in 24h so display matches comparison
-      const raw = { date: toIsoDate(f.date), time: norm.time, venue: f.venue || '', round: f.round || '' };
-      const prev = snapshot[key];
-
-      if (prev) {
-        // Support old flat snapshot format ({ date, time, venue, round }) transparently
-        const prevNorm = prev.norm
-          ? prev.norm
-          : { date: prev.date, time: normaliseTime(prev.time), venue: normaliseVenue(prev.venue), round: (prev.round||'').trim() };
-        const prevRaw = prev.raw || prev;
-        const diffs = TRACKED_FIELDS
-          .filter(field => prevNorm[field] !== norm[field])
-          .map(field => ({ field: field.charAt(0).toUpperCase() + field.slice(1), from: prevRaw[field], to: raw[field] }));
-        if (diffs.length) {
-          changes.push({ teamA: f.teamA, teamB: f.teamB, county: f.county, competition: f.competition, date: norm.date, diffs });
-        }
-      }
-
-      newSnapshot[key] = { norm, raw };
-    }
-
-    await kv.put(CLUBBER_SNAPSHOT_KV_KEY, JSON.stringify(newSnapshot));
-
-    if (changes.length && env.TEAMS_WEBHOOK_URL) {
-      try {
-        await sendTeamsNotification(env.TEAMS_WEBHOOK_URL, changes);
-      } catch (e) {
-        console.error('Cron: Teams notification failed', e);
-      }
+      console.error(`Cron ${cron} failed:`, e);
     }
   },
 
@@ -2604,123 +2747,21 @@ export default {
       return new Response(JSON.stringify(data), { headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } });
     }
 
-    // Stale-while-revalidate: if KV cache is < 55 min old serve it immediately;
-    // start a background live-fetch to keep it warm. Force live fetch with ?refresh=1.
-    const forceRefresh = url.searchParams.has('refresh');
-    if (!forceRefresh && kv) {
-      try {
-        const cached = await kv.get(FIXTURE_CACHE_KV_KEY);
-        if (cached) {
-          const { cachedAt, fixtures: baseFixtures } = JSON.parse(cached);
-          const ageMs = Date.now() - new Date(cachedAt).getTime();
-          if (ageMs < 55 * 60 * 1000) { // < 55 minutes: serve immediately
-            const [statusMap, overridesMap, kvManualFixtures] = await Promise.all([
-              getStatusMap(kv), getOverridesMap(kv), getManualFixtures(kv),
-            ]);
-            const fixtures = baseFixtures
-              .map((f) => {
-                const key = fixtureKey(f);
-                const ov = overridesMap[key];
-                return { ...f, ...(ov || {}), status: statusMap[key] || 'Proposed' };
-              })
-              .filter((f) => f.status !== 'Removed');
-            // Background: refresh the cache without blocking this response
-            if (ctx) ctx.waitUntil(
-              this.fetch(new Request(url.origin + url.pathname + '?refresh=1'), env, ctx).catch(() => {})
-            );
-            return new Response(
-              JSON.stringify({ fetchedAt: cachedAt, fixtures, overrides: overridesMap, manualFixtures: kvManualFixtures }),
-              { headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } }
-            );
-          }
-        }
-      } catch (_) { /* fall through to live fetch */ }
+    // GET reads exclusively from the 5 group KV keys written by the cron scrapers.
+    // No live fetching here — all scraping is done by the scheduled handler.
+    if (!kv) {
+      return new Response(JSON.stringify({ error: 'KV not bound' }), { status: 500, headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } });
     }
 
     try {
-      const cacDebug = [];
-      const [corkResults, waterfordResults, laoisResults, wexfordResults, kerryResults, offalyResults, tipperaryResults, tipperaryFootballResults, kildareResults, roscommonFootballResults, roscommonHurlingResults, kilkennyResults, monaghanResults, meathResults, longfordResults, carlowLiveResults, louthLiveResults, tipperaryCamogieResults, kilkennyCamogieResults] = await Promise.all([
-        Promise.all(CORK_COMPETITIONS.map(fetchCorkCompetition)).catch(() => []),
-        Promise.all(WATERFORD_COMPETITIONS.map(fetchWaterfordCompetition)).catch(() => []),
-        fetchLaoisCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Laois', 'laoisgaa.ie', c, cacDebug)))).catch(() => []),
-        fetchWexfordCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Wexford', 'wexford.clubandcounty.com', c, cacDebug)))).catch(() => []),
-        fetchKerryCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Kerry', 'www.kerrygaa.ie', c, cacDebug)))).catch(() => []),
-        fetchOffalyCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Offaly', 'offaly.gaa.ie', c, cacDebug)))).catch(() => []),
-        fetchTipperaryHurlingCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Tipperary', 'tipperary.gaa.ie', c, cacDebug)))).catch(() => []),
-        fetchTipperaryFootball(cacDebug).catch(() => []),
-        fetchKildare(cacDebug).catch(() => []),
-        fetchRoscommonFootball().catch(() => []),
-        fetchRoscommonSport('hurling').catch(() => []),
-        fetchKilkennyCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Kilkenny', 'kilkennygaa.ie', c, cacDebug)))).catch(() => []),
-        fetchMonaghanCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Monaghan', 'www.monaghangaa.ie', c, cacDebug)))).catch(() => []),
-        fetchMeathCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Meath', 'meath.gaa.ie', c, cacDebug)))).catch(() => []),
-        fetchLongford(env.FOIREANN_API_KEY).catch(() => []),
-        fetchCarlowFixtures().catch(() => []),
-        fetchLouthFixtures().catch(() => []),
-        fetchTipperaryCamogieFixtures().catch(() => []),
-        fetchKilkennyAmogieCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Kilkenny', 'kilkennycamogie.ie', c, cacDebug)))).catch(() => []),
-      ]);
-
-      const fixCamel = s => s
-        .replace(/([a-z])([A-Z])/g, '$1 $2')      // camelCase: e.g. KillarneyLegion → Killarney Legion
-        .replace(/([A-Z]{2,})([A-Z][a-z])/g, '$1 $2'); // ACRONYM+Word: e.g. GAAGrounds → GAA Grounds
-      const fixNames = f => ({ ...f, teamA: fixCamel(f.teamA), teamB: fixCamel(f.teamB), venue: fixCamel(f.venue) });
-
-      let fixtures = [
-        ...corkResults.flat().map(f => fixNames({ ...f, teamA: fixCorkName(f.teamA), teamB: fixCorkName(f.teamB), venue: fixCorkName(f.venue) })),
-        ...waterfordResults.flat().map(fixNames),
-        ...laoisResults.flat().map(fixNames),
-        ...wexfordResults.flat().map(fixNames),
-        ...kerryResults.flat().map(f => { const g = fixNames({ ...f, teamA: fixKerryName(f.teamA), teamB: fixKerryName(f.teamB), venue: fixKerryName(f.venue) }); return { ...g, teamA: fixKerryName(g.teamA), teamB: fixKerryName(g.teamB), venue: fixKerryName(g.venue) }; }),
-        ...offalyResults.flat().map(fixNames),
-        ...tipperaryResults.flat().map(fixNames),
-        ...tipperaryFootballResults.map(fixNames),
-        ...kildareResults.map(fixNames),
-        ...roscommonFootballResults.map(fixNames),
-        ...roscommonHurlingResults.map(fixNames),
-        ...kilkennyResults.flat().map(fixNames),
-        ...monaghanResults.flat().map(fixNames),
-        ...meathResults.flat().map(fixNames),
-        ...(longfordResults.length > 0 ? longfordResults : LONGFORD_FIXTURES),
-        ...TIPPERARY_FIXTURES,
-        ...KILDARE_FIXTURES,
-        ...KERRY_STATIC_FIXTURES,
-        ...OFFALY_STATIC_FIXTURES,
-        ...(carlowLiveResults.length > 0 ? carlowLiveResults : CARLOW_FIXTURES),
-        ...(louthLiveResults.length > 0 ? louthLiveResults : LOUTH_FIXTURES.filter(f => !/^Winner|^Loser/i.test(f.teamA) && !/^Winner|^Loser/i.test(f.teamB))),
-        ...tipperaryCamogieResults,
-        ...kilkennyCamogieResults.flat().map(f => ({ ...fixNames(f), sport: 'Camogie' })),
-        ...RUGBY_FIXTURES,
-      ];
-
-      // Global dedup: normalise time case so "7:00 pm" and "7:00 PM" collapse to one record.
-      // When two records share the same identity key, keep the richer one (has round > longer venue).
-      {
-        const globalSeen = new Map();
-        for (const f of fixtures) {
-          const key = `${f.county}|${f.competition}|${f.teamA}|${f.teamB}|${toIsoDate(f.date)}|${(f.time || '').toLowerCase().trim()}`;
-          if (!globalSeen.has(key)) {
-            globalSeen.set(key, f);
-          } else {
-            const existing = globalSeen.get(key);
-            // Prefer whichever has a round, then longer venue string
-            const existingScore = (existing.round ? 2 : 0) + (existing.venue || '').length;
-            const newScore = (f.round ? 2 : 0) + (f.venue || '').length;
-            if (newScore > existingScore) globalSeen.set(key, f);
-          }
-        }
-        fixtures = [...globalSeen.values()];
-      }
-
+      const baseFixtures = await getAllCachedFixtures(kv);
       const fetchedAt = new Date().toISOString();
 
-      // Save base fixtures as last-known-good cache (always await so background refresh works).
-      if (kv) {
-        await kv.put(FIXTURE_CACHE_KV_KEY, JSON.stringify({ cachedAt: fetchedAt, fixtures }));
-      }
+      const [statusMap, overridesMap, kvManualFixtures] = await Promise.all([
+        getStatusMap(kv), getOverridesMap(kv), getManualFixtures(kv),
+      ]);
 
-      const [statusMap, overridesMap, kvManualFixtures] = await Promise.all([getStatusMap(kv), getOverridesMap(kv), getManualFixtures(kv)]);
-      fixtures = fixtures
+      const fixtures = deduplicateFixtures(baseFixtures)
         .map((f) => {
           const key = fixtureKey(f);
           const ov = overridesMap[key];
@@ -2728,55 +2769,11 @@ export default {
         })
         .filter((f) => f.status !== 'Removed');
 
-      const includeDebug = url.searchParams.has('debug');
-
       return new Response(
-        JSON.stringify({
-          fetchedAt,
-          fixtures,
-          overrides: overridesMap,
-          manualFixtures: kvManualFixtures,
-          ...(includeDebug ? { cacDebug } : {}),
-        }),
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            ...CORS_HEADERS,
-          },
-        }
+        JSON.stringify({ fetchedAt, fixtures, overrides: overridesMap, manualFixtures: kvManualFixtures }),
+        { headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } }
       );
     } catch (err) {
-      // Attempt to serve last-known-good cached fixtures with fresh statuses applied.
-      if (kv) {
-        try {
-          const cached = await kv.get(FIXTURE_CACHE_KV_KEY);
-          if (cached) {
-            const { cachedAt, fixtures: baseFixtures } = JSON.parse(cached);
-            const [statusMap, overridesMap, kvManualFixtures] = await Promise.all([
-              getStatusMap(kv), getOverridesMap(kv), getManualFixtures(kv),
-            ]);
-            const fixtures = baseFixtures
-              .map((f) => {
-                const key = fixtureKey(f);
-                const ov = overridesMap[key];
-                return { ...f, ...(ov || {}), status: statusMap[key] || 'Proposed' };
-              })
-              .filter((f) => f.status !== 'Removed');
-            return new Response(
-              JSON.stringify({
-                fetchedAt: cachedAt,
-                fromCache: true,
-                fixtures,
-                overrides: overridesMap,
-                manualFixtures: kvManualFixtures,
-              }),
-              { headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } }
-            );
-          }
-        } catch (cacheErr) {
-          console.error('Cache fallback failed', cacheErr);
-        }
-      }
       return new Response(
         JSON.stringify({ error: String(err && err.message ? err.message : err) }),
         { status: 502, headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } }
