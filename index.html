@@ -2154,11 +2154,75 @@ function csvEscape(val){
   return s;
 }
 
+function abbreviateFixture(competition, round) {
+  if (!competition) return '';
+  let comp = competition;
+
+  // Detect parenthetical "(X Cup)" — those competitions get an extra C appended
+  let hasCup = false;
+  comp = comp.replace(/\s*\(([^)]*)\)/g, (_, inner) => {
+    if (/\bcup\b/i.test(inner)) hasCup = true;
+    return '';
+  });
+
+  // Strip county/sponsor prefixes
+  comp = comp.replace(/^county\s+\w+\s*/i, '');
+  comp = comp.replace(/^kildare\s+/i, '');
+  comp = comp.replace(/^omni\w+\s+/i, '');
+  comp = comp.trim();
+
+  // Extract U18/U21 etc age prefix
+  const ageMatch = comp.match(/^(U\d+)\s+/i);
+  const agePfx = ageMatch ? ageMatch[1].toUpperCase() + ' ' : '';
+  if (ageMatch) comp = comp.slice(ageMatch[0].length);
+
+  // Strip "Relegation" from competition name (handled in round)
+  comp = comp.replace(/\s*Relegation\b/gi, '').replace(/\s{2,}/g, ' ').trim();
+
+  const wordMap = {
+    senior: 'S', intermediate: 'I', junior: 'J', premier: 'P',
+    football: 'F', hurling: 'H', camogie: 'C', championship: 'C', cup: 'C',
+    county: '', tipperary: '', semi: '', final: '',
+  };
+  const tokens = comp.split(/\s+/);
+  let abbr = '';
+  let groupSuffix = '';
+
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i];
+    const tl = t.toLowerCase();
+    if (tl === 'fc') { abbr += 'FC'; continue; }
+    if (tl === 'group' && i + 1 < tokens.length) {
+      groupSuffix = ' G' + tokens[++i].toUpperCase();
+      continue;
+    }
+    if (/^[AB]$/.test(t)) { abbr += t; continue; }
+    if (wordMap[tl] !== undefined) abbr += wordMap[tl];
+  }
+
+  if (hasCup) abbr += 'C';
+  abbr = agePfx + abbr + groupSuffix;
+
+  // Abbreviate round
+  let rnd = (round || '').trim();
+  rnd = rnd.replace(/\s+FOD\s*$/i, '');                            // strip FOD suffix
+  rnd = rnd.replace(/\bPremier\s+Final\b/gi, '');                   // already encoded in comp (e.g. HCCP)
+  rnd = rnd.replace(/\bRel\s+F\b/gi, 'Rel Final');                  // expand bare "Rel F" → "Rel Final"
+  rnd = rnd.replace(/\bRel(?:egation)?\s+Relegation\b/gi, 'Rel');  // collapse "Rel Relegation" → "Rel"
+  rnd = rnd.replace(/\bQuarter[\s-]?Finals?\s*\d*/i, 'QF');
+  rnd = rnd.replace(/\bSemi[\s-]?Finals?\s*\d*/i, 'SF');
+  rnd = rnd.replace(/\bPlay[\s-]?off\b/gi, 'PO');
+  rnd = rnd.replace(/\bRound\s+(\d+)/i, 'R$1');
+  rnd = rnd.trim();
+
+  return (abbr + (rnd ? ' ' + rnd : '')).trim();
+}
+
 function exportSelectedToExcel(){
   const selFixtures=fixtures.filter(f=>selected.has(f.id));
   if(!selFixtures.length) return;
-  const headers=['County','Code','Team A','Team B','Date','Day','Time','Venue','Competition','Round','Status','Clubber Pick','Hero'];
-  const rows=selFixtures.map(f=>[f.county,f.code||'',f.teamA,f.teamB,f.date,f.day,f.time,f.venue,f.competition,f.round,f.status,f.clubberPick?'Yes':'',f.hero?'Yes':'']);
+  const headers=['County','Code','Team A','Team B','Date','Day','Time','Venue','Competition','Round','Abbreviation','Status','Clubber Pick','Hero'];
+  const rows=selFixtures.map(f=>[f.county,f.code||'',f.teamA,f.teamB,f.date,f.day,f.time,f.venue,f.competition,f.round,abbreviateFixture(f.competition,f.round),f.status,f.clubberPick?'Yes':'',f.hero?'Yes':'']);
   const csv=[headers,...rows].map(row=>row.map(csvEscape).join(',')).join('\r\n');
   const blob=new Blob(['﻿'+csv],{type:'application/vnd.ms-excel;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
