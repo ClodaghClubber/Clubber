@@ -2160,7 +2160,7 @@ function csvEscape(val){
   return s;
 }
 
-function abbreviateFixture(competition, round) {
+function abbreviateFixture(competition, round, code) {
   if (!competition) return '';
   let comp = competition;
 
@@ -2182,6 +2182,9 @@ function abbreviateFixture(competition, round) {
   const agePfx = ageMatch ? ageMatch[1].toUpperCase() + ' ' : '';
   if (ageMatch) comp = comp.slice(ageMatch[0].length);
 
+  // Track whether competition contains Relegation (suppresses group suffix)
+  const hasRelegation = /\bRelegation\b/i.test(comp);
+
   // Strip "Relegation" from competition name (handled in round)
   comp = comp.replace(/\s*Relegation\b/gi, '').replace(/\s{2,}/g, ' ').trim();
 
@@ -2198,6 +2201,7 @@ function abbreviateFixture(competition, round) {
     const t = tokens[i];
     const tl = t.toLowerCase();
     if (tl === 'fc') { abbr += 'FC'; continue; }
+    if (tl === 'hc') { abbr += 'HC'; continue; }
     if (tl === 'group' && i + 1 < tokens.length) {
       groupSuffix = ' G' + tokens[++i].toUpperCase();
       continue;
@@ -2207,18 +2211,32 @@ function abbreviateFixture(competition, round) {
   }
 
   if (hasCup) abbr += 'C';
-  abbr = agePfx + abbr + groupSuffix;
+  // Don't append a group suffix for relegation competitions (e.g. "SH Rel Final" not "SH G1 Rel Final")
+  if (!hasRelegation) abbr += groupSuffix;
+
+  // LGFA: replace sport/championship letters with "LGFA", preserving any group suffix
+  if ((code || '').toUpperCase() === 'LGFA') {
+    const grpMatch = abbr.match(/(\s+G\S+)$/);
+    const grp = grpMatch ? grpMatch[1] : '';
+    const base = grp ? abbr.slice(0, -grp.length) : abbr;
+    const levelPart = base.replace(/[FHC]+/g, '').replace(/\s+/g, '');
+    abbr = (levelPart.length <= 1 ? levelPart + 'LGFA' : levelPart + ' LGFA') + grp;
+  }
+
+  abbr = agePfx + abbr;
 
   // Abbreviate round
   let rnd = (round || '').trim();
   rnd = rnd.replace(/\s+FOD\s*$/i, '');                            // strip FOD suffix
   rnd = rnd.replace(/\bPremier\s+Final\b/gi, '');                   // already encoded in comp (e.g. HCCP)
+  rnd = rnd.replace(/\bPreliminary\b/gi, 'Prelim');                  // Preliminary → Prelim
   rnd = rnd.replace(/\bRel\s+F\b/gi, 'Rel Final');                  // expand bare "Rel F" → "Rel Final"
   rnd = rnd.replace(/\bRel(?:egation)?\s+Relegation\b/gi, 'Rel');  // collapse "Rel Relegation" → "Rel"
   rnd = rnd.replace(/\bQuarter[\s-]?Finals?\s*\d*/i, 'QF');
   rnd = rnd.replace(/\bSemi[\s-]?Finals?\s*\d*/i, 'SF');
   rnd = rnd.replace(/\bPlay[\s-]?off\b/gi, 'PO');
   rnd = rnd.replace(/\bRound\s+(\d+)/i, 'R$1');
+  rnd = rnd.replace(/(\S)Replay\b/gi, '$1 Replay');                 // ensure space before Replay
   rnd = rnd.trim();
 
   return (abbr + (rnd ? ' ' + rnd : '')).trim();
@@ -2228,7 +2246,7 @@ function exportSelectedToExcel(){
   const selFixtures=fixtures.filter(f=>selected.has(f.id));
   if(!selFixtures.length) return;
   const headers=['County','Code','Team A','Team B','Date','Day','Time','Venue','Competition','Round','Abbreviation','Status','Clubber Pick','Hero'];
-  const rows=selFixtures.map(f=>[f.county,f.code||'',f.teamA,f.teamB,f.date,f.day,f.time,f.venue,f.competition,f.round,abbreviateFixture(f.competition,f.round),f.status,f.clubberPick?'Yes':'',f.hero?'Yes':'']);
+  const rows=selFixtures.map(f=>[f.county,f.code||'',f.teamA,f.teamB,f.date,f.day,f.time,f.venue,f.competition,f.round,abbreviateFixture(f.competition,f.round,f.code),f.status,f.clubberPick?'Yes':'',f.hero?'Yes':'']);
   const csv=[headers,...rows].map(row=>row.map(csvEscape).join(',')).join('\r\n');
   const blob=new Blob(['﻿'+csv],{type:'application/vnd.ms-excel;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
