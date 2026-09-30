@@ -2230,8 +2230,9 @@ function abbreviateFixture(competition, round, code) {
   rnd = rnd.replace(/\s+FOD\s*$/i, '');                            // strip FOD suffix
   rnd = rnd.replace(/\bPremier\s+Final\b/gi, '');                   // already encoded in comp (e.g. HCCP)
   rnd = rnd.replace(/\bPreliminary\b/gi, 'Prelim');                  // Preliminary → Prelim
+  rnd = rnd.replace(/\bRelegation\b/gi, 'Rel');                      // normalize "Relegation" → "Rel"
   rnd = rnd.replace(/\bRel\s+F\b/gi, 'Rel Final');                  // expand bare "Rel F" → "Rel Final"
-  rnd = rnd.replace(/\bRel(?:egation)?\s+Relegation\b/gi, 'Rel');  // collapse "Rel Relegation" → "Rel"
+  rnd = rnd.replace(/\bRel\s+Rel\b/gi, 'Rel');                      // collapse "Rel Rel" → "Rel"
   rnd = rnd.replace(/\bQuarter[\s-]?Finals?\s*\d*/i, 'QF');
   rnd = rnd.replace(/\bSemi[\s-]?Finals?\s*\d*/i, 'SF');
   rnd = rnd.replace(/\bPlay[\s-]?off\b/gi, 'PO');
