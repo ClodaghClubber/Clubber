@@ -421,9 +421,11 @@
       <option value="changes">Changes only</option>
     </select>
   </div>
-  <div style="display:flex;align-items:center;gap:6px;">
-    <label for="rugbyToggle" style="cursor:pointer;user-select:none;">Include Rugby</label>
-    <input type="checkbox" id="rugbyToggle" style="cursor:pointer;width:16px;height:16px;">
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span style="font-size:12px;color:var(--muted);user-select:none;">Include Rugby</span>
+    <button id="rugbyToggle" role="switch" aria-checked="false" style="position:relative;display:inline-flex;align-items:center;width:44px;height:24px;border-radius:12px;border:none;cursor:pointer;background:#ccc;transition:background .2s;padding:0;flex-shrink:0;" title="Include Rugby fixtures">
+      <span style="position:absolute;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:left .2s;pointer-events:none;"></span>
+    </button>
   </div>
   <div class="actions">
     <button class="btn-approve" id="approveBtn" disabled>Approve</button>
@@ -2006,7 +2008,7 @@ function getFiltered(){
   const selCodes=msGetValues('codeFilter');
   const selComps=msGetValues('compFilter');
   const selStatuses=msGetValues('statusFilter');
-  const includeRugby=document.getElementById('rugbyToggle').checked;
+  const includeRugby=document.getElementById('rugbyToggle').getAttribute('aria-checked')==='true';
   let list=fixtures.filter(f=>{
     if(!includeRugby && isRugbyFixture(f)) return false;
     if(selCounties.length && !selCounties.includes(f.county)) return false;
@@ -2499,7 +2501,29 @@ dateTo.addEventListener('change',()=>{
   const savedBf=localStorage.getItem('gaaFilter_clubberFilter');
   if(savedCf){ cf.value=savedCf; changesOnlyFilter=savedCf==='changes'; }
   if(savedBf){ bf.value=savedBf; clubberFilterVal=savedBf; }
-  document.getElementById('rugbyToggle').addEventListener('change', render);
+  (function(){
+    const RUGBY_COUNTIES = ['ACE','BUCS','Champ'];
+    const btn = document.getElementById('rugbyToggle');
+    const thumb = btn.querySelector('span');
+    function setToggle(on){
+      btn.setAttribute('aria-checked', on ? 'true' : 'false');
+      btn.style.background = on ? '#4caf50' : '#ccc';
+      thumb.style.left = on ? '23px' : '3px';
+      if(!on){
+        // Deselect rugby counties from the county filter
+        const cur = msCounty.getValues();
+        if(cur.length > 0){
+          const filtered = cur.filter(v => !RUGBY_COUNTIES.includes(v));
+          msCounty.setValues(filtered);
+        }
+      }
+      render();
+    }
+    btn.addEventListener('click', () => {
+      const isOn = btn.getAttribute('aria-checked') === 'true';
+      setToggle(!isOn);
+    });
+  })();
   cf.addEventListener('change',e=>{
     changesOnlyFilter=e.target.value==='changes';
     localStorage.setItem('gaaFilter_changesFilter',e.target.value);
