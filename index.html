@@ -1981,9 +1981,18 @@ let selected=new Set();
 let sortKey='date', sortDir=1;
 
 function populateFilterOptions(){
+  const RUGBY_COUNTIES=['ACE','BUCS','Champ'];
   const counties=[...new Set(fixtures.map(f=>f.county))].sort((a,b)=>a.localeCompare(b));
   msCounty.setOptions(counties);
   if(window._pendingRestore_countyFilter){ msCounty.setValues(window._pendingRestore_countyFilter); delete window._pendingRestore_countyFilter; }
+  // If rugby toggle is off, ensure rugby counties are deselected (setOptions resets to All)
+  if(document.getElementById('rugbyToggle')&&document.getElementById('rugbyToggle').getAttribute('aria-checked')!=='true'){
+    const cur=msCounty.getValues();
+    // cur empty = "All" — expand to all counties minus rugby ones
+    const base=cur.length===0?counties:cur;
+    const filtered=base.filter(v=>!RUGBY_COUNTIES.includes(v));
+    msCounty.setValues(filtered);
+  }
   populateCompOptions();
   if(window._pendingRestore_compFilter){ msComp.setValues(window._pendingRestore_compFilter); delete window._pendingRestore_compFilter; }
 }
