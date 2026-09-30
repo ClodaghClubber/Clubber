@@ -2220,7 +2220,7 @@ function abbreviateFixture(competition, round, code) {
     const grp = grpMatch ? grpMatch[1] : '';
     const base = grp ? abbr.slice(0, -grp.length) : abbr;
     const levelPart = base.replace(/[FHC]+/g, '').replace(/\s+/g, '');
-    abbr = (levelPart.length <= 1 ? levelPart + 'LGFA' : levelPart + ' LGFA') + grp;
+    abbr = (levelPart + ' LGFA') + grp;
   }
 
   abbr = agePfx + abbr;
