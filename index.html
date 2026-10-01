@@ -127,6 +127,23 @@
   #importDropZone.dragover{border-color:var(--accent)!important;background:rgba(90,79,207,.08);}
   #importFixtureBtn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:6px 12px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;}
   #importFixtureBtn:hover{color:var(--text);border-color:var(--accent);}
+  #csvImportBtn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:6px 12px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;}
+  #csvImportBtn:hover{color:var(--text);border-color:var(--accent);}
+  #csvImportModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;align-items:flex-start;justify-content:center;padding-top:30px;}
+  #csvImportModal.open{display:flex;}
+  #csvImportModal .modal-box{width:min(960px,96vw);max-height:calc(100vh - 60px);display:flex;flex-direction:column;}
+  #csvPreviewWrap{flex:1;overflow-y:auto;margin-top:12px;}
+  #csvPreviewTable{width:100%;border-collapse:collapse;font-size:12px;}
+  #csvPreviewTable th{background:var(--bg);padding:6px 8px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;top:0;z-index:1;}
+  #csvPreviewTable td{padding:5px 8px;border-bottom:1px solid rgba(128,128,128,.12);vertical-align:middle;color:var(--text);}
+  #csvPreviewTable tr.csv-dup td{opacity:.5;}
+  #csvPreviewTable tr.csv-approved td:nth-child(2){color:#4ade80;font-weight:600;}
+  #csvPreviewTable tr.csv-needs-county{background:rgba(251,191,36,.07);}
+  .csv-county-sel{background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:12px;color:var(--text);width:130px;font-family:inherit;}
+  .csv-status-badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700;letter-spacing:.03em;}
+  .csv-status-badge.approved{background:rgba(22,163,74,.2);color:#4ade80;}
+  .csv-status-badge.other{background:rgba(107,114,128,.2);color:var(--muted);}
+  .csv-status-badge.dup{background:rgba(239,68,68,.15);color:#f87171;}
   .modal-box{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:28px 32px;width:620px;max-width:96vw;max-height:85vh;overflow-y:auto;}
   .modal-box h2{margin:0 0 20px;font-size:17px;color:var(--text);}
   .modal-section{margin-bottom:18px;}
@@ -433,6 +450,12 @@
     <button class="btn-remove" id="removeBtn" disabled>Remove</button>
     <button class="btn-remove" id="clearChangesBtn" style="display:none;" title="Clear all change markers">Clear changes</button>
     <button class="btn-modal-add" id="addFixtureBtn">+ Add Fixture</button>
+    <button id="csvImportBtn" title="Import fixtures from spreadsheet CSV">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M7 1v8M4.5 6.5l2.5 2.5 2.5-2.5"/><path d="M1 11h12v1.5H1z"/>
+      </svg>
+      Import CSV
+    </button>
     <button id="importFixtureBtn" title="Import fixture from a .txt file">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
         <path d="M8 1H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V5z"/><path d="M8 1v4h4"/><path d="M4.5 8h5M4.5 10h3"/>
@@ -769,6 +792,64 @@
     <div class="modal-actions">
       <button type="button" onclick="closeImportModal()" class="btn-modal-cancel">Cancel</button>
       <button type="button" id="importAddBtn" class="btn-modal-add" disabled>Add Fixture</button>
+    </div>
+  </div>
+</div>
+
+<!-- CSV Import Modal -->
+<div id="csvImportModal">
+  <div class="modal-box">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <h2 style="margin:0;">Import from Spreadsheet CSV</h2>
+      <button type="button" onclick="closeCsvImportModal()" style="background:none;border:none;cursor:pointer;font-size:20px;line-height:1;color:var(--muted);padding:4px 6px;" aria-label="Close">&times;</button>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px;">
+      <div>
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);display:block;margin-bottom:5px;">CSV File</label>
+        <label id="csvDropZone" for="csvFileInput" style="display:inline-flex;align-items:center;gap:7px;border:1px solid var(--border);border-radius:6px;padding:7px 12px;cursor:pointer;font-size:13px;color:var(--muted);transition:border-color .15s;">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9.5V11h9V9.5M6.5 1v7M4 5.5l2.5 2.5 2.5-2.5"/></svg>
+          <span id="csvFileLabel">Choose file…</span>
+        </label>
+        <input type="file" id="csvFileInput" accept=".csv,text/csv,text/plain" style="display:none;">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);display:block;margin-bottom:5px;">Date From</label>
+        <input type="date" id="csvDateFrom" style="background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--text);font-family:inherit;">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);display:block;margin-bottom:5px;">Date To</label>
+        <input type="date" id="csvDateTo" style="background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--text);font-family:inherit;">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);display:block;margin-bottom:5px;">&nbsp;</label>
+        <button type="button" id="csvParseBtn" class="btn-modal-add" disabled>Preview</button>
+      </div>
+    </div>
+    <div id="csvError" style="display:none;background:#2d1515;border:1px solid #7f1d1d;border-radius:6px;padding:10px 14px;font-size:13px;color:#fca5a5;margin-bottom:10px;"></div>
+    <div id="csvInfo" style="display:none;font-size:12px;color:var(--muted);margin-bottom:8px;"></div>
+    <div id="csvPreviewWrap" style="display:none;">
+      <div style="overflow-x:auto;">
+        <table id="csvPreviewTable">
+          <thead>
+            <tr>
+              <th><input type="checkbox" id="csvSelectAll" title="Select all"></th>
+              <th>Status</th>
+              <th>County</th>
+              <th>Team A</th>
+              <th>Team B</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Competition</th>
+              <th>Round</th>
+            </tr>
+          </thead>
+          <tbody id="csvPreviewBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-actions" style="margin-top:14px;">
+      <button type="button" onclick="closeCsvImportModal()" class="btn-modal-cancel">Cancel</button>
+      <button type="button" id="csvImportDoBtn" class="btn-modal-add" disabled>Import Selected</button>
     </div>
   </div>
 </div>
@@ -4107,6 +4188,320 @@ async function handleLogout() {
 // Auth disabled — bypass login
 (async () => { finishAuth('guest'); })();
 // ===== END AUTH =====
+
+// ===== CSV IMPORT =====
+(function(){
+  const IRISH_COUNTIES = new Set([
+    'Antrim','Armagh','Carlow','Cavan','Clare','Cork','Derry','Donegal','Down',
+    'Dublin','Fermanagh','Galway','Kerry','Kildare','Kilkenny','Laois','Leitrim',
+    'Limerick','Longford','Louth','Mayo','Meath','Monaghan','Offaly','Roscommon',
+    'Sligo','Tipperary','Tyrone','Waterford','Westmeath','Wexford','Wicklow',
+    // common extras in fixtures
+    'International','Britain','New York','San Francisco','Boston','Chicago','ACE','BUCS','Champ'
+  ]);
+
+  const MONTH_MAP = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+
+  function parseCsvDate(raw){
+    // "02-Jan" or "02-Jan-2026"
+    if(!raw) return '';
+    const m = raw.trim().match(/^(\d{1,2})-([A-Za-z]{3})(?:-(\d{4}))?$/);
+    if(!m) return '';
+    const day = m[1].padStart(2,'0');
+    const mon = MONTH_MAP[m[2].toLowerCase()];
+    if(!mon) return '';
+    const yr = m[3] || '2026';
+    return `${yr}-${String(mon).padStart(2,'0')}-${day}`;
+  }
+
+  function parseCsvRow(line){
+    const fields = [];
+    let cur = '', inQ = false;
+    for(let i=0;i<line.length;i++){
+      const c=line[i];
+      if(c==='"'){ inQ=!inQ; }
+      else if(c===','&&!inQ){ fields.push(cur); cur=''; }
+      else cur+=c;
+    }
+    fields.push(cur);
+    return fields.map(f=>f.trim().replace(/^"|"$/g,'').trim());
+  }
+
+  function parseCsv(text){
+    const lines = text.split(/\r?\n/);
+    const rows = [];
+    for(const line of lines){
+      if(!line.trim()) continue;
+      rows.push(parseCsvRow(line));
+    }
+    return rows;
+  }
+
+  function isProvince(val){
+    if(!val) return false;
+    return !IRISH_COUNTIES.has(val);
+  }
+
+  let csvRows = []; // parsed and filtered rows for preview
+
+  function openCsvImportModal(){
+    // Default date range: today → +90 days
+    const today = new Date();
+    const end = new Date(today); end.setDate(end.getDate()+90);
+    const toIso = d => d.toISOString().slice(0,10);
+    document.getElementById('csvDateFrom').value = toIso(today);
+    document.getElementById('csvDateTo').value = toIso(end);
+    document.getElementById('csvFileInput').value = '';
+    document.getElementById('csvFileLabel').textContent = 'Choose file…';
+    document.getElementById('csvParseBtn').disabled = true;
+    document.getElementById('csvPreviewWrap').style.display = 'none';
+    document.getElementById('csvImportDoBtn').disabled = true;
+    document.getElementById('csvError').style.display = 'none';
+    document.getElementById('csvInfo').style.display = 'none';
+    csvRows = [];
+    document.getElementById('csvImportModal').classList.add('open');
+  }
+
+  window.closeCsvImportModal = function(){
+    document.getElementById('csvImportModal').classList.remove('open');
+  };
+
+  document.getElementById('csvImportModal').addEventListener('click', e=>{
+    if(e.target===document.getElementById('csvImportModal')) closeCsvImportModal();
+  });
+
+  document.getElementById('csvImportBtn').addEventListener('click', openCsvImportModal);
+
+  document.getElementById('csvFileInput').addEventListener('change', e=>{
+    const f = e.target.files[0];
+    document.getElementById('csvFileLabel').textContent = f ? f.name : 'Choose file…';
+    document.getElementById('csvParseBtn').disabled = !f;
+  });
+
+  document.getElementById('csvParseBtn').addEventListener('click', ()=>{
+    const file = document.getElementById('csvFileInput').files[0];
+    if(!file){ showCsvError('No file selected.'); return; }
+    const reader = new FileReader();
+    reader.onload = e => processCsv(e.target.result);
+    reader.readAsText(file);
+  });
+
+  function showCsvError(msg){
+    const el = document.getElementById('csvError');
+    el.textContent = msg; el.style.display = '';
+  }
+
+  function processCsv(text){
+    document.getElementById('csvError').style.display = 'none';
+    const allRows = parseCsv(text);
+    // Skip header row if present (col A looks like "Status" or similar text, not fixture data)
+    const dataRows = allRows.filter(r => {
+      const col0 = (r[0]||'').trim();
+      // skip blank or header-like rows
+      if(!col0 || col0.toLowerCase()==='status') return false;
+      // require at least team A and B
+      if(!(r[3]||'').trim() || !(r[4]||'').trim()) return false;
+      return true;
+    });
+
+    const dateFrom = document.getElementById('csvDateFrom').value;
+    const dateTo = document.getElementById('csvDateTo').value;
+
+    // Build fixture candidates
+    const candidates = dataRows.map(r=>{
+      const status = (r[0]||'').trim();
+      const county = (r[2]||'').trim();
+      const teamA = (r[3]||'').trim();
+      const teamB = (r[4]||'').trim();
+      const dateRaw = (r[5]||'').trim();
+      const time = (r[7]||'').trim();
+      const venue = (r[8]||'').trim();
+      const competition = (r[9]||'').trim();
+      const round = (r[10]||'').trim();
+      const date = parseCsvDate(dateRaw);
+      return { status, county, teamA, teamB, date, dateRaw, time, venue, competition, round, needsCounty: isProvince(county) };
+    });
+
+    // Date filter
+    const filtered = candidates.filter(c=>{
+      if(!c.date) return false;
+      if(dateFrom && c.date < dateFrom) return false;
+      if(dateTo && c.date > dateTo) return false;
+      return true;
+    });
+
+    if(filtered.length===0){
+      showCsvError('No fixtures found in the selected date range. Check the file format and dates.');
+      document.getElementById('csvPreviewWrap').style.display = 'none';
+      document.getElementById('csvImportDoBtn').disabled = true;
+      return;
+    }
+
+    // Duplicate detection: same teamA + teamB + date (either order), against existing fixtures
+    const existingSet = new Set(
+      fixtures.map(f=>`${norm(f.teamA)}|${norm(f.teamB)}|${f.date}`)
+        .concat(fixtures.map(f=>`${norm(f.teamB)}|${norm(f.teamA)}|${f.date}`))
+    );
+    // Also detect duplicates within CSV itself
+    const csvSeen = new Set();
+    filtered.forEach(c=>{
+      const k1 = `${norm(c.teamA)}|${norm(c.teamB)}|${c.date}`;
+      const k2 = `${norm(c.teamB)}|${norm(c.teamA)}|${c.date}`;
+      c.isDup = existingSet.has(k1) || existingSet.has(k2);
+      if(csvSeen.has(k1)){c.isDup=true;} else {csvSeen.add(k1); csvSeen.add(k2);}
+    });
+
+    csvRows = filtered;
+    renderCsvPreview();
+
+    const info = document.getElementById('csvInfo');
+    const dupCount = filtered.filter(r=>r.isDup).length;
+    const needsCountyCount = filtered.filter(r=>r.needsCounty&&!r.isDup).length;
+    let msg = `${filtered.length} fixture${filtered.length!==1?'s':''} in range`;
+    if(dupCount) msg += ` · ${dupCount} duplicate${dupCount!==1?'s':''} excluded`;
+    if(needsCountyCount) msg += ` · ${needsCountyCount} need county selection`;
+    info.textContent = msg; info.style.display = '';
+    document.getElementById('csvPreviewWrap').style.display = '';
+    updateCsvImportBtn();
+  }
+
+  function norm(s){ return (s||'').toLowerCase().trim(); }
+
+  function renderCsvPreview(){
+    const tbody = document.getElementById('csvPreviewBody');
+    tbody.innerHTML = '';
+    const countyList = [...new Set(fixtures.map(f=>f.county))].sort();
+
+    csvRows.forEach((row, i)=>{
+      const tr = document.createElement('tr');
+      if(row.isDup) tr.classList.add('csv-dup');
+      if(!row.isDup && row.status.toLowerCase()==='approved') tr.classList.add('csv-approved');
+      if(!row.isDup && row.needsCounty) tr.classList.add('csv-needs-county');
+
+      // Checkbox
+      const tdChk = document.createElement('td');
+      const chk = document.createElement('input');
+      chk.type = 'checkbox';
+      chk.dataset.idx = i;
+      chk.checked = !row.isDup;
+      chk.disabled = row.isDup;
+      chk.addEventListener('change', updateCsvImportBtn);
+      tdChk.appendChild(chk);
+      tr.appendChild(tdChk);
+
+      // Status
+      const tdSt = document.createElement('td');
+      const badge = document.createElement('span');
+      badge.className = 'csv-status-badge ' + (row.isDup ? 'dup' : row.status.toLowerCase()==='approved' ? 'approved' : 'other');
+      badge.textContent = row.isDup ? 'Duplicate' : row.status;
+      tdSt.appendChild(badge);
+      tr.appendChild(tdSt);
+
+      // County
+      const tdCo = document.createElement('td');
+      if(row.needsCounty && !row.isDup){
+        const sel = document.createElement('select');
+        sel.className = 'csv-county-sel';
+        sel.dataset.idx = i;
+        const optBlank = document.createElement('option');
+        optBlank.value = ''; optBlank.textContent = row.county ? `(${row.county}) →` : '-- pick county --';
+        sel.appendChild(optBlank);
+        countyList.forEach(c=>{
+          const o = document.createElement('option');
+          o.value = c; o.textContent = c;
+          if(c===row.countyResolved) o.selected = true;
+          sel.appendChild(o);
+        });
+        sel.addEventListener('change', e=>{
+          csvRows[i].countyResolved = e.target.value;
+          updateCsvImportBtn();
+        });
+        tdCo.appendChild(sel);
+      } else {
+        tdCo.textContent = row.county;
+      }
+      tr.appendChild(tdCo);
+
+      [row.teamA, row.teamB, row.date, row.time, row.competition, row.round].forEach(v=>{
+        const td = document.createElement('td');
+        td.textContent = v||'';
+        tr.appendChild(td);
+      });
+
+      tbody.appendChild(tr);
+    });
+
+    // Select all checkbox
+    const selAll = document.getElementById('csvSelectAll');
+    selAll.checked = csvRows.filter(r=>!r.isDup).length > 0;
+    selAll.onchange = e=>{
+      document.querySelectorAll('#csvPreviewBody input[type=checkbox]:not(:disabled)').forEach(c=>{ c.checked=e.target.checked; });
+      updateCsvImportBtn();
+    };
+  }
+
+  function updateCsvImportBtn(){
+    const checked = [...document.querySelectorAll('#csvPreviewBody input[type=checkbox]:checked')];
+    // Validate: checked rows that need county must have one selected
+    const valid = checked.length > 0 && checked.every(chk=>{
+      const idx = parseInt(chk.dataset.idx);
+      const row = csvRows[idx];
+      if(row.needsCounty) return !!(row.countyResolved);
+      return true;
+    });
+    document.getElementById('csvImportDoBtn').disabled = !valid;
+  }
+
+  document.getElementById('csvImportDoBtn').addEventListener('click', ()=>{
+    const checked = [...document.querySelectorAll('#csvPreviewBody input[type=checkbox]:checked')];
+    if(!checked.length) return;
+
+    let importedCount = 0;
+    checked.forEach(chk=>{
+      const idx = parseInt(chk.dataset.idx);
+      const row = csvRows[idx];
+      const county = row.needsCounty ? (row.countyResolved||'') : row.county;
+      if(!county) return;
+
+      const isApproved = row.status.toLowerCase() === 'approved';
+      const f = {
+        id: 'm'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+        county, teamA: row.teamA, teamB: row.teamB,
+        date: row.date, day: dayName(row.date),
+        time: row.time||'', venue: row.venue||'',
+        competition: row.competition||'', round: row.round||'',
+        code: deriveCode(row.competition||'', null),
+        status: isApproved ? 'Approved' : 'Proposed',
+        manual: true
+      };
+      manualFixtures.push(f);
+      fixtures.push(f);
+
+      // Record creation in changelog
+      recordManualCreate(f, 'CSV Spreadsheet');
+
+      // If approved, also log the status change
+      if(isApproved){
+        recordStatusChange(f, 'Proposed', 'Approved');
+        // Rewrite history note to explain source
+        const sk = stableKeyOf(f);
+        if(fixtureChangelog[sk]){
+          fixtureChangelog[sk].history[0].note = `Imported from Fixtures Spreadsheet in approved state`;
+        }
+      }
+      importedCount++;
+    });
+
+    saveManualFixtures();
+    saveCache();
+    saveChangelog();
+    populateFilterOptions();
+    render();
+    closeCsvImportModal();
+    showConflictToast(`✓ Imported ${importedCount} fixture${importedCount!==1?'s':''}`, '#16a34a');
+  });
+})();
+// ===== END CSV IMPORT =====
 </script>
 </div><!-- #dashboardWrap -->
 </body>
