@@ -445,6 +445,15 @@
       <span style="position:absolute;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:left .2s;pointer-events:none;"></span>
     </button>
   </div>
+  <div style="display:flex;align-items:flex-end;">
+    <button id="clearFiltersBtn" title="Clear all filters" style="display:none;background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:6px 10px;font-size:13px;cursor:pointer;display:none;align-items:center;gap:5px;font-family:inherit;" aria-label="Clear all filters">
+      <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 4h14l-5.5 6.5V17l-3-1.5v-6.5L3 4z"/>
+        <circle cx="15" cy="15" r="4.5" fill="var(--panel)" stroke="currentColor" stroke-width="1.5"/>
+        <line x1="13.2" y1="13.2" x2="16.8" y2="16.8"/><line x1="16.8" y1="13.2" x2="13.2" y2="16.8"/>
+      </svg>
+    </button>
+  </div>
   <div class="actions">
     <button class="btn-approve" id="approveBtn" disabled>Approve</button>
     <button class="btn-reject" id="rejectBtn" disabled>Reject</button>
@@ -2250,6 +2259,7 @@ function updateActionButtons(){
   clubberUkBtn.disabled = !approvedSel.some(f=>isRugbyFixture(f));
   assignSocialsBtn.disabled = selFixtures.length===0;
   assignSupport2Btn.disabled = selFixtures.length===0;
+  if(typeof updateClearBtn === 'function') updateClearBtn();
 }
 
 function csvEscape(val){
@@ -2589,6 +2599,48 @@ dateTo.addEventListener('change',()=>{
   localStorage.setItem('gaaDateTo',dateTo.value);
   render();
 });
+// ---- Clear Filters Button ----
+(function(){
+  const clearBtn = document.getElementById('clearFiltersBtn');
+
+  function isFiltered(){
+    if(msCounty.getValues().length > 0) return true;
+    if(msComp.getValues().length > 0) return true;
+    if(msCode.getValues().length > 0) return true;
+    if(msStatus.getValues().length > 0) return true;
+    if(document.getElementById('highlightFilter').querySelector('.ms-label').textContent !== 'All') return true;
+    if(dateFrom.value || dateTo.value) return true;
+    if(document.getElementById('changesFilter').value) return true;
+    if(document.getElementById('clubberFilter').value) return true;
+    return false;
+  }
+
+  window.updateClearBtn = function updateClearBtn(){
+    clearBtn.style.display = isFiltered() ? 'inline-flex' : 'none';
+  };
+
+  function clearAllFilters(){
+    msCounty.setValues([]);
+    msComp.setValues([]);
+    msCode.setValues([]);
+    msStatus.setValues([]);
+    if(typeof msHighlight !== 'undefined') msHighlight.setValues([]);
+    dateFrom.value = '';
+    dateTo.value = '';
+    localStorage.removeItem('gaaDateFrom');
+    localStorage.removeItem('gaaDateTo');
+    document.getElementById('changesFilter').value = '';
+    changesOnlyFilter = false;
+    document.getElementById('clubberFilter').value = '';
+    clubberFilterVal = '';
+    localStorage.removeItem('gaaFilter_changesFilter');
+    localStorage.removeItem('gaaFilter_clubberFilter');
+    render();
+    updateClearBtn();
+  }
+
+  clearBtn.addEventListener('click', clearAllFilters);
+})();
 // Restore + persist plain select filters
 (()=>{
   const cf=document.getElementById('changesFilter');
