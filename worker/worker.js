@@ -1517,6 +1517,14 @@ const CARLOW_FIXTURES = [];
   ['St Patricks','O\'Hanrahans/Ó Hanracháin','11 September 2026','19:30','Pitch 2 Netwatch Centre of Excellence','QF'],
 ].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Junior C Football Championship',r[5])));
 
+// Carlow - October 2026 Finals (source: carlowgaa.ie Oct 2026)
+[
+  ['St Patricks','Ballon GFC','3 October 2026','17:15','Netwatch Cullen Park, Carlow','Semi Final'],
+].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Intermediate Football Championship',r[5])));
+[
+  ['Rathvilly/Rathbhile','Palatine','3 October 2026','19:00','Netwatch Cullen Park, Carlow','Semi Final'],
+].forEach(r=>CARLOW_FIXTURES.push(mkStatic('Carlow',r[0],r[1],r[2],r[3],r[4],'Senior Football Championship',r[5])));
+
 // Carlow - Junior Hurling Championship (source: carlowgaa.ie Sep 2026)
 [
   ['Naomh Eoin','Burren Rangers','4 September 2026','19:00','Netwatch Cullen Park','QF'],
@@ -2437,7 +2445,8 @@ async function scrapeGroupB(kv) {
     ...wexfordResults.flat().map(fixNames),
     ...kildareResults.map(fixNames),
     ...KILDARE_FIXTURES,
-    ...(carlowLiveResults.length > 0 ? carlowLiveResults : CARLOW_FIXTURES),
+    ...carlowLiveResults,
+    ...CARLOW_FIXTURES, // always include static; dedup in writeGroupCache handles overlap
     ...(louthLiveResults.length > 0 ? louthLiveResults : LOUTH_FIXTURES.filter(f => !/^Winner|^Loser/i.test(f.teamA) && !/^Winner|^Loser/i.test(f.teamB))),
   ];
   await writeGroupCache(kv, CACHE_B_KEY, fixtures);
