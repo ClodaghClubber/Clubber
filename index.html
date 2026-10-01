@@ -106,7 +106,6 @@
   .badge-manual{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:transparent;color:var(--muted);border:1px dashed var(--muted);padding:1px 5px;border-radius:8px;margin-left:5px;vertical-align:middle;white-space:nowrap;}
   .badge-claude{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:#d97706;color:#fff;padding:1px 5px;border-radius:8px;margin-left:5px;vertical-align:middle;white-space:nowrap;}
   .badge-import{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:#0e7490;color:#fff;padding:1px 5px;border-radius:8px;margin-left:5px;vertical-align:middle;white-space:nowrap;}
-  .badge-rel{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:#7c2d2d;color:#ffd0d0;padding:1px 5px;border-radius:8px;margin-left:5px;vertical-align:middle;white-space:nowrap;}
   .btn-mark-clubber{background:#1a6fa8;}
   .empty{text-align:center;color:var(--muted);padding:40px;}
   .count{color:var(--muted);font-size:12px;padding:8px 24px;display:flex;align-items:center;gap:8px;}
@@ -2178,7 +2177,7 @@ function render(){
       <td style="white-space:nowrap;">${f.county}</td>
       <td>${f.code||''}</td>
       <td>${f.teamA}</td>
-      <td>${f.teamB}${f.manual?(f.source==='csv'?'<span class="badge-import" title="Imported from spreadsheet CSV">IMPORT</span>':f.source==='claude'?'<span class="badge-claude" style="margin-left:5px;" title="Created via Claude">CLAUDE</span>':'<span class="badge-manual" style="margin-left:5px;">MAN</span>'):''}${/relegat/i.test(f.competition||'')||/relegat/i.test(f.round||'')?'<span class="badge-rel" style="margin-left:5px;" title="Relegation fixture">REL</span>':''}${dhIds.has(f.id)?'<span class="badge-dh" style="margin-left:5px;" title="Double header — multiple fixtures at this venue on this day">DH</span>':''}</td>
+      <td>${f.teamB}${f.manual?(f.source==='csv'?'<span class="badge-import" title="Imported from spreadsheet CSV">IMPORT</span>':f.source==='claude'?'<span class="badge-claude" style="margin-left:5px;" title="Created via Claude">CLAUDE</span>':'<span class="badge-manual" style="margin-left:5px;">MAN</span>'):''}${dhIds.has(f.id)?'<span class="badge-dh" style="margin-left:5px;" title="Double header — multiple fixtures at this venue on this day">DH</span>':''}</td>
       <td>${f.date}</td>
       <td>${f.day}</td>
       <td>${f.time}</td>
