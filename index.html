@@ -4305,7 +4305,7 @@ async function handleLogout() {
   function openCsvImportModal(){
     // Default date range: today → +90 days
     const today = new Date();
-    const end = new Date(today); end.setDate(end.getDate()+90);
+    const end = new Date(today.getFullYear(), today.getMonth()+1, 0); // last day of current month
     const toIso = d => d.toISOString().slice(0,10);
     document.getElementById('csvDateFrom').value = toIso(today);
     document.getElementById('csvDateTo').value = toIso(end);
