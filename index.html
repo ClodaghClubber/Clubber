@@ -1285,6 +1285,11 @@ function applyManualFixtures(){
 }
 
 // ---- Fixture Change Tracking ----
+function normaliseCounty(county){
+  if(!county) return county;
+  // Strip trailing "LGFA", "Camogie", "GAA" etc. so "Waterford LGFA" → "Waterford"
+  return county.replace(/\s+(LGFA|Camogie|GAA)\s*$/i, '').trim();
+}
 function stableKeyOf(f){
   return `${f.county}|${f.teamA}|${f.teamB}|${f.competition}`;
 }
@@ -2728,6 +2733,7 @@ function mergeFixtures(incoming){
   // otherwise corrupt the status key).
   const existingByKey=new Map(fixtures.map(f=>[f._origKey||keyOf(f),f]));
   fixtures = incoming.map(inc=>{
+    inc.county = normaliseCounty(inc.county);
     const origKey=keyOf(inc);
     const ex=existingByKey.get(origKey);
     // Spread ex first so local state (clubberCreated, socials, etc.) survives
@@ -4362,7 +4368,7 @@ async function handleLogout() {
     // Build fixture candidates
     const candidates = dataRows.map(r=>{
       const status = (r[0]||'').trim();
-      const county = (r[2]||'').trim();
+      const county = normaliseCounty((r[2]||'').trim());
       const teamA = (r[3]||'').trim();
       const teamB = (r[4]||'').trim();
       const dateRaw = (r[5]||'').trim();
@@ -4512,7 +4518,7 @@ async function handleLogout() {
     checked.forEach(chk=>{
       const idx = parseInt(chk.dataset.idx);
       const row = csvRows[idx];
-      const county = row.needsCounty ? (row.countyResolved||'') : row.county;
+      const county = normaliseCounty(row.needsCounty ? (row.countyResolved||'') : row.county);
       if(!county) return;
 
       const isApproved = row.status.toLowerCase() === 'approved';
