@@ -2525,11 +2525,11 @@ dateTo.addEventListener('change',()=>{
       thumb.style.left = on ? '23px' : '3px';
       if(!on){
         // Deselect rugby counties from the county filter
-        const cur = msCounty.getValues();
-        if(cur.length > 0){
-          const filtered = cur.filter(v => !RUGBY_COUNTIES.includes(v));
-          msCounty.setValues(filtered);
-        }
+        // cur empty = "All selected" — expand to full list before filtering
+        const allCounties = msCounty.getValues().length > 0
+          ? msCounty.getValues()
+          : [...document.querySelectorAll('#countyFilter input[type=checkbox]:not([data-all])')].map(cb=>cb.value);
+        msCounty.setValues(allCounties.filter(v => !RUGBY_COUNTIES.includes(v)));
       }
       render();
     }
