@@ -665,6 +665,7 @@
       <table class="confirm-table">
         <thead>
           <tr>
+            <th><input type="checkbox" id="clubberConfirmSelectAll" checked title="Select / deselect all"></th>
             <th>Fixture</th>
             <th>Date</th>
             <th>County</th>
@@ -2412,6 +2413,7 @@ function openClubberConfirm(selFixtures, site) {
     ].join('');
     const price = p ? p.price : '';
     return `<tr class="${rowCls}" data-idx="${i}">
+      <td style="text-align:center;"><input type="checkbox" class="confirm-include" data-idx="${i}" ${r.skipped ? '' : 'checked'} ${r.skipped ? 'disabled' : ''} title="${r.skipped ? 'Skipped — not approved' : 'Include in export'}"></td>
       <td><div class="team-names">${f.teamA} v ${f.teamB}</div><div class="sub-detail">${p ? p.club+' v '+p.competitorClubName : ''}</div></td>
       <td style="white-space:nowrap">${f.date}<div class="sub-detail">${f.time||''}</div></td>
       <td>${p ? p.county : f.county}</td>
@@ -2423,6 +2425,13 @@ function openClubberConfirm(selFixtures, site) {
       <td>${notes}</td>
     </tr>`;
   }).join('');
+
+  // Wire select-all checkbox
+  const selAll = document.getElementById('clubberConfirmSelectAll');
+  selAll.checked = true;
+  selAll.onchange = e => {
+    document.querySelectorAll('#clubberConfirmBody input.confirm-include:not(:disabled)').forEach(c => { c.checked = e.target.checked; });
+  };
 
   document.getElementById('clubberConfirmModal').classList.add('open');
 }
@@ -2466,7 +2475,8 @@ document.getElementById('clubberConfirmDownloadBtn').addEventListener('click', (
   document.getElementById('clubberConfirmModal').classList.remove('open');
 
   const BATCH_SIZE=10;
-  const eligible=results.filter(r=>!r.skipped);
+  const checkedIdxs = new Set([...document.querySelectorAll('#clubberConfirmBody input.confirm-include:checked')].map(c=>parseInt(c.dataset.idx,10)));
+  const eligible=results.filter((r,i)=>!r.skipped && checkedIdxs.has(i));
   const batches=[];
   for(let i=0;i<eligible.length;i+=BATCH_SIZE) batches.push(eligible.slice(i,i+BATCH_SIZE));
   const stamp=new Date().toISOString().slice(0,10);
@@ -4423,7 +4433,15 @@ async function handleLogout() {
     updateCsvImportBtn();
   }
 
-  function norm(s){ return (s||'').toLowerCase().trim(); }
+  function norm(s){
+    return (s||'')
+      .toLowerCase()
+      .replace(/['.'\-]/g, '')          // strip apostrophes, periods, hyphens
+      .replace(/\b(gaa|gfc|fc|clg|afc|utd|united|rovers|celtic|town|city|county)\b/g, '')  // strip common suffixes
+      .replace(/\bst\b\.?/g, 'saint')   // St → saint
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
 
   function renderCsvPreview(){
     const tbody = document.getElementById('csvPreviewBody');
