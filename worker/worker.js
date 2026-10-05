@@ -1569,7 +1569,7 @@ async function fetchLouthFixtures() {
   const UNDERAGE_RE = /\bU\d+\b|\bMinor\b|\bJuvenile\b|\bYouth\b|\bUnder[ -]?\d+\b|\bCoiste na n[Óó]g\b/i;
   try {
     const res = await fetch(
-      'https://louthgaa.ie/fixtures-results/?countyBoardID=20&fixturesOnly=Y&daysAfter=60',
+      'https://louthgaa.ie/fixtures-results/?countyBoardID=20&fixturesOnly=Y&daysAfter=90',
       { headers: { 'User-Agent': UA } }
     );
     if (!res.ok) return [];
@@ -2447,7 +2447,8 @@ async function scrapeGroupB(kv) {
     ...KILDARE_FIXTURES,
     ...carlowLiveResults,
     ...CARLOW_FIXTURES, // always include static; dedup in writeGroupCache handles overlap
-    ...(louthLiveResults.length > 0 ? louthLiveResults : LOUTH_FIXTURES.filter(f => !/^Winner|^Loser/i.test(f.teamA) && !/^Winner|^Loser/i.test(f.teamB))),
+    ...louthLiveResults,
+    ...LOUTH_FIXTURES.filter(f => !/^Winner|^Loser/i.test(f.teamA) && !/^Winner|^Loser/i.test(f.teamB)), // always include static; dedup in writeGroupCache handles overlap
   ];
   await writeGroupCache(kv, CACHE_B_KEY, fixtures);
 }
@@ -2588,6 +2589,7 @@ export default {
 
     const url = new URL(request.url);
     const kv = env.FIXTURE_STATUS;
+
 
     if (request.method === 'POST') {
       try {
