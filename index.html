@@ -2472,10 +2472,12 @@ document.getElementById('clubberConfirmDownloadBtn').addEventListener('click', (
     }
   });
 
+  // Read checked state before closing modal (hiding can affect :checked queries in some browsers)
+  const checkedIdxs = new Set([...document.querySelectorAll('#clubberConfirmBody input.confirm-include:checked')].map(c=>parseInt(c.dataset.idx,10)));
+
   document.getElementById('clubberConfirmModal').classList.remove('open');
 
   const BATCH_SIZE=10;
-  const checkedIdxs = new Set([...document.querySelectorAll('#clubberConfirmBody input.confirm-include:checked')].map(c=>parseInt(c.dataset.idx,10)));
   const eligible=results.filter((r,i)=>!r.skipped && checkedIdxs.has(i));
   const batches=[];
   for(let i=0;i<eligible.length;i+=BATCH_SIZE) batches.push(eligible.slice(i,i+BATCH_SIZE));
