@@ -4531,12 +4531,8 @@ async function handleLogout() {
   function updateCsvImportBtn(){
     const checked = [...document.querySelectorAll('#csvPreviewBody input[type=checkbox]:checked')];
     // Validate: checked rows that need county must have one selected
-    const valid = checked.length > 0 && checked.every(chk=>{
-      const idx = parseInt(chk.dataset.idx);
-      const row = csvRows[idx];
-      if(row.needsCounty) return !!(row.countyResolved);
-      return true;
-    });
+    // County selection is optional — rows without one will be imported using the raw county value
+    const valid = checked.length > 0;
     document.getElementById('csvImportDoBtn').disabled = !valid;
   }
 
@@ -4548,7 +4544,7 @@ async function handleLogout() {
     checked.forEach(chk=>{
       const idx = parseInt(chk.dataset.idx);
       const row = csvRows[idx];
-      const county = normaliseCounty(row.needsCounty ? (row.countyResolved||'') : row.county);
+      const county = normaliseCounty(row.needsCounty ? (row.countyResolved || row.county || '') : row.county);
       if(!county) return;
 
       const isApproved = row.status.toLowerCase() === 'approved';
