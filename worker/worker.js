@@ -2227,6 +2227,23 @@ const RUGBY_FIXTURES = [];
   bucsAdd(M,'Final','TBD','TBD','21 April 2027');
 })();
 
+// ACE (Academy College Engagement) Rugby — static fixtures
+const ACE_FIXTURES = [];
+(function() {
+  const add = (round, competition, teamA, teamB, date, time, venue) => {
+    const f = mkStatic('ACE', teamA, teamB, date, time, venue, competition, round);
+    f.sport = 'Rugby';
+    ACE_FIXTURES.push(f);
+  };
+  // Round 3 — 10 July 2026
+  add('Round 3','ACE Tier 1 - South Pool','Exeter College','Hartpury','10 July 2026','13:00','Exeter');
+  add('Round 3','ACE Tier 1 - South Pool','Gordons School','Truro College','10 July 2026','14:00','Gordons');
+  add('Round 3','ACE Tier 1 - South Pool','SGS College','Beechen Cliff School','10 July 2026','14:00','SGS College');
+  add('Round 3','ACE Tier 1 - North Pool','Bishop Burton College','Loughborough','10 July 2026','14:00','Bishop Burton');
+  add('Round 3','ACE Tier 1 - North Pool','Severn Vale','Gosforth Academy','10 July 2026','14:00','Severn Vale');
+  add('Round 3','ACE Tier 1 - North Pool','Oaklands','Moulton','10 July 2026','14:30','Oaklands');
+})();
+
 const VALID_STATUSES = ['Proposed', 'Approved', 'Rejected', 'Removed'];
 const STATUS_KV_KEY = 'statuses';
 const OVERRIDES_KV_KEY = 'overrides';
@@ -2499,6 +2516,7 @@ async function scrapeGroupD(kv, env) {
     ...roscommonHurlingResults.map(fixNames),
     ...(longfordResults.length > 0 ? longfordResults : LONGFORD_FIXTURES),
     ...RUGBY_FIXTURES,
+    ...ACE_FIXTURES,
   ];
   await writeGroupCache(kv, CACHE_D_KEY, fixtures);
 }
