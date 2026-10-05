@@ -3368,6 +3368,11 @@ function deriveGrade(county, competition) {
 
   // Senior
   if (/Premier\s+Senior/i.test(c)) return 'Senior 1';
+  // Offaly Camogie: Senior A → "Senior A", Senior B → "Senior 2"
+  if (county === 'Offaly' && /Camogie/i.test(c)) {
+    if (/Senior\s+A\b/i.test(c)) return 'Senior A';
+    if (/Senior\s+B\b/i.test(c)) return 'Senior 2';
+  }
   if (/Senior\s+[AB]\b/i.test(c)) return 'Senior 2';
   if (/Senior/i.test(c)) return 'Senior 1';
 
