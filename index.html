@@ -2885,15 +2885,15 @@ document.getElementById('tbody').addEventListener('click',e=>{
   if(histBtn){openChangeHistoryModal(histBtn.dataset.histSk,histBtn.dataset.histId);return;}
   const replayTd=e.target.closest('td[data-replay-id]');
   if(replayTd){
-    const id=+replayTd.dataset.replayId;
-    const f=fixtures.find(fx=>fx.id===id);
+    const id=replayTd.dataset.replayId;
+    const f=fixtures.find(fx=>fx.id==id);
     if(f){
       f.replay=!f.replay;
       const ov=fixtureOverrides[keyOf(f)]||{};
       ov.replay=f.replay; fixtureOverrides[keyOf(f)]=ov;
       saveOverrides();
       if(!f.manual) syncOverrides([{key:keyOf(f),fields:{replay:f.replay}}]);
-      if(f.manual){const mf=manualFixtures.find(m=>m.id===id);if(mf)mf.replay=f.replay;saveManualFixtures();}
+      if(f.manual){const mf=manualFixtures.find(m=>m.id==id);if(mf)mf.replay=f.replay;saveManualFixtures();}
       saveCache(); render();
     }
     return;
@@ -2901,8 +2901,8 @@ document.getElementById('tbody').addEventListener('click',e=>{
   // Pick cell
   const pickTd=e.target.closest('td[data-pick-id]');
   if(pickTd){
-    const id=+pickTd.dataset.pickId;
-    const f=fixtures.find(fx=>fx.id===id);
+    const id=pickTd.dataset.pickId;
+    const f=fixtures.find(fx=>fx.id==id);
     if(f){
       f.clubberPick=!f.clubberPick;
       const fk=f._origKey||keyOf(f);
@@ -2910,7 +2910,7 @@ document.getElementById('tbody').addEventListener('click',e=>{
       ov.clubberPick=f.clubberPick; fixtureOverrides[fk]=ov;
       saveOverrides();
       if(!f.manual) syncOverrides([{key:fk,fields:{clubberPick:f.clubberPick}}]);
-      if(f.manual){const mf=manualFixtures.find(m=>m.id===id);if(mf)mf.clubberPick=f.clubberPick;saveManualFixtures();}
+      if(f.manual){const mf=manualFixtures.find(m=>m.id==id);if(mf)mf.clubberPick=f.clubberPick;saveManualFixtures();}
       saveCache(); render();
     }
     return;
@@ -2918,8 +2918,8 @@ document.getElementById('tbody').addEventListener('click',e=>{
   // Hero cell
   const heroTd=e.target.closest('td[data-hero-id]');
   if(heroTd){
-    const id=+heroTd.dataset.heroId;
-    const f=fixtures.find(fx=>fx.id===id);
+    const id=heroTd.dataset.heroId;
+    const f=fixtures.find(fx=>fx.id==id);
     if(f){
       f.hero=!f.hero;
       const fk=f._origKey||keyOf(f);
@@ -2927,7 +2927,7 @@ document.getElementById('tbody').addEventListener('click',e=>{
       ov.hero=f.hero; fixtureOverrides[fk]=ov;
       saveOverrides();
       if(!f.manual) syncOverrides([{key:fk,fields:{hero:f.hero}}]);
-      if(f.manual){const mf=manualFixtures.find(m=>m.id===id);if(mf)mf.hero=f.hero;saveManualFixtures();}
+      if(f.manual){const mf=manualFixtures.find(m=>m.id==id);if(mf)mf.hero=f.hero;saveManualFixtures();}
       saveCache(); render();
     }
     return;
@@ -2936,8 +2936,8 @@ document.getElementById('tbody').addEventListener('click',e=>{
   const vidTd=e.target.closest('td[data-vid-id]');
   if(vidTd){
     if(vidTd.querySelector('select')) return;
-    const id=+vidTd.dataset.vidId;
-    const f=fixtures.find(fx=>fx.id===id);
+    const id=vidTd.dataset.vidId;
+    const f=fixtures.find(fx=>fx.id==id);
     if(!f) return;
     const sel=document.createElement('select');
     sel.className='qa-sel'; sel.style.minWidth='130px';
@@ -2956,7 +2956,7 @@ document.getElementById('tbody').addEventListener('click',e=>{
       }
       fixtureOverrides[keyOf(f)]=ov; saveOverrides();
       if(!f.manual) syncOverrides([{key:keyOf(f),fields:{videographer:ov.videographer,videographerEmail:ov.videographerEmail,unitSystem:ov.unitSystem,unit:ov.unit}}]);
-      if(f.manual){const mf=manualFixtures.find(m=>m.id===id);if(mf)Object.assign(mf,{videographer:f.videographer,videographerEmail:f.videographerEmail,unitSystem:f.unitSystem,unit:f.unit});saveManualFixtures();}
+      if(f.manual){const mf=manualFixtures.find(m=>m.id==id);if(mf)Object.assign(mf,{videographer:f.videographer,videographerEmail:f.videographerEmail,unitSystem:f.unitSystem,unit:f.unit});saveManualFixtures();}
       saveCache(); render();
     };
     sel.addEventListener('change',commit);
@@ -2968,8 +2968,8 @@ document.getElementById('tbody').addEventListener('click',e=>{
   const unitTd=e.target.closest('td[data-unit-id]');
   if(unitTd){
     if(unitTd.querySelector('select')) return;
-    const id=+unitTd.dataset.unitId;
-    const f=fixtures.find(fx=>fx.id===id);
+    const id=unitTd.dataset.unitId;
+    const f=fixtures.find(fx=>fx.id==id);
     if(!f) return;
     const wrap=document.createElement('div');
     wrap.style.cssText='display:flex;flex-direction:column;gap:3px;';
@@ -2998,7 +2998,7 @@ document.getElementById('tbody').addEventListener('click',e=>{
       const ov=fixtureOverrides[keyOf(f)]||{};
       ov.unitSystem=sys; ov.unit=unit; fixtureOverrides[keyOf(f)]=ov; saveOverrides();
       if(!f.manual) syncOverrides([{key:keyOf(f),fields:{unitSystem:sys,unit}}]);
-      if(f.manual){const mf=manualFixtures.find(m=>m.id===id);if(mf){mf.unitSystem=sys;mf.unit=unit;}saveManualFixtures();}
+      if(f.manual){const mf=manualFixtures.find(m=>m.id==id);if(mf){mf.unitSystem=sys;mf.unit=unit;}saveManualFixtures();}
       saveCache();
     };
     unitSel.addEventListener('change',saveUnit);
@@ -3015,8 +3015,8 @@ document.getElementById('tbody').addEventListener('click',e=>{
   if(!td) return;
   if(td.querySelector('select')) return;
   const isSocials='socialsId' in td.dataset;
-  const id=+(isSocials?td.dataset.socialsId:td.dataset.support2Id);
-  const f=fixtures.find(fx=>fx.id===id);
+  const id=isSocials?td.dataset.socialsId:td.dataset.support2Id;
+  const f=fixtures.find(fx=>fx.id==id);
   if(!f) return;
   const list=isSocials?SOCIALS:SUPPORT2;
   const cur=isSocials?f.socials:f.support2;
@@ -3037,7 +3037,7 @@ document.getElementById('tbody').addEventListener('click',e=>{
     fixtureOverrides[keyOf(f)]=ov;
     saveOverrides();
     if(f.manual){
-      const mf=manualFixtures.find(m=>m.id===id);
+      const mf=manualFixtures.find(m=>m.id==id);
       if(mf){if(isSocials){mf.socials=name;mf.socialsEmail=email;}else{mf.support2=name;mf.support2Email=email;}}
       saveManualFixtures();
     }
