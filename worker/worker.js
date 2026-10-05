@@ -1580,7 +1580,8 @@ async function fetchLouthFixtures() {
     const dateLine = /^(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\s+(\d+)(?:st|nd|rd|th)\s+(\w+)\s+(\d{4})$/i;
     // Time pattern: "8 00 PM" or "12 30 PM" (site omits colon, uses spaces)
     const timeParse = (t) => {
-      const m = t.match(/^(\d+)\s+(\d{2})\s+(AM|PM)$/i);
+      // Accept both "8 00 PM" (spaces) and "8:00 PM" (colon)
+      const m = t.match(/^(\d+)[\s:](\d{2})\s+(AM|PM)$/i);
       if (!m) return null;
       let h = parseInt(m[1], 10);
       const min = m[2];
@@ -1808,6 +1809,11 @@ const LOUTH_FIXTURES = [];
   ['Winner of Round 1','Clan Na Gael','5 September 2026','20:00','Cullen Auto Parts Louth GAA Training Centre, Darver','Round 2'],
   ['Clan Na Gael','Loser of Round 1','12 September 2026','19:30','Fr McEvoy Park, Cooley','Round 3'],
 ].forEach(r=>LOUTH_FIXTURES.push(mkStatic('Louth',r[0],r[1],r[2],r[3],r[4],'Intermediate Football Championship Group 3',r[5])));
+
+// Louth - Intermediate Football Championship knockouts
+[
+  ['St Brides','Geraldines','12 October 2026','20:00','Cullen Auto Parts Louth GAA Training Centre, Darver','Semi-Final'],
+].forEach(r=>LOUTH_FIXTURES.push(mkStatic('Louth',r[0],r[1],r[2],r[3],r[4],'Intermediate Football Championship',r[5])));
 
 // Louth - Intermediate Football Championship Group 4
 [
