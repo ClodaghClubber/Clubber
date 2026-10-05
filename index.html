@@ -4435,14 +4435,19 @@ async function handleLogout() {
     updateCsvImportBtn();
   }
 
+  // Irish-name → English-name aliases for dedup matching
+  const TEAM_ALIASES = {
+    'uibh laoire': 'iveleary',
+  };
   function norm(s){
-    return (s||'')
+    let v = (s||'')
       .toLowerCase()
       .replace(/['.'\-\/]/g, ' ')        // strip apostrophes, periods, hyphens, slashes (e.g. Kilskyre/Moylagh)
       .replace(/\b(gaa|gfc|fc|clg|afc|utd|united|rovers|celtic|town|city|county)\b/g, '')  // strip common suffixes
       .replace(/\bst\b\.?/g, 'saint')   // St → saint
       .replace(/\s+/g, ' ')
       .trim();
+    return TEAM_ALIASES[v] || v;
   }
 
   function renderCsvPreview(){
