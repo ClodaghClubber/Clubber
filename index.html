@@ -106,6 +106,16 @@
   .badge-manual{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:transparent;color:var(--muted);border:1px dashed var(--muted);padding:1px 5px;border-radius:8px;margin-left:5px;vertical-align:middle;white-space:nowrap;}
   .badge-claude{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:#d97706;color:#fff;padding:1px 5px;border-radius:8px;margin-left:5px;vertical-align:middle;white-space:nowrap;}
   .badge-import{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:#0e7490;color:#fff;padding:1px 5px;border-radius:8px;margin-left:5px;vertical-align:middle;white-space:nowrap;}
+  .csv-compare-tab{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;color:var(--muted);font-family:inherit;}
+  .csv-compare-tab.active{background:#1a6fa8;border-color:#1a6fa8;color:#fff;}
+  #csvCompareTable th{background:var(--panel);border-bottom:1px solid var(--border);padding:6px 8px;text-align:left;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;position:sticky;top:0;}
+  #csvCompareTable td{padding:6px 8px;border-bottom:1px solid var(--border);vertical-align:top;}
+  #csvCompareTable tr.cmp-missing td{background:rgba(239,68,68,.07);}
+  #csvCompareTable tr.cmp-near td{background:rgba(251,191,36,.07);}
+  #csvCompareTable tr.cmp-matched td{background:rgba(34,197,94,.05);}
+  .cmp-link-btn{background:#d97706;border:none;border-radius:4px;color:#fff;font-size:11px;padding:2px 8px;cursor:pointer;font-family:inherit;white-space:nowrap;}
+  .cmp-link-btn.linked{background:#16a34a;}
+  .cmp-dash-cell{color:var(--muted);font-style:italic;}
   .btn-mark-clubber{background:#1a6fa8;}
   .empty{text-align:center;color:var(--muted);padding:40px;}
   .count{color:var(--muted);font-size:12px;padding:8px 24px;display:flex;align-items:center;gap:8px;}
@@ -834,6 +844,9 @@
         <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);display:block;margin-bottom:5px;">&nbsp;</label>
         <button type="button" id="csvParseBtn" class="btn-modal-add" disabled>Preview</button>
       </div>
+      <div style="align-self:flex-end;">
+        <button type="button" id="csvCompareBtn" class="btn-modal-cancel" disabled style="margin-left:6px;">Compare</button>
+      </div>
     </div>
     <div id="csvError" style="display:none;background:#2d1515;border:1px solid #7f1d1d;border-radius:6px;padding:10px 14px;font-size:13px;color:#fca5a5;margin-bottom:10px;"></div>
     <div id="csvInfo" style="display:none;font-size:12px;color:var(--muted);margin-bottom:8px;"></div>
@@ -854,6 +867,25 @@
             </tr>
           </thead>
           <tbody id="csvPreviewBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div id="csvCompareWrap" style="display:none;margin-top:10px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <span style="font-size:13px;font-weight:700;color:var(--text);">Compare Results</span>
+        <button type="button" id="csvCompareBackBtn" class="btn-modal-cancel" style="font-size:11px;padding:3px 10px;">← Back to Preview</button>
+      </div>
+      <div id="csvCompareInfo" style="font-size:12px;color:var(--muted);margin-bottom:8px;"></div>
+      <!-- tabs -->
+      <div style="display:flex;gap:4px;margin-bottom:8px;" id="csvCompareTabs">
+        <button class="csv-compare-tab active" data-tab="missing">❌ Missing from dashboard</button>
+        <button class="csv-compare-tab" data-tab="near">⚠️ Near matches</button>
+        <button class="csv-compare-tab" data-tab="matched">✅ Matched</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table id="csvCompareTable" style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead id="csvCompareHead"></thead>
+          <tbody id="csvCompareBody"></tbody>
         </table>
       </div>
     </div>
@@ -4331,6 +4363,8 @@ async function handleLogout() {
     document.getElementById('csvParseBtn').disabled = true;
     document.getElementById('csvPreviewWrap').style.display = 'none';
     document.getElementById('csvImportDoBtn').disabled = true;
+    document.getElementById('csvCompareBtn').disabled = true;
+    document.getElementById('csvCompareWrap').style.display = 'none';
     document.getElementById('csvError').style.display = 'none';
     document.getElementById('csvInfo').style.display = 'none';
     csvRows = [];
@@ -4437,6 +4471,7 @@ async function handleLogout() {
     if(needsCountyCount) msg += ` · ${needsCountyCount} need county selection`;
     info.textContent = msg; info.style.display = '';
     document.getElementById('csvPreviewWrap').style.display = '';
+    document.getElementById('csvCompareBtn').disabled = false;
     updateCsvImportBtn();
   }
 
@@ -4584,6 +4619,146 @@ async function handleLogout() {
     closeCsvImportModal();
     showConflictToast(`✓ Imported ${importedCount} fixture${importedCount!==1?'s':''}`, '#16a34a');
   });
+
+  // ---- Compare feature ----
+  let compareResults = []; // { row, status:'missing'|'near'|'matched', dashFx, linked }
+  let compareTab = 'missing';
+
+  document.getElementById('csvCompareBtn').addEventListener('click', runCompare);
+  document.getElementById('csvCompareBackBtn').addEventListener('click', ()=>{
+    document.getElementById('csvCompareWrap').style.display = 'none';
+    document.getElementById('csvPreviewWrap').style.display = '';
+    document.getElementById('csvInfo').style.display = '';
+  });
+
+  document.getElementById('csvCompareTabs').addEventListener('click', e=>{
+    const btn = e.target.closest('.csv-compare-tab');
+    if(!btn) return;
+    compareTab = btn.dataset.tab;
+    document.querySelectorAll('.csv-compare-tab').forEach(b=>b.classList.toggle('active', b===btn));
+    renderCompareTable();
+  });
+
+  function normCmp(s){
+    // Broader fuzzy norm for compare: strip punctuation, common words, lowercase
+    return (s||'').toLowerCase()
+      .replace(/['.'\-\/]/g,' ')
+      .replace(/\b(gaa|gfc|fc|clg|afc|utd|united|rovers|celtic|town|city|county|og|na|st|saint|gaels|boys|girls|lads)\b/g,'')
+      .replace(/\s+/g,' ').trim();
+  }
+
+  function levenshtein(a,b){
+    const m=a.length,n=b.length,dp=Array.from({length:m+1},(_,i)=>Array.from({length:n+1},(_,j)=>i===0?j:j===0?i:0));
+    for(let i=1;i<=m;i++) for(let j=1;j<=n;j++) dp[i][j]=a[i-1]===b[j-1]?dp[i-1][j-1]:1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);
+    return dp[m][n];
+  }
+
+  function teamsSimilar(csvA,csvB,dA,dB){
+    const nCA=normCmp(csvA),nCB=normCmp(csvB),nDA=normCmp(dA),nDB=normCmp(dB);
+    // forward or reversed
+    const fwd = levenshtein(nCA,nDA)+levenshtein(nCB,nDB);
+    const rev = levenshtein(nCA,nDB)+levenshtein(nCB,nDA);
+    const score = Math.min(fwd,rev);
+    const maxLen = Math.max(nCA.length+nCB.length,nDA.length+nDB.length,1);
+    return { score, similar: score/maxLen < 0.45 };
+  }
+
+  function runCompare(){
+    const fromDate = document.getElementById('csvDateFrom').value;
+    const toDate   = document.getElementById('csvDateTo').value;
+    const inRange  = csvRows.filter(r=>!r.parseError && r.date && r.date>=fromDate && (!toDate||r.date<=toDate));
+
+    compareResults = inRange.map(row=>{
+      const normA=norm(row.teamA), normB=norm(row.teamB), date=row.date;
+      // Exact fuzzy match (same as dup detection)
+      const exact = fixtures.find(f=>f.date===date&&(
+        (norm(f.teamA)===normA&&norm(f.teamB)===normB)||
+        (norm(f.teamA)===normB&&norm(f.teamB)===normA)
+      ));
+      if(exact) return {row,status:'matched',dashFx:exact,linked:false};
+
+      // Near match: same date, teams score below similarity threshold
+      const sameDay = fixtures.filter(f=>f.date===date);
+      const near = sameDay.find(f=>teamsSimilar(row.teamA,row.teamB,f.teamA,f.teamB).similar);
+      if(near) return {row,status:'near',dashFx:near,linked:false};
+
+      return {row,status:'missing',dashFx:null,linked:false};
+    });
+
+    const missingCount = compareResults.filter(r=>r.status==='missing'&&!r.linked).length;
+    const nearCount    = compareResults.filter(r=>r.status==='near'&&!r.linked).length;
+    const matchedCount = compareResults.filter(r=>r.status==='matched'||r.linked).length;
+    document.getElementById('csvCompareInfo').textContent =
+      `${compareResults.length} fixtures in range · ${missingCount} missing from dashboard · ${nearCount} near-matches · ${matchedCount} matched`;
+
+    compareTab = 'missing';
+    document.querySelectorAll('.csv-compare-tab').forEach(b=>b.classList.toggle('active',b.dataset.tab==='missing'));
+
+    document.getElementById('csvPreviewWrap').style.display = 'none';
+    document.getElementById('csvInfo').style.display = 'none';
+    document.getElementById('csvCompareWrap').style.display = '';
+    renderCompareTable();
+  }
+
+  function renderCompareTable(){
+    const isNear = compareTab==='near';
+    const head = document.getElementById('csvCompareHead');
+    const body = document.getElementById('csvCompareBody');
+
+    head.innerHTML = `<tr>
+      <th>Date</th><th>County</th><th>CSV Team A</th><th>CSV Team B</th><th>Competition</th>
+      ${isNear?'<th>Dashboard match</th><th></th>':''}
+    </tr>`;
+
+    let rows = compareResults.filter(r=>{
+      if(compareTab==='missing') return r.status==='missing' && !r.linked;
+      if(compareTab==='near')    return r.status==='near'    && !r.linked;
+      if(compareTab==='matched') return r.status==='matched' || r.linked;
+    });
+
+    if(!rows.length){
+      body.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:18px;color:var(--muted);font-style:italic;">None</td></tr>`;
+      return;
+    }
+
+    body.innerHTML = rows.map((r,i)=>{
+      const idx = compareResults.indexOf(r);
+      const cls = r.linked?'cmp-matched':`cmp-${r.status}`;
+      let dashCell='', actionCell='';
+      if(isNear){
+        const d=r.dashFx;
+        dashCell=`<td class="cmp-dash-cell">${d?`${d.teamA} v ${d.teamB}<br><span style="font-size:10px">${d.competition||''}</span>`:'-'}</td>`;
+        actionCell=`<td><button class="cmp-link-btn${r.linked?' linked':''}" data-cidx="${idx}">${r.linked?'✓ Linked':'Link as same fixture'}</button></td>`;
+      }
+      return `<tr class="${cls}">
+        <td>${r.row.date}</td>
+        <td>${r.row.county||''}</td>
+        <td>${r.row.teamA}</td>
+        <td>${r.row.teamB}</td>
+        <td style="font-size:11px">${r.row.competition||''}</td>
+        ${dashCell}${actionCell}
+      </tr>`;
+    }).join('');
+
+    // Link button handler
+    body.querySelectorAll('.cmp-link-btn').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const cidx=parseInt(btn.dataset.cidx);
+        compareResults[cidx].linked=!compareResults[cidx].linked;
+        // update the existing dup detection so the row shows as matched in preview too
+        if(compareResults[cidx].linked){
+          const r=compareResults[cidx];
+          // Mark in csvRows as not a dup so it can still be imported if needed
+          r.row._linkedToDash=true;
+        }
+        runCompare(); // refresh counts
+        compareTab='near';
+        document.querySelectorAll('.csv-compare-tab').forEach(b=>b.classList.toggle('active',b.dataset.tab==='near'));
+        renderCompareTable();
+      });
+    });
+  }
+
 })();
 // ===== END CSV IMPORT =====
 </script>
