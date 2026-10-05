@@ -115,6 +115,8 @@
   #csvCompareTable tr.cmp-matched td{background:rgba(34,197,94,.05);}
   .cmp-link-btn{background:#d97706;border:none;border-radius:4px;color:#fff;font-size:11px;padding:2px 8px;cursor:pointer;font-family:inherit;white-space:nowrap;}
   .cmp-link-btn.linked{background:#16a34a;}
+  .cmp-ignore-btn{background:#6b7280;border:none;border-radius:4px;color:#fff;font-size:11px;padding:2px 8px;cursor:pointer;font-family:inherit;white-space:nowrap;}
+  .cmp-ignore-btn--undo{background:#1a6fa8;}
   .cmp-dash-cell{color:var(--muted);font-style:italic;}
   .btn-mark-clubber{background:#1a6fa8;}
   .empty{text-align:center;color:var(--muted);padding:40px;}
@@ -878,9 +880,10 @@
       <div id="csvCompareInfo" style="font-size:12px;color:var(--muted);margin-bottom:8px;"></div>
       <!-- tabs -->
       <div style="display:flex;gap:4px;margin-bottom:8px;" id="csvCompareTabs">
-        <button class="csv-compare-tab active" data-tab="missing">❌ Missing from dashboard</button>
+        <button class="csv-compare-tab active" data-tab="missing">❌ Missing</button>
         <button class="csv-compare-tab" data-tab="near">⚠️ Near matches</button>
         <button class="csv-compare-tab" data-tab="matched">✅ Matched</button>
+        <button class="csv-compare-tab" data-tab="ignored">🚫 Ignored</button>
       </div>
       <div style="overflow-x:auto;">
         <table id="csvCompareTable" style="width:100%;border-collapse:collapse;font-size:12px;">
@@ -4685,35 +4688,34 @@ async function handleLogout() {
       return {row,status:'missing',dashFx:null,linked:false};
     });
 
-    const missingCount = compareResults.filter(r=>r.status==='missing'&&!r.linked).length;
-    const nearCount    = compareResults.filter(r=>r.status==='near'&&!r.linked).length;
-    const matchedCount = compareResults.filter(r=>r.status==='matched'||r.linked).length;
-    document.getElementById('csvCompareInfo').textContent =
-      `${compareResults.length} fixtures in range · ${missingCount} missing from dashboard · ${nearCount} near-matches · ${matchedCount} matched`;
-
     compareTab = 'missing';
     document.querySelectorAll('.csv-compare-tab').forEach(b=>b.classList.toggle('active',b.dataset.tab==='missing'));
-
     document.getElementById('csvPreviewWrap').style.display = 'none';
     document.getElementById('csvInfo').style.display = 'none';
     document.getElementById('csvCompareWrap').style.display = '';
+    refreshCompareCounts();
     renderCompareTable();
   }
 
   function renderCompareTable(){
-    const isNear = compareTab==='near';
+    const isNear    = compareTab==='near';
+    const isMissing = compareTab==='missing';
+    const isIgnored = compareTab==='ignored';
     const head = document.getElementById('csvCompareHead');
     const body = document.getElementById('csvCompareBody');
+    const showAction = isNear || isMissing || isIgnored;
 
     head.innerHTML = `<tr>
       <th>Date</th><th>County</th><th>CSV Team A</th><th>CSV Team B</th><th>Competition</th>
-      ${isNear?'<th>Dashboard match</th><th></th>':''}
+      ${isNear?'<th>Dashboard match</th>':''}
+      ${showAction?'<th></th>':''}
     </tr>`;
 
     let rows = compareResults.filter(r=>{
-      if(compareTab==='missing') return r.status==='missing' && !r.linked;
-      if(compareTab==='near')    return r.status==='near'    && !r.linked;
+      if(isMissing) return r.status==='missing' && !r.linked && !r.ignored;
+      if(isNear)    return r.status==='near'    && !r.linked && !r.ignored;
       if(compareTab==='matched') return r.status==='matched' || r.linked;
+      if(isIgnored) return r.ignored;
     });
 
     if(!rows.length){
@@ -4721,14 +4723,21 @@ async function handleLogout() {
       return;
     }
 
-    body.innerHTML = rows.map((r,i)=>{
+    body.innerHTML = rows.map(r=>{
       const idx = compareResults.indexOf(r);
-      const cls = r.linked?'cmp-matched':`cmp-${r.status}`;
+      const cls = r.ignored?'cmp-near':r.linked?'cmp-matched':`cmp-${r.status}`;
       let dashCell='', actionCell='';
       if(isNear){
         const d=r.dashFx;
         dashCell=`<td class="cmp-dash-cell">${d?`${d.teamA} v ${d.teamB}<br><span style="font-size:10px">${d.competition||''}</span>`:'-'}</td>`;
-        actionCell=`<td><button class="cmp-link-btn${r.linked?' linked':''}" data-cidx="${idx}">${r.linked?'✓ Linked':'Link as same fixture'}</button></td>`;
+        actionCell=`<td style="white-space:nowrap">
+          <button class="cmp-link-btn${r.linked?' linked':''}" data-cidx="${idx}">${r.linked?'✓ Linked':'Link as same'}</button>
+          <button class="cmp-ignore-btn" data-cidx="${idx}" style="margin-left:4px">Ignore</button>
+        </td>`;
+      } else if(isMissing){
+        actionCell=`<td><button class="cmp-ignore-btn" data-cidx="${idx}">Ignore</button></td>`;
+      } else if(isIgnored){
+        actionCell=`<td><button class="cmp-ignore-btn cmp-ignore-btn--undo" data-cidx="${idx}">Undo</button></td>`;
       }
       return `<tr class="${cls}">
         <td>${r.row.date}</td>
@@ -4745,17 +4754,37 @@ async function handleLogout() {
       btn.addEventListener('click',()=>{
         const cidx=parseInt(btn.dataset.cidx);
         compareResults[cidx].linked=!compareResults[cidx].linked;
-        // update the existing dup detection so the row shows as matched in preview too
-        if(compareResults[cidx].linked){
-          const r=compareResults[cidx];
-          // Mark in csvRows as not a dup so it can still be imported if needed
-          r.row._linkedToDash=true;
-        }
-        runCompare(); // refresh counts
-        compareTab='near';
-        document.querySelectorAll('.csv-compare-tab').forEach(b=>b.classList.toggle('active',b.dataset.tab==='near'));
+        if(compareResults[cidx].linked) compareResults[cidx].row._linkedToDash=true;
+        refreshCompareCounts();
         renderCompareTable();
       });
+    });
+
+    // Ignore / Undo handler
+    body.querySelectorAll('.cmp-ignore-btn').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const cidx=parseInt(btn.dataset.cidx);
+        compareResults[cidx].ignored=!compareResults[cidx].ignored;
+        refreshCompareCounts();
+        // stay on ignored tab after undo, else stay on current
+        if(compareResults[cidx].ignored) compareTab='missing';
+        renderCompareTable();
+      });
+    });
+  }
+
+  function refreshCompareCounts(){
+    const missingCount = compareResults.filter(r=>r.status==='missing'&&!r.linked&&!r.ignored).length;
+    const nearCount    = compareResults.filter(r=>r.status==='near'&&!r.linked&&!r.ignored).length;
+    const matchedCount = compareResults.filter(r=>r.status==='matched'||r.linked).length;
+    const ignoredCount = compareResults.filter(r=>r.ignored).length;
+    document.getElementById('csvCompareInfo').textContent =
+      `${compareResults.length} fixtures in range · ${missingCount} missing · ${nearCount} near-matches · ${matchedCount} matched${ignoredCount?` · ${ignoredCount} ignored`:''}`;
+    document.querySelectorAll('.csv-compare-tab').forEach(b=>{
+      if(b.dataset.tab==='missing') b.textContent=`❌ Missing (${missingCount})`;
+      else if(b.dataset.tab==='near') b.textContent=`⚠️ Near matches (${nearCount})`;
+      else if(b.dataset.tab==='matched') b.textContent=`✅ Matched (${matchedCount})`;
+      else if(b.dataset.tab==='ignored') b.textContent=`🚫 Ignored (${ignoredCount})`;
     });
   }
 
