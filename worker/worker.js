@@ -2236,12 +2236,12 @@ const ACE_FIXTURES = [];
     ACE_FIXTURES.push(f);
   };
   // Round 3 — 10 July 2026
-  add('Round 3','ACE Tier 1 - South Pool','Exeter College','Hartpury','10 July 2026','13:00','Exeter');
-  add('Round 3','ACE Tier 1 - South Pool','Gordons School','Truro College','10 July 2026','14:00','Gordons');
-  add('Round 3','ACE Tier 1 - South Pool','SGS College','Beechen Cliff School','10 July 2026','14:00','SGS College');
-  add('Round 3','ACE Tier 1 - North Pool','Bishop Burton College','Loughborough','10 July 2026','14:00','Bishop Burton');
-  add('Round 3','ACE Tier 1 - North Pool','Severn Vale','Gosforth Academy','10 July 2026','14:00','Severn Vale');
-  add('Round 3','ACE Tier 1 - North Pool','Oaklands','Moulton','10 July 2026','14:30','Oaklands');
+  add('Round 3','ACE Tier 1 - South Pool','Exeter College','Hartpury','7 October 2026','13:00','Exeter');
+  add('Round 3','ACE Tier 1 - South Pool','Gordons School','Truro College','7 October 2026','14:00','Gordons');
+  add('Round 3','ACE Tier 1 - South Pool','SGS College','Beechen Cliff School','7 October 2026','14:00','SGS College');
+  add('Round 3','ACE Tier 1 - North Pool','Bishop Burton College','Loughborough','7 October 2026','14:00','Bishop Burton');
+  add('Round 3','ACE Tier 1 - North Pool','Severn Vale','Gosforth Academy','7 October 2026','14:00','Severn Vale');
+  add('Round 3','ACE Tier 1 - North Pool','Oaklands','Moulton','7 October 2026','14:30','Oaklands');
 })();
 
 const VALID_STATUSES = ['Proposed', 'Approved', 'Rejected', 'Removed'];
