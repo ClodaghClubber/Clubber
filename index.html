@@ -3521,15 +3521,15 @@ function deriveGrade(county, competition) {
 }
 
 function lookupTeam(teamName, preferredCounty) {
-  const name = teamName.replace(/\s+/g, ‘ ‘).trim();
-  const normApos = s => (s || ‘’).replace(/[‘’]/g, "’");
+  const name = teamName.replace(/\s+/g, ' ').trim();
+  const normApos = s => (s || '').replace(/[''']/g, "'");
   const officialName = (clubId, county) => {
-    const clubs = sportsCountiesIndex[(county || ‘’).toLowerCase()] || [];
+    const clubs = sportsCountiesIndex[(county || '').toLowerCase()] || [];
     const found = clubs.find(c => c.id === clubId);
     return found ? found.name : null;
   };
   const resolve = (county, val) => {
-    if (typeof val === ‘object’) {
+    if (typeof val === 'object') {
       const official = officialName(val.id, county);
       return { county, clubId: val.id, matchedName: official ?? normApos(val.name) };
     }
