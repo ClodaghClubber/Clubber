@@ -2262,7 +2262,7 @@ function render(){
     const _chgBadge=_chg&&_chg.type!=='unchanged'?`<span class="badge-chg badge-chg-${_chg.type}" style="cursor:default;">${_chgLabel}</span>`:'';
     tr.innerHTML=`
       <td style="white-space:nowrap;"><input type="checkbox" data-id="${f.id}" ${selected.has(f.id)?'checked':''}><button class="edit-btn" data-edit-id="${f.id}" title="Edit fixture" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:0 4px;vertical-align:middle;opacity:.6;">✎</button></td>
-      <td style="text-align:center;">${f.clubberCreated?'<span class="badge-clubber-created" title="Created in Clubber">✓ Clubber</span>':''}</td>
+      <td style="text-align:center;">${f.clubberCreated?`<span class="badge-clubber-created" data-unmark-clubber="${f.id}" title="Click to unmark as Clubber" style="cursor:pointer;">✓ Clubber</span>`:''}</td>
       <td style="white-space:nowrap;">${f.county}</td>
       <td>${f.code||''}</td>
       <td>${f.teamA}</td>
@@ -2968,6 +2968,23 @@ document.getElementById('userBtn').addEventListener('click', () => {
 document.getElementById('tbody').addEventListener('click',e=>{
   const histBtn=e.target.closest('.hist-btn');
   if(histBtn){openChangeHistoryModal(histBtn.dataset.histSk,histBtn.dataset.histId);return;}
+  // Unmark as Clubber
+  const unmarkBadge=e.target.closest('[data-unmark-clubber]');
+  if(unmarkBadge){
+    const id=unmarkBadge.dataset.unmarkClubber;
+    const f=fixtures.find(fx=>fx.id==id);
+    if(f){
+      f.clubberCreated=false;
+      const fk=f._origKey||keyOf(f);
+      const ov=fixtureOverrides[fk]||{};
+      ov.clubberCreated=false; fixtureOverrides[fk]=ov;
+      saveOverrides();
+      if(!f.manual) syncOverrides([{key:fk,fields:{clubberCreated:false}}]);
+      if(f.manual){const mf=manualFixtures.find(m=>m.id==id);if(mf)mf.clubberCreated=false;saveManualFixtures();}
+      saveCache(); render();
+    }
+    return;
+  }
   const replayTd=e.target.closest('td[data-replay-id]');
   if(replayTd){
     const id=replayTd.dataset.replayId;
