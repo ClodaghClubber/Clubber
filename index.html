@@ -2440,7 +2440,8 @@ function abbreviateFixture(competition, round, code) {
 }
 
 function exportSelectedToExcel(){
-  const selFixtures=fixtures.filter(f=>selected.has(f.id));
+  const visibleIds=new Set(getFiltered().map(f=>f.id));
+  const selFixtures=fixtures.filter(f=>selected.has(f.id)&&visibleIds.has(f.id));
   if(!selFixtures.length) return;
   const headers=['County','Code','Team A','Team B','Date','Day','Time','Venue','Competition','Round','Abbreviation','Status','Clubber Pick','Hero'];
   const rows=selFixtures.map(f=>[f.county,f.code||'',f.teamA,f.teamB,f.date,f.day,f.time,f.venue,f.competition,f.round,abbreviateFixture(f.competition,f.round,f.code),f.status,f.clubberPick?'Yes':'',f.hero?'Yes':'']);
