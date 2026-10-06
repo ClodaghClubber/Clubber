@@ -2262,7 +2262,7 @@ function render(){
     const _chgBadge=_chg&&_chg.type!=='unchanged'?`<span class="badge-chg badge-chg-${_chg.type}" style="cursor:default;">${_chgLabel}</span>`:'';
     tr.innerHTML=`
       <td style="white-space:nowrap;"><input type="checkbox" data-id="${f.id}" ${selected.has(f.id)?'checked':''}><button class="edit-btn" data-edit-id="${f.id}" title="Edit fixture" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:0 4px;vertical-align:middle;opacity:.6;">✎</button></td>
-      <td style="text-align:center;">${f.clubberCreated?`<span class="badge-clubber-created" data-unmark-clubber="${f.id}" title="Click to unmark as Clubber" style="cursor:pointer;">✓ Clubber</span>`:''}</td>
+      <td style="text-align:center;">${f.clubberCreated?'<span class="badge-clubber-created" data-unmark-clubber="'+f.id+'" title="Click to unmark as Clubber" style="cursor:pointer;">✓ Clubber</span>':''}</td>
       <td style="white-space:nowrap;">${f.county}</td>
       <td>${f.code||''}</td>
       <td>${f.teamA}</td>
