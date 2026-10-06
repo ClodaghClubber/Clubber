@@ -225,6 +225,10 @@
   .vid-cell:hover,.unit-cell:hover{opacity:.7;}
   #unitConflictToast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#c2410c;color:#fff;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;}
   #unitConflictToast.show{opacity:1;}
+  #pickUndoToast{position:fixed;bottom:24px;right:24px;background:#1a3a6b;color:#fff;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;display:flex;align-items:center;gap:10px;opacity:0;transition:opacity .3s;pointer-events:none;}
+  #pickUndoToast.show{opacity:1;pointer-events:auto;}
+  #pickUndoToast button{background:rgba(255,255,255,0.2);border:none;color:#fff;padding:3px 10px;border-radius:5px;cursor:pointer;font-size:12px;font-weight:700;}
+  #pickUndoToast button:hover{background:rgba(255,255,255,0.35);}
   .btn-clubber{background:#1a3a6b;}
   .btn-compare{background:#7c3aed;}
   /* ---- Compare Clubber modal ---- */
@@ -635,6 +639,7 @@
 <div class="empty" id="emptyMsg" style="display:none;">No fixtures match the current filters.</div>
 </div>
 <div id="unitConflictToast"></div>
+<div id="pickUndoToast"><span id="pickUndoMsg"></span><button onclick="undoLastPick()">Undo</button></div>
 
 <!-- Videographer Selector View -->
 <div id="vidView" style="display:none;padding:16px 24px;">
@@ -1113,6 +1118,34 @@ function showConflictToast(msg,color){
   t.textContent=msg; t.style.background=color||'#c2410c'; t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),3500);
 }
+function showPickUndoToast(msg){
+  const t=document.getElementById('pickUndoToast');
+  const m=document.getElementById('pickUndoMsg');
+  if(!t||!m) return;
+  m.textContent=msg;
+  t.classList.add('show');
+  if(pickUndoTimer) clearTimeout(pickUndoTimer);
+  pickUndoTimer=setTimeout(()=>t.classList.remove('show'),5000);
+}
+function undoLastPick(){
+  if(!pickUndoStack.length) return;
+  const {id,fk,sk,prevPick,historyLen}=pickUndoStack.pop();
+  const f=fixtures.find(fx=>fx.id==id);
+  if(!f) return;
+  f.clubberPick=prevPick;
+  const ov=fixtureOverrides[fk]||{};
+  ov.clubberPick=prevPick; fixtureOverrides[fk]=ov;
+  saveOverrides();
+  if(!f.manual) syncOverrides([{key:fk,fields:{clubberPick:prevPick}}]);
+  if(f.manual){const mf=manualFixtures.find(m=>m.id==id);if(mf)mf.clubberPick=prevPick;saveManualFixtures();}
+  // Trim the history entry that was added
+  if(fixtureChangelog[sk]) fixtureChangelog[sk].history.splice(historyLen);
+  saveChangelog();
+  const t=document.getElementById('pickUndoToast');
+  if(t) t.classList.remove('show');
+  if(pickUndoTimer){clearTimeout(pickUndoTimer);pickUndoTimer=null;}
+  saveCache(); render();
+}
 function unitBadge(f){
   if(!f.unit) return '<span style="color:var(--muted)">—</span>';
   const icon=f.unitSystem==='Videon'
@@ -1290,6 +1323,8 @@ let nextId = 1;
 let lastLoadInfo = "";
 let fixtureBaseline = {}; // stableKey -> { original:{date,time,venue,round}, lastKnown:{...} }
 let fixtureChangelog = {}; // stableKey -> { type:'unchanged'|'changed'|'removed', data:{county,teamA,teamB,competition}, history:[{at,note?,diffs}] }
+let pickUndoStack = []; // [{id, fk, sk, prevPick, historyLen}]
+let pickUndoTimer = null;
 let changesOnlyFilter = false;
 let clubberFilterVal = '';
 
@@ -1516,6 +1551,13 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('changeHistoryModal').addEventListener('click',e=>{
     if(e.target===document.getElementById('changeHistoryModal')) closeChangeHistoryModal();
   });
+});
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key==='z'&&!e.shiftKey){
+    const active=document.activeElement;
+    if(active&&(active.tagName==='INPUT'||active.tagName==='TEXTAREA'||active.isContentEditable)) return;
+    if(pickUndoStack.length){e.preventDefault();undoLastPick();}
+  }
 });
 
 // ---- Socials overrides (persist socials assignments for worker-fetched fixtures) ----
@@ -2959,8 +3001,12 @@ document.getElementById('tbody').addEventListener('click',e=>{
       const sk=stableKeyOf(f);
       const now=new Date().toLocaleString('en-IE');
       if(!fixtureChangelog[sk]) fixtureChangelog[sk]={type:'unchanged',data:{county:f.county,teamA:f.teamA,teamB:f.teamB,competition:f.competition,date:f.date,time:f.time,venue:f.venue||'',round:f.round||'',code:f.code||''},history:[]};
+      const histLenBefore=fixtureChangelog[sk].history.length;
       fixtureChangelog[sk].history.push({at:now,who:currentUser||'Unknown',diffs:[{field:'Clubber Pick',from:prevPick?'Yes':'No',to:f.clubberPick?'Yes':'No'}]});
       saveChangelog();
+      // Push undo entry and show toast
+      pickUndoStack.push({id,fk,sk,prevPick,historyLen:histLenBefore});
+      showPickUndoToast(f.clubberPick?'Marked as Clubber Pick':'Clubber Pick removed');
       saveCache(); render();
     }
     return;
