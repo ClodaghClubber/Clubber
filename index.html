@@ -546,16 +546,7 @@
       </svg>
       UK (Rugby)
     </button>
-    <button id="pickLogBtn" title="View Clubber Pick audit log" onclick="openPickLog()" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px;font-weight:600;">
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="3" y="3" width="22" height="22" rx="3" stroke="currentColor" stroke-width="1.6"/>
-        <path d="M8 9h12M8 13h12M8 17h7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        <circle cx="21" cy="21" r="5" fill="#f59e0b"/>
-        <path d="M19 21l1.5 1.5 2.5-2.5" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      Pick Log
-    </button>
-    <button id="userBtn" title="Set your name for the audit log" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px;font-weight:600;">
+<button id="userBtn" title="Set your name for the audit log" style="background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px;font-weight:600;">
       <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="14" cy="10" r="5" stroke="currentColor" stroke-width="1.6"/>
         <path d="M4 24c0-5.523 4.477-10 10-10s10 4.477 10 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
@@ -666,30 +657,6 @@
   <div id="vidViewContent"></div>
 </div>
 
-<!-- Pick Log Modal -->
-<div id="pickLogModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;align-items:center;justify-content:center;">
-  <div class="modal-box" style="width:640px;max-height:80vh;display:flex;flex-direction:column;">
-    <h2 style="margin:0 0 12px;display:flex;align-items:center;gap:8px;">📋 Clubber Pick Log</h2>
-    <div id="pickLogStatus" style="font-size:12px;color:var(--muted);margin-bottom:10px;"></div>
-    <div style="overflow-y:auto;flex:1;">
-      <table style="width:100%;border-collapse:collapse;font-size:12px;">
-        <thead>
-          <tr style="position:sticky;top:0;background:var(--panel);">
-            <th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);color:var(--muted);">When</th>
-            <th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);color:var(--muted);">Who</th>
-            <th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);color:var(--muted);">Device</th>
-            <th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);color:var(--muted);">Fixture</th>
-            <th style="text-align:center;padding:6px 8px;border-bottom:1px solid var(--border);color:var(--muted);">Action</th>
-          </tr>
-        </thead>
-        <tbody id="pickLogBody"></tbody>
-      </table>
-    </div>
-    <div class="modal-actions" style="margin-top:12px;">
-      <button class="btn-modal-cancel" onclick="document.getElementById('pickLogModal').style.display='none'">Close</button>
-    </div>
-  </div>
-</div>
 
 <!-- Clubber Feedback Modal -->
 <div id="removeConfirmModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;align-items:center;justify-content:center;">
@@ -1495,13 +1462,16 @@ async function openChangeHistoryModal(sk,fid){
         const [hCounty,hComp,hTeamA,hTeamB]=h.key.split('|');
         return hCounty===skCounty&&hComp===skComp&&hTeamA===skTeamA&&hTeamB===skTeamB;
       })
-      .map(h=>({
-        _ts: new Date(h.timestamp).getTime(),
-        at: new Date(h.timestamp).toLocaleString('en-IE'),
-        who: [h.user,h.device].filter(Boolean).join(' · ')||'Unknown',
-        note: '',
-        diffs:[{field:'Status',from:h.previousStatus,to:h.status}]
-      }));
+      .map(h=>{
+        const isPick = h.status&&h.status.startsWith('Pick:');
+        return {
+          _ts: new Date(h.timestamp).getTime(),
+          at: new Date(h.timestamp).toLocaleString('en-IE'),
+          who: [h.user,h.device].filter(Boolean).join(' · ')||'Unknown',
+          note: '',
+          diffs:[{field: isPick ? 'Clubber Pick' : 'Status', from:h.previousStatus, to: isPick ? h.status.replace('Pick: ','') : h.status}]
+        };
+      });
   } catch(_){}
 
   // Merge, deduplicate status entries (KV is authoritative, drop matching local ones)
@@ -2977,6 +2947,7 @@ document.getElementById('tbody').addEventListener('click',e=>{
     const id=pickTd.dataset.pickId;
     const f=fixtures.find(fx=>fx.id==id);
     if(f){
+      const prevPick=!!f.clubberPick;
       f.clubberPick=!f.clubberPick;
       const fk=f._origKey||keyOf(f);
       const ov=fixtureOverrides[fk]||{};
@@ -2984,6 +2955,12 @@ document.getElementById('tbody').addEventListener('click',e=>{
       saveOverrides();
       if(!f.manual) syncOverrides([{key:fk,fields:{clubberPick:f.clubberPick}}]);
       if(f.manual){const mf=manualFixtures.find(m=>m.id==id);if(mf)mf.clubberPick=f.clubberPick;saveManualFixtures();}
+      // Record in fixture history
+      const sk=stableKeyOf(f);
+      const now=new Date().toLocaleString('en-IE');
+      if(!fixtureChangelog[sk]) fixtureChangelog[sk]={type:'unchanged',data:{county:f.county,teamA:f.teamA,teamB:f.teamB,competition:f.competition,date:f.date,time:f.time,venue:f.venue||'',round:f.round||'',code:f.code||''},history:[]};
+      fixtureChangelog[sk].history.push({at:now,who:currentUser||'Unknown',diffs:[{field:'Clubber Pick',from:prevPick?'Yes':'No',to:f.clubberPick?'Yes':'No'}]});
+      saveChangelog();
       saveCache(); render();
     }
     return;
@@ -4243,42 +4220,6 @@ function vidDoAssign(fid, name) {
 }
 // ===== END VIDEOGRAPHER SELECTOR =====
 
-// ===== PICK LOG =====
-async function openPickLog() {
-  const modal = document.getElementById('pickLogModal');
-  const status = document.getElementById('pickLogStatus');
-  const body = document.getElementById('pickLogBody');
-  modal.style.display = 'flex';
-  status.textContent = 'Loading…';
-  body.innerHTML = '';
-  try {
-    const res = await fetch(WORKER_URL + '?action=getPickAudit', { cache: 'no-store' });
-    const json = await res.json();
-    if (!json.ok) throw new Error(json.error || 'Failed');
-    const audit = json.audit || [];
-    status.textContent = audit.length ? `${audit.length} entries (newest first)` : 'No picks recorded yet.';
-    body.innerHTML = audit.map(e => {
-      const dt = e.timestamp ? new Date(e.timestamp).toLocaleString('en-IE', { dateStyle: 'short', timeStyle: 'short' }) : '—';
-      const who = e.user || '(unknown)';
-      const dev = e.device || '—';
-      const parts = (e.key || '').split('|');
-      const fixture = parts.length >= 3 ? `${parts[1]} v ${parts[2]} (${parts[0]})` : e.key;
-      const action = e.picked
-        ? '<span style="color:#f59e0b;font-weight:700;">★ Picked</span>'
-        : '<span style="color:var(--muted);">Unpicked</span>';
-      return `<tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:6px 8px;white-space:nowrap;">${dt}</td>
-        <td style="padding:6px 8px;font-weight:600;">${who}</td>
-        <td style="padding:6px 8px;color:var(--muted);">${dev}</td>
-        <td style="padding:6px 8px;">${fixture}</td>
-        <td style="padding:6px 8px;text-align:center;">${action}</td>
-      </tr>`;
-    }).join('');
-    if (!audit.length) body.innerHTML = '<tr><td colspan="5" style="padding:16px;text-align:center;color:var(--muted);">No picks recorded yet — picks made from now on will appear here.</td></tr>';
-  } catch (err) {
-    status.textContent = 'Failed to load: ' + err.message;
-  }
-}
 
 // ===== AUTH =====
 async function handleLogin(e) {
