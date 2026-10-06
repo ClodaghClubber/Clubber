@@ -3448,8 +3448,11 @@ let VID_DATA = null; // loaded from vidData.json
   }
 })();
 
+function stripDiacritics(s) {
+  return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
 function normClubName(n) {
-  return (n || '').toLowerCase()
+  return stripDiacritics(n || '').toLowerCase()
     .replace(/\bst\.?\s*/g, 'saint ')
     .replace(/[''`]/g, "'")
     .replace(/[^a-z0-9' ]/g, ' ')
@@ -3501,30 +3504,44 @@ function deriveGrade(county, competition) {
 }
 
 function lookupTeam(teamName, preferredCounty) {
-  const name = teamName.replace(/\s+/g, ' ').trim();
-  const normApos = s => (s || '').replace(/[‘’]/g, "'");
+  const name = teamName.replace(/\s+/g, ‘ ‘).trim();
+  const normApos = s => (s || ‘’).replace(/[‘’]/g, "’");
   const officialName = (clubId, county) => {
-    const clubs = sportsCountiesIndex[(county || '').toLowerCase()] || [];
+    const clubs = sportsCountiesIndex[(county || ‘’).toLowerCase()] || [];
     const found = clubs.find(c => c.id === clubId);
     return found ? found.name : null;
   };
   const resolve = (county, val) => {
-    if (typeof val === 'object') {
+    if (typeof val === ‘object’) {
       const official = officialName(val.id, county);
       return { county, clubId: val.id, matchedName: official ?? normApos(val.name) };
     }
     const official = officialName(val, county);
     return { county, clubId: val, matchedName: official ?? normApos(name) };
   };
+  // Lookup helper: try exact key, then diacritic-stripped key match
+  const findInCounty = (teams, n) => {
+    if (teams[n]) return teams[n];
+    const stripped = stripDiacritics(n);
+    if (stripped !== n) {
+      const key = Object.keys(teams).find(k => stripDiacritics(k) === stripped);
+      if (key) return teams[key];
+    }
+    return null;
+  };
   // 1. Exact match in teamMappings — preferred county first
-  if (teamMappings[preferredCounty]?.[name])
-    return resolve(preferredCounty, teamMappings[preferredCounty][name]);
+  const prefTeams = teamMappings[preferredCounty];
+  if (prefTeams) {
+    const hit = findInCounty(prefTeams, name);
+    if (hit) return resolve(preferredCounty, hit);
+  }
   // 2. Fuzzy match in sportsCountiesLookup — county-scoped (higher priority than cross-county teamMappings)
   const result = fuzzyLookupClub(name, preferredCounty);
   if (result) return result;
   // 3. Exact match in teamMappings — all other counties (last resort)
   for (const [county, teams] of Object.entries(teamMappings)) {
-    if (teams[name]) return resolve(county, teams[name]);
+    const hit = findInCounty(teams, name);
+    if (hit) return resolve(county, hit);
   }
   return null;
 }
