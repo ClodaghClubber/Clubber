@@ -1705,7 +1705,7 @@ function handleImportFile(file){
     try{ _showImportPreview(parseImportFile(e.target.result)); }
     catch(err){ _showImportError(err.message); }
   };
-  reader.readAsText(file);
+  reader.readAsText(file, 'UTF-8');
 }
 
 function openImportModal(){
@@ -3820,7 +3820,7 @@ function downloadJson(data, filename) {
         alert('Could not read the file. Make sure it is the JSON exported by the bookmarklet.\n\n' + err.message);
       }
     };
-    reader.readAsText(file);
+    reader.readAsText(file, 'UTF-8');
   }
 
   // ---- Extract Clubber fixtures from bookmarklet output ----
@@ -4489,7 +4489,7 @@ async function handleLogout() {
     if(!file){ showCsvError('No file selected.'); return; }
     const reader = new FileReader();
     reader.onload = e => processCsv(e.target.result);
-    reader.readAsText(file);
+    reader.readAsText(file, 'UTF-8');
   });
 
   function showCsvError(msg){
