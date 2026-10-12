@@ -3703,7 +3703,7 @@ function buildGamePayload(f) {
     competitorClubId: teamBResult?.clubId || '',
     competitorClubCounty: isRugby ? 'UK' : (teamBResult?.county || ''),
     price,
-    hideFromFan: false,
+    hideFromFan: f.county === 'BUCS',
     sendToSpectatr: true,
     sendToMagnifi: false,
     ...(f.clubberPick ? { trendingUpcoming: true } : {}),
