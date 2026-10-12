@@ -2865,11 +2865,24 @@ async function syncOverrides(updates){
   }catch(e){ console.warn('Override sync failed:',e); }
 }
 
+// Stable keys of the manual fixtures KV is known to hold (from the last load
+// or successful sync). A local-only fixture whose key is in this set was
+// renamed or removed server-side, so it must not be re-pushed.
+const MANUAL_KV_KEYS='gaaManualKvKeys';
+function loadKnownKvKeys(){
+  try{ const r=localStorage.getItem(MANUAL_KV_KEYS); return r?new Set(JSON.parse(r)):null; }catch(e){ return null; }
+}
+function saveKnownKvKeys(keys){
+  try{ localStorage.setItem(MANUAL_KV_KEYS, JSON.stringify([...keys])); }catch(e){}
+}
+
 function syncManualFixtures(){
+  const sentKeys=new Set(manualFixtures.map(f=>stableKeyOf(f)));
   authFetch(WORKER_URL,{
     method:'POST',
     body:JSON.stringify({action:'setManualFixtures',fixtures:manualFixtures})
-  }).catch(e=>console.warn('Manual fixture sync failed:',e));
+  }).then(r=>{ if(r&&r.ok) saveKnownKvKeys(sentKeys); })
+    .catch(e=>console.warn('Manual fixture sync failed:',e));
 }
 
 async function loadFixtures(isRefresh){
@@ -2886,7 +2899,14 @@ async function loadFixtures(isRefresh){
     if(Array.isArray(json.manualFixtures)){
       const localMap=new Map(manualFixtures.map(f=>[stableKeyOf(f),f]));
       const kvKeys=new Set(json.manualFixtures.map(f=>stableKeyOf(f)));
-      const localOnly=manualFixtures.filter(f=>!kvKeys.has(stableKeyOf(f)));
+      // Only keep local-only fixtures KV has never held (genuinely unsynced).
+      // Ones KV used to hold were renamed/removed there, so drop them.
+      // Before a known-key list exists, fall back to source==='claude'
+      // (fixtures written directly to KV, never created in this browser).
+      const knownKv=loadKnownKvKeys();
+      const wasInKv=f=>knownKv ? knownKv.has(stableKeyOf(f)) : f.source==='claude';
+      const localOnly=manualFixtures.filter(f=>!kvKeys.has(stableKeyOf(f)) && !wasInKv(f));
+      saveKnownKvKeys(kvKeys);
       // Merge: KV wins on all fields except status — preserve local status if user changed it
       const merged=json.manualFixtures.map(f=>{
         const local=localMap.get(stableKeyOf(f));
