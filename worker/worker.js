@@ -2236,7 +2236,7 @@ const ACE_FIXTURES = [];
     ACE_FIXTURES.push(f);
   };
   // ACE fixtures are now maintained as manual fixtures (KV `manualFixtures`,
-  // competition "RFU ACE Boys"). The 7 Oct 2026 entries that were here
+  // competition "RFU ACE Boys League"). The 7 Oct 2026 entries that were here
   // duplicated those and have been removed.
 })();
 
