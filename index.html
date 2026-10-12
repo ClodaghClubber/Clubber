@@ -3679,7 +3679,8 @@ function buildGamePayload(f) {
   const county = isRugby ? 'UK' : (f.county || '').replace(/ LGFA$/i, '');
 
   const rawTime = f.time ? from12h(f.time) : '';
-  const utcTime = rawTime && rawTime.includes(':') ? dublinToUtc(f.date, rawTime) : '';
+  // No known time (blank/TBC) -> placeholder 00:01
+  const utcTime = rawTime && rawTime.includes(':') ? dublinToUtc(f.date, rawTime) : '00:01';
 
   const payload = {
     gameScope: f.county === 'BUCS' ? 'University' : f.county === 'ACE' ? 'School' : 'Club',
