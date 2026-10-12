@@ -3663,8 +3663,12 @@ function buildGamePayload(f) {
   if (!isRugby && !grade) errors.push(`grade could not be derived from competition "${f.competition}"`);
   if (!isRugby && !(f.code || '').trim()) errors.push(`Code is missing — set a code (e.g. Football, Hurling, LGFA) before exporting`);
 
+  // ACE: girls' competitions contain "Girls"; everything else is the boys' league
+  const isAceGirls = f.county === 'ACE' && /girls/i.test(f.competition || '');
   const championsType = f.county === 'BUCS'
     ? (f.competition || 'Men\'s BUCS Super Rugby')
+    : f.county === 'ACE'
+    ? (isAceGirls ? 'RFU ACE Girls League' : 'RFU ACE Boys League')
     : isRugby
     ? 'Champ Rugby'
     : lookupClubberCompetition(
@@ -3712,6 +3716,7 @@ function buildGamePayload(f) {
     code: isRugby
       ? (f.competition === "Men's BUCS Super Rugby" ? "Union Men's"
         : f.competition === "Women's BUCS Super Rugby" ? "Union Women's"
+        : f.county === 'ACE' ? (isAceGirls ? "Union Women's" : "Union Men's")
         : 'Union')
       : (f.code || ''),
     sportType: isRugby ? 'Rugby' : undefined,
