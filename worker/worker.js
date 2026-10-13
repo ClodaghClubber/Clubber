@@ -1295,6 +1295,72 @@ async function fetchCarlowFixtures() {
   }
 }
 
+// ---- London: live scraper ----
+// londongaa.org/fixtures/ is a server-rendered Sportlomo list of all scheduled
+// fixtures. Each competition starts with a .compheader link (sponsor + name);
+// following <ul class="... table-body fixtures"> blocks belong to it.
+// Dates have no year ("17 Oct") — the nearest future-ish year is assumed.
+// Knockout rounds aren't published, so they're inferred from how many
+// fixtures remain in the competition (1 = Final, 2 = Semi Final, 4 = QF).
+async function fetchLondonFixtures() {
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const decode = s => s.replace(/&amp;/g, '&').replace(/&#0?39;|&#8217;|&rsquo;/g, "'").replace(/&nbsp;/g, ' ')
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n)).replace(/\s+/g, ' ').trim();
+  try {
+    const res = await fetch('https://www.londongaa.org/fixtures/', {
+      headers: { 'User-Agent': UA, 'Accept': 'text/html' },
+    });
+    if (!res.ok) { console.error('fetchLondonFixtures HTTP', res.status); return []; }
+    const html = await res.text();
+    const now = new Date();
+    const raw = [];
+    let compTitle = '';
+    const re = /<div class="compheader">[\s\S]*?<a [^>]*>([^<]+)<\/a>|<ul class="column-seven table-body fixtures">([\s\S]*?)<\/ul>/g;
+    let m;
+    while ((m = re.exec(html))) {
+      if (m[1]) { compTitle = decode(m[1]); continue; }
+      const block = m[2];
+      const pick = r => { const x = block.match(r); return x ? decode(x[1]) : ''; };
+      const dm = pick(/ftime"><span class="data">([^<]+)/);
+      const teamA = pick(/team1"><span>([^<]+)/);
+      const teamB = pick(/team2"><span>([^<]+)/);
+      const dp = dm.match(/^(\d{1,2})\s+([A-Za-z]{3})/);
+      if (!dp || !teamA || !teamB || !compTitle) continue;
+      const mi = MONTHS.findIndex(x => x.slice(0, 3).toLowerCase() === dp[2].toLowerCase());
+      if (mi < 0) continue;
+      // Fixtures more than ~2 months in the past belong to next year
+      let year = now.getUTCFullYear();
+      if (mi < now.getUTCMonth() - 2) year++;
+      const time = pick(/fvs"><span class="data"[^>]*>([^<]+)/);
+      raw.push({
+        compTitle, teamA, teamB,
+        date: `${parseInt(dp[1], 10)} ${MONTHS[mi]} ${year}`,
+        time: /^\d{1,2}:\d{2}$/.test(time) ? time : '',
+        venue: pick(/fvenue"><span class="data">([^<]*)/),
+      });
+    }
+    const perComp = {};
+    raw.forEach(r => { perComp[r.compTitle] = (perComp[r.compTitle] || 0) + 1; });
+    return raw.map(r => {
+      // Drop the sponsor prefix: keep from the grade word onwards
+      const g = r.compTitle.match(/\b(Senior|Intermediate|Junior|Minor|Under|U\d+)\b.*$/i);
+      let competition = g ? g[0] : r.compTitle;
+      let round = '';
+      if (/\s+Relegation\s+Play\s*Off$/i.test(competition)) {
+        competition = competition.replace(/\s+Play\s*Off$/i, '');
+        round = 'Play Off';
+      } else if (/\s+Knockout$/i.test(competition)) {
+        competition = competition.replace(/\s+Knockout$/i, '');
+        round = { 1: 'Final', 2: 'Semi Final', 4: 'Quarter Final' }[perComp[r.compTitle]] || '';
+      }
+      return mkStatic('London', r.teamA, r.teamB, r.date, r.time, r.venue, competition, round);
+    });
+  } catch (e) {
+    console.error('fetchLondonFixtures failed:', e);
+    return [];
+  }
+}
+
 // ---- Carlow: static data ----
 // Static fixtures are kept as a fallback / supplement for competitions not
 // on carlowgaa.ie, and for historical rounds already passed.
@@ -2252,7 +2318,7 @@ const CACHE_A_KEY = 'cache_A'; // Cork, Waterford
 const CACHE_B_KEY = 'cache_B'; // Laois, Wexford, Kildare, Carlow, Louth
 const CACHE_C_KEY = 'cache_C'; // Kerry, Offaly, Tipperary GAA
 const CACHE_D_KEY = 'cache_D'; // Kilkenny, Meath, Monaghan, Roscommon, Longford
-const CACHE_E_KEY = 'cache_E'; // Tipperary Camogie, Kilkenny Camogie
+const CACHE_E_KEY = 'cache_E'; // Tipperary Camogie, Kilkenny Camogie, London
 
 // Same composite key the dashboard uses client-side to match a fixture
 // across reloads (county|competition|teamA|teamB|date), so Approve/Reject/
@@ -2517,16 +2583,18 @@ async function scrapeGroupD(kv, env) {
   await writeGroupCache(kv, CACHE_D_KEY, fixtures);
 }
 
-// Group E: Tipperary Camogie, Kilkenny Camogie — then run Teams alert
+// Group E: Tipperary Camogie, Kilkenny Camogie, London — then run Teams alert
 async function scrapeGroupE(kv) {
   const cacDebug = [];
-  const [tipperaryCamogieResults, kilkennyCamogieResults] = await Promise.all([
+  const [tipperaryCamogieResults, kilkennyCamogieResults, londonResults] = await Promise.all([
     fetchTipperaryCamogieFixtures().catch(() => []),
     fetchKilkennyAmogieCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Kilkenny', 'kilkennycamogie.ie', c, cacDebug)))).catch(() => []),
+    fetchLondonFixtures().catch(() => []),
   ]);
   const fixtures = [
     ...tipperaryCamogieResults,
     ...kilkennyCamogieResults.flat().map(f => ({ ...fixNames(f), sport: 'Camogie' })),
+    ...londonResults,
   ];
   await writeGroupCache(kv, CACHE_E_KEY, fixtures);
 }

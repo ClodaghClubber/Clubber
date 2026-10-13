@@ -1967,5 +1967,215 @@
       "id": "39cdb3b0-d133-4ec9-ace1-031fe5016cc3",
       "name": "SGS College"
     }
+  },
+  "London": {
+    "Kilburn Gaels": {
+      "id": "7bb5ce2d-2198-4c42-a118-37293e05ad4b",
+      "name": "Kilburn Gaels"
+    },
+    "Brothers Pearse": {
+      "id": "8113bfc6-03e1-4be7-9044-b7c709402aa2",
+      "name": "Brothers Pearse"
+    },
+    "Cu Chulainns": {
+      "id": "c569da46-ca42-4a3c-92e6-eda2c8c580f3",
+      "name": "Cu Chulainns"
+    },
+    "Cú Chulainns": {
+      "id": "c569da46-ca42-4a3c-92e6-eda2c8c580f3",
+      "name": "Cu Chulainns"
+    },
+    "Dulwich Harps": {
+      "id": "005d2897-c96d-4188-a7f0-72b3960909e3",
+      "name": "Dulwich Harps"
+    },
+    "Éire Óg London": {
+      "id": "da2312cb-2c07-4b29-bb99-ce16301d2a3c",
+      "name": "Éire Óg London"
+    },
+    "Eire Og": {
+      "id": "da2312cb-2c07-4b29-bb99-ce16301d2a3c",
+      "name": "Éire Óg London"
+    },
+    "Éire Óg": {
+      "id": "da2312cb-2c07-4b29-bb99-ce16301d2a3c",
+      "name": "Éire Óg London"
+    },
+    "Eire Og London": {
+      "id": "da2312cb-2c07-4b29-bb99-ce16301d2a3c",
+      "name": "Éire Óg London"
+    },
+    "Fr. Murphy's": {
+      "id": "d9be89b2-6ac4-4421-8a2e-f4f17e36b86a",
+      "name": "Fr. Murphy's"
+    },
+    "Fr Murphys": {
+      "id": "d9be89b2-6ac4-4421-8a2e-f4f17e36b86a",
+      "name": "Fr. Murphy's"
+    },
+    "Fr. Murphys": {
+      "id": "d9be89b2-6ac4-4421-8a2e-f4f17e36b86a",
+      "name": "Fr. Murphy's"
+    },
+    "Fr Murphy's": {
+      "id": "d9be89b2-6ac4-4421-8a2e-f4f17e36b86a",
+      "name": "Fr. Murphy's"
+    },
+    "Father Murphys": {
+      "id": "d9be89b2-6ac4-4421-8a2e-f4f17e36b86a",
+      "name": "Fr. Murphy's"
+    },
+    "Fulham Irish": {
+      "id": "ebae3d32-b4bf-4d96-837b-0d81aab16545",
+      "name": "Fulham Irish"
+    },
+    "Garryowen": {
+      "id": "be30b728-a161-47f1-88ba-583cbec2ff12",
+      "name": "Garryowen"
+    },
+    "Granuaile": {
+      "id": "e19cae57-79fb-40d9-80aa-1f76384298d0",
+      "name": "Granuaile"
+    },
+    "Harlesden Harps": {
+      "id": "726e13f4-fc87-44be-a77c-e910bd6bbc3a",
+      "name": "Harlesden Harps"
+    },
+    "Neasden Gaels": {
+      "id": "bdf6e646-8dc5-432a-8f94-a278d364a09b",
+      "name": "Neasden Gaels"
+    },
+    "Kingdom Kerry Gaels": {
+      "id": "39a900fc-5758-4806-a0b3-d49a6399030c",
+      "name": "Kingdom Kerry Gaels"
+    },
+    "North London Shamrocks": {
+      "id": "41a4fbec-b98e-4273-82b3-beaa50b3e002",
+      "name": "North London Shamrocks"
+    },
+    "Parnells": {
+      "id": "08c141b0-2f66-45bf-a95f-cb3eca1a9c23",
+      "name": "Parnells"
+    },
+    "Robert Emmets": {
+      "id": "b5e890b4-ee28-4490-967c-02e198caa1ed",
+      "name": "Robert Emmets"
+    },
+    "Robert Emmetts": {
+      "id": "b5e890b4-ee28-4490-967c-02e198caa1ed",
+      "name": "Robert Emmets"
+    },
+    "Round Towers": {
+      "id": "3cdf7c7b-98b6-418a-90c0-abd17f364a38",
+      "name": "Round Towers"
+    },
+    "St. Anthony's": {
+      "id": "5581e0f2-0d17-4b04-bb15-b5369571ea98",
+      "name": "St. Anthony's"
+    },
+    "St Anthonys": {
+      "id": "5581e0f2-0d17-4b04-bb15-b5369571ea98",
+      "name": "St. Anthony's"
+    },
+    "St Anthony's": {
+      "id": "5581e0f2-0d17-4b04-bb15-b5369571ea98",
+      "name": "St. Anthony's"
+    },
+    "St. Brendan's": {
+      "id": "7c13d135-c167-4135-ba02-220e387df538",
+      "name": "St. Brendan's"
+    },
+    "St Brendans": {
+      "id": "7c13d135-c167-4135-ba02-220e387df538",
+      "name": "St. Brendan's"
+    },
+    "St Brendan's": {
+      "id": "7c13d135-c167-4135-ba02-220e387df538",
+      "name": "St. Brendan's"
+    },
+    "St. Claret's": {
+      "id": "32142c57-2e79-40b0-bcd3-f48c20092488",
+      "name": "St. Claret's"
+    },
+    "St Clarets": {
+      "id": "32142c57-2e79-40b0-bcd3-f48c20092488",
+      "name": "St. Claret's"
+    },
+    "St Claret's": {
+      "id": "32142c57-2e79-40b0-bcd3-f48c20092488",
+      "name": "St. Claret's"
+    },
+    "St. Gabriel's": {
+      "id": "4cb64398-b106-49d3-adde-f468e62a0027",
+      "name": "St. Gabriel's"
+    },
+    "St Gabriels": {
+      "id": "4cb64398-b106-49d3-adde-f468e62a0027",
+      "name": "St. Gabriel's"
+    },
+    "St Gabriel's": {
+      "id": "4cb64398-b106-49d3-adde-f468e62a0027",
+      "name": "St. Gabriel's"
+    },
+    "St. Joseph's": {
+      "id": "f72b0b33-de1b-4cd2-9104-e2536e07d266",
+      "name": "St. Joseph's"
+    },
+    "St Josephs": {
+      "id": "f72b0b33-de1b-4cd2-9104-e2536e07d266",
+      "name": "St. Joseph's"
+    },
+    "St Joseph's": {
+      "id": "f72b0b33-de1b-4cd2-9104-e2536e07d266",
+      "name": "St. Joseph's"
+    },
+    "St. Kiernan's": {
+      "id": "8355bbdd-c1ae-4c06-90de-caca5e1ac948",
+      "name": "St. Kiernan's"
+    },
+    "St Kiernans": {
+      "id": "8355bbdd-c1ae-4c06-90de-caca5e1ac948",
+      "name": "St. Kiernan's"
+    },
+    "St Kiernan's": {
+      "id": "8355bbdd-c1ae-4c06-90de-caca5e1ac948",
+      "name": "St. Kiernan's"
+    },
+    "Seán Treacy's": {
+      "id": "56914f61-6519-4944-b3e1-c125c4e7477a",
+      "name": "Seán Treacy's"
+    },
+    "Sean Treacys": {
+      "id": "56914f61-6519-4944-b3e1-c125c4e7477a",
+      "name": "Seán Treacy's"
+    },
+    "Seán Treacys": {
+      "id": "56914f61-6519-4944-b3e1-c125c4e7477a",
+      "name": "Seán Treacy's"
+    },
+    "Sean Treacy's": {
+      "id": "56914f61-6519-4944-b3e1-c125c4e7477a",
+      "name": "Seán Treacy's"
+    },
+    "Tara": {
+      "id": "0a743aac-2442-4a80-af77-b1ce809437ba",
+      "name": "Tara"
+    },
+    "Thomas McCurtains": {
+      "id": "7b8d2f7e-4a50-48b5-b9f0-d05f34c5468f",
+      "name": "Thomas McCurtains"
+    },
+    "Tír Chonaill Gaels": {
+      "id": "4ed48bff-c4b6-4992-9937-d7844707f34c",
+      "name": "Tír Chonaill Gaels"
+    },
+    "Tir Chonaill Gaels": {
+      "id": "4ed48bff-c4b6-4992-9937-d7844707f34c",
+      "name": "Tír Chonaill Gaels"
+    },
+    "Wandsworth Gaels": {
+      "id": "afa3465d-6d72-4f9c-905d-9757e42152cb",
+      "name": "Wandsworth Gaels"
+    }
   }
 }
