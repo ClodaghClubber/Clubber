@@ -1466,6 +1466,14 @@ async function fetchLeinsterClubFixtures() {
       f.sport = r.competition.activity === 'hurling' ? 'Hurling' : 'Football';
       out.push(f);
     }
+    // Undrawn games in the same round are identical ("TBC v TBC", same day)
+    // and would be collapsed by dedup - number the repeats: "TBC (2)".
+    const seen = {};
+    for (const f of out) {
+      const k = [f.competition, f.teamA, f.teamB, f.date, f.time].join('|');
+      seen[k] = (seen[k] || 0) + 1;
+      if (seen[k] > 1) f.teamB = `${f.teamB} (${seen[k]})`;
+    }
     return out;
   } catch (e) {
     console.error('fetchLeinsterClubFixtures failed:', e);

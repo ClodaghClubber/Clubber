@@ -3651,7 +3651,7 @@ function buildGamePayload(f) {
   // Draws list unconfirmed teams ("X or Y", "Winner of QF1", "Clare
   // representatives", "A, B, C or D", or just a county name like "Carlow")
   // - never export those, or the fuzzy matcher would silently pick a club.
-  const unconfirmed = t => isProvincial && (/\s+or\s+|^winner\b|^loser\b|representatives|^tb[cd]$/i.test(t)
+  const unconfirmed = t => isProvincial && (/\s+or\s+|^winner\b|^loser\b|representatives|^tb[cd]\b/i.test(t)
     || (t.match(/,/g) || []).length >= 2
     || ALL_GAA_COUNTIES.some(c => c.toLowerCase() === t.toLowerCase()));
   [normA, normB].forEach(t => { if (unconfirmed(t)) errors.push(`Team not confirmed yet: "${t}"`); });
