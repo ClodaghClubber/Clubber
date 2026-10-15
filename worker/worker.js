@@ -1172,19 +1172,8 @@ const LONGFORD_FIXTURES = [];
   ['Clonguish','Dromard','27 September 2026','12:00','','Semi Final'],
 ].forEach(r=>LONGFORD_FIXTURES.push(mkStatic('Longford',r[0],r[1],r[2],r[3],r[4],'Senior Football Championship',r[5])));
 
-// Longford - Leinster Club Championships (source: longfordgaa.ie Sep 2026)
-[
-  ['Longford','Kildare','31 October 2026','','','Round 1'],
-].forEach(r=>LONGFORD_FIXTURES.push(mkStatic('Longford',r[0],r[1],r[2],r[3],r[4],'Leinster Club Intermediate Football Championship',r[5])));
-[
-  ['Meath','Longford','31 October 2026','','','Round 1'],
-].forEach(r=>LONGFORD_FIXTURES.push(mkStatic('Longford',r[0],r[1],r[2],r[3],r[4],'Leinster Club Junior Football Championship',r[5])));
-[
-  ['Westmeath','Longford','1 November 2026','14:00','','Round 1'],
-].forEach(r=>LONGFORD_FIXTURES.push(mkStatic('Longford',r[0],r[1],r[2],r[3],r[4],'Leinster Club Senior Football Championship',r[5])));
-[
-  ['Longford Slashers','Europe','7 November 2026','','','Semi Final'],
-].forEach(r=>LONGFORD_FIXTURES.push(mkStatic('Longford',r[0],r[1],r[2],r[3],r[4],'Leinster Club Special Hurling Championship',r[5])));
+// Leinster Club fixtures involving Longford clubs now come from the Leinster
+// feed (fetchLeinsterClubFixtures) under county "Leinster".
 
 // ---- Kildare: static data ----
 // Kildare's fixtures aren't published on a scrapable website; they were

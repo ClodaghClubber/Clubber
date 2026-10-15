@@ -2171,6 +2171,15 @@ function populateFilterOptions(){
     msCounty.setValues(finalList);
     delete window._pendingRestore_countyFilter;
   }
+  // Counties that first appear on a later rebuild (e.g. fresh worker data
+  // arriving after the cached render) default to included too
+  const prevKnown=window._knownCountyOptions;
+  if(prevKnown){
+    const added=counties.filter(c=>!prevKnown.has(c)&&!RUGBY_COUNTIES.includes(c));
+    const cur=msCounty.getValues();
+    if(added.length&&cur.length){ msCounty.setValues([...cur,...added]); _msSave('countyFilter'); }
+  }
+  window._knownCountyOptions=new Set(counties);
   // If rugby toggle is off, ensure rugby counties are deselected (setOptions resets to All)
   if(document.getElementById('rugbyToggle')&&document.getElementById('rugbyToggle').getAttribute('aria-checked')!=='true'){
     const cur=msCounty.getValues();
