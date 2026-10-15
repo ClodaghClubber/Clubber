@@ -1361,6 +1361,69 @@ async function fetchLondonFixtures() {
   }
 }
 
+// ---- Munster: club championships ----
+// munster.gaa.ie/fixtures/club-championships-2026/ is a hand-edited set of
+// HTML tables, one per competition. Rows are:
+//   round | match no | home | - | away | - | D/M | "<venue> @ <time>" | ref | report
+// Teams are often provisional ("Glen Rovers or St. Finbarr's (Cork)",
+// "Winner of QF1") and are kept as written so they update as counties finish.
+// A trailing "(County)" is stripped into teamACounty/teamBCounty for club lookup.
+const MUNSTER_CLUB_URL = 'https://munster.gaa.ie/fixtures/club-championships-2026/';
+async function fetchMunsterClubFixtures() {
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const ROUNDS = { QF: 'Quarter Final', SF: 'Semi Final', FINAL: 'Final' };
+  const decode = s => s.replace(/<[^>]+>/g, ' ').replace(/&#8217;|&#8216;|&rsquo;|&#0?39;|[‘’]/g, "'")
+    .replace(/&#8211;|&ndash;/g, '-').replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ')
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n)).replace(/\s+/g, ' ').trim();
+  const splitCounty = s => {
+    const m = s.match(/^(.*?)\s*\(([^)]+)\)$/);
+    return m ? { name: m[1].trim(), county: m[2].trim() } : { name: s, county: '' };
+  };
+  try {
+    const res = await fetch(MUNSTER_CLUB_URL, { headers: { 'User-Agent': UA, 'Accept': 'text/html' } });
+    if (!res.ok) { console.error('fetchMunsterClubFixtures HTTP', res.status); return []; }
+    const html = await res.text();
+    const out = [];
+    for (const table of html.match(/<table[\s\S]*?<\/table>/g) || []) {
+      const th = table.match(/<th[^>]*>([\s\S]*?)<\/th>/);
+      if (!th) continue;
+      const title = decode(th[1]);                      // "2026 AIB Munster GAA Senior Club Hurling Championship"
+      const year = (title.match(/\b(20\d\d)\b/) || [])[1];
+      const g = title.match(/\b(Senior|Intermediate|Junior)\b.*$/i);
+      if (!year || !g) continue;
+      const competition = 'Munster ' + g[0];
+      const sport = /hurling/i.test(competition) ? 'Hurling' : 'Football';
+      for (const tr of table.match(/<tr[\s\S]*?<\/tr>/g) || []) {
+        const cells = (tr.match(/<td[^>]*>[\s\S]*?<\/td>/g) || []).map(c => decode(c.replace(/^<td[^>]*>|<\/td>$/g, '')));
+        if (cells.length < 8) continue;
+        const round = ROUNDS[cells[0].toUpperCase()];
+        const dm = cells[6].match(/^(\d{1,2})\/(\d{1,2})$/);
+        if (!round || !dm) continue;
+        const [venuePart, timePart = ''] = cells[7].split('@').map(s => s.trim());
+        const tm = timePart.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)$/i);
+        let time = '';
+        if (tm) {
+          let h = parseInt(tm[1], 10) % 12;
+          if (tm[3].toLowerCase() === 'pm') h += 12;
+          time = `${String(h).padStart(2, '0')}:${tm[2] || '00'}`;
+        }
+        const a = splitCounty(cells[2] || 'TBC');
+        const b = splitCounty(cells[4] || 'TBC');
+        const f = mkStatic('Munster', a.name, b.name, `${parseInt(dm[1], 10)} ${MONTHS[parseInt(dm[2], 10) - 1]} ${year}`,
+          time, venuePart, competition, round);
+        f.sport = sport;
+        if (a.county) f.teamACounty = a.county;
+        if (b.county) f.teamBCounty = b.county;
+        out.push(f);
+      }
+    }
+    return out;
+  } catch (e) {
+    console.error('fetchMunsterClubFixtures failed:', e);
+    return [];
+  }
+}
+
 // ---- Carlow: static data ----
 // Static fixtures are kept as a fallback / supplement for competitions not
 // on carlowgaa.ie, and for historical rounds already passed.
@@ -2318,7 +2381,7 @@ const CACHE_A_KEY = 'cache_A'; // Cork, Waterford
 const CACHE_B_KEY = 'cache_B'; // Laois, Wexford, Kildare, Carlow, Louth
 const CACHE_C_KEY = 'cache_C'; // Kerry, Offaly, Tipperary GAA
 const CACHE_D_KEY = 'cache_D'; // Kilkenny, Meath, Monaghan, Roscommon, Longford
-const CACHE_E_KEY = 'cache_E'; // Tipperary Camogie, Kilkenny Camogie, London
+const CACHE_E_KEY = 'cache_E'; // Tipperary Camogie, Kilkenny Camogie, London, Munster club
 
 // Same composite key the dashboard uses client-side to match a fixture
 // across reloads (county|competition|teamA|teamB|date), so Approve/Reject/
@@ -2583,18 +2646,20 @@ async function scrapeGroupD(kv, env) {
   await writeGroupCache(kv, CACHE_D_KEY, fixtures);
 }
 
-// Group E: Tipperary Camogie, Kilkenny Camogie, London — then run Teams alert
+// Group E: Tipperary Camogie, Kilkenny Camogie, London, Munster club — then run Teams alert
 async function scrapeGroupE(kv) {
   const cacDebug = [];
-  const [tipperaryCamogieResults, kilkennyCamogieResults, londonResults] = await Promise.all([
+  const [tipperaryCamogieResults, kilkennyCamogieResults, londonResults, munsterResults] = await Promise.all([
     fetchTipperaryCamogieFixtures().catch(() => []),
     fetchKilkennyAmogieCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Kilkenny', 'kilkennycamogie.ie', c, cacDebug)))).catch(() => []),
     fetchLondonFixtures().catch(() => []),
+    fetchMunsterClubFixtures().catch(() => []),
   ]);
   const fixtures = [
     ...tipperaryCamogieResults,
     ...kilkennyCamogieResults.flat().map(f => ({ ...fixNames(f), sport: 'Camogie' })),
     ...londonResults,
+    ...munsterResults,
   ];
   await writeGroupCache(kv, CACHE_E_KEY, fixtures);
 }

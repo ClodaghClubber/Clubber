@@ -3639,12 +3639,22 @@ function buildGamePayload(f) {
   const normA = (f.teamA || '').replace(/\s+/g, ' ').trim();
   const normB = (f.teamB || '').replace(/\s+/g, ' ').trim();
 
-  const teamAResult = lookupTeam(f.teamA, f.county);
-  if (!teamAResult) errors.push(`Club not found for "${normA}" (${f.county}) — add to teamMappings.json`);
+  // Provincial fixtures (e.g. Munster club) carry each team's own county
+  const countyA = f.teamACounty || f.county;
+  const countyB = f.teamBCounty || f.county;
+  // Munster club draws list unconfirmed teams ("X or Y", "Winner of QF1",
+  // "Clare representatives", "A, B, C or D") - never export those, or the
+  // fuzzy matcher would silently pick one of the candidates.
+  if (f.county === 'Munster') {
+    const unconfirmed = t => /\s+or\s+|^winner\b|^loser\b|representatives|^tb[cd]$/i.test(t) || (t.match(/,/g) || []).length >= 2;
+    [normA, normB].forEach(t => { if (unconfirmed(t)) errors.push(`Team not confirmed yet: "${t}"`); });
+  }
+  const teamAResult = lookupTeam(f.teamA, countyA);
+  if (!teamAResult) errors.push(`Club not found for "${normA}" (${countyA}) — add to teamMappings.json`);
   else if (teamAResult.autoMatched) warnings.push(`"${normA}" auto-matched to "${teamAResult.matchedName}" — verify this is correct`);
 
-  const teamBResult = lookupTeam(f.teamB, f.county);
-  if (!teamBResult) errors.push(`Club not found for "${normB}" (${f.county}) — add to teamMappings.json`);
+  const teamBResult = lookupTeam(f.teamB, countyB);
+  if (!teamBResult) errors.push(`Club not found for "${normB}" (${countyB}) — add to teamMappings.json`);
   else if (teamBResult.autoMatched) warnings.push(`"${normB}" auto-matched to "${teamBResult.matchedName}" — verify this is correct`);
 
   // Validate exported names exactly match Clubber's registered names
@@ -3669,6 +3679,8 @@ function buildGamePayload(f) {
     ? (f.competition || 'Men\'s BUCS Super Rugby')
     : f.county === 'ACE'
     ? (isAceGirls ? 'RFU ACE Girls League' : 'RFU ACE Boys League')
+    : f.county === 'Munster'
+    ? 'Munster Club'
     : isRugby
     ? 'Champ Rugby'
     : lookupClubberCompetition(
@@ -3700,7 +3712,9 @@ function buildGamePayload(f) {
     else if (/semi.?final|^\bsf\b/.test(roundNorm)) price = 16.99;
   }
 
-  const county = isRugby ? 'UK' : (f.county || '').replace(/ LGFA$/i, '');
+  const county = isRugby ? 'UK'
+    : f.county === 'Munster' ? (teamAResult?.county || countyA)
+    : (f.county || '').replace(/ LGFA$/i, '');
 
   const rawTime = f.time ? from12h(f.time) : '';
   // No known time (blank/TBC) -> placeholder 00:01
