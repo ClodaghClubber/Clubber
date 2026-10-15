@@ -1470,6 +1470,108 @@ async function fetchLeinsterClubFixtures() {
   }
 }
 
+// ---- Minor finals (all counties) ----
+// The adult scrapers deliberately skip underage grades. This pulls only the
+// FINALS of each county's minor competitions (Laois calls its minor grade U17
+// and files it under "juvenile"), so placeholders like "Winner of Semi Final
+// 1" update as the semis are played. ClubAndCounty sites expose a grade-level
+// feed, so it's one request per county per code; Waterford's Sportlomo
+// /fixtures/ page lists every upcoming game in one request.
+const MINOR_CAC_SOURCES = [
+  { county: 'Kildare',   domain: 'kildaregaa.ie' },
+  { county: 'Kilkenny',  domain: 'kilkennygaa.ie' },
+  { county: 'Offaly',    domain: 'offaly.gaa.ie' },
+  { county: 'Monaghan',  domain: 'www.monaghangaa.ie' },
+  { county: 'Tipperary', domain: 'tipperary.gaa.ie' },
+  { county: 'Meath',     domain: 'meath.gaa.ie' },
+  { county: 'Wexford',   domain: 'wexford.clubandcounty.com' },
+  { county: 'Kerry',     domain: 'www.kerrygaa.ie' },
+  { county: 'Laois',     domain: 'laoisgaa.ie', grade: 'juvenile', compFilter: /\bU-?17\b/i },
+];
+
+// "2026 Manguard Plus Minor Football C Championship Final" or
+// "LOETB Minor Football Championship - B Final" -> { competition, round }
+// Returns null unless the heading is a final (not a semi/quarter final).
+function splitMinorFinalHeading(raw) {
+  let s = decodeEntities(raw || '').replace(/\s+/g, ' ').replace(/^20\d\d\s*[-–]?\s*/, '').trim();
+  if (!/\bfinal\b/i.test(s) || /semi|quarter/i.test(s)) return null;
+  let round = 'Final';
+  const parts = s.split(/\s+[-–]\s+/);
+  if (parts.length > 1 && /\bfinal\b/i.test(parts[parts.length - 1])) {
+    round = parts.pop().trim();
+    s = parts.join(' - ');
+  } else {
+    const t = s.match(/\s+((?:(?:[A-D]|Cup|Shield|Plate|Trophy)\s+)?Final(?:\s+Replay)?)$/i);
+    if (t) { round = t[1]; s = s.slice(0, t.index); }
+  }
+  const g = s.match(/\b(Minor|U-?1[78])\b/i);          // drop sponsor prefix
+  if (g) s = s.slice(g.index);
+  // "...Championship Final - Final" -> drop the repeated "Final" from the name
+  s = s.replace(/\s+Final$/i, '').replace(/^[-–\s]+|[-–\s]+$/g, '').trim();
+  return s ? { competition: s, round } : null;
+}
+
+async function fetchCacMinorFinals(src, debug) {
+  const out = [];
+  const grade = src.grade || 'minor';
+  for (const sport of ['football', 'hurling']) {
+    const baseUrl = `https://${src.domain}/fixtures-results/${sport}/club/${grade}/`;
+    const url = `${baseUrl}?ajax=1&feed_type=fixtures&page=0&size=100&sport=${sport}&level=club&grade=${grade}`;
+    try {
+      const res = await fetch(url, { headers: { 'User-Agent': UA, Accept: 'application/json', Referer: baseUrl } });
+      if (!res.ok) { debug.push({ county: src.county, sport, stage: 'minor-http', status: res.status }); continue; }
+      const json = JSON.parse(stripBom(await res.text()));
+      if (!json.ok) continue;
+      const rows = [];
+      parseCacHtmlDirect(json.html, rows, src.county, '');
+      for (const r of rows) {
+        if (src.compFilter && !src.compFilter.test(r._rawComp)) continue;
+        if (!src.compFilter && !/\bminor\b/i.test(r._rawComp)) continue;
+        const h = splitMinorFinalHeading(r._rawComp);
+        if (!h) continue;
+        const { _rawComp, ...f } = r;
+        out.push({ ...f, competition: h.competition, round: h.round, sport: sport === 'hurling' ? 'Hurling' : 'Football' });
+      }
+    } catch (e) {
+      debug.push({ county: src.county, sport, stage: 'minor-threw', error: String(e) });
+    }
+  }
+  return out;
+}
+
+async function fetchWaterfordMinorFinals() {
+  // /fixtures/ uses a different row layout; take the minor competition links
+  // from it and read each league page with the usual Sportlomo parser.
+  const res = await fetch('https://www.waterfordgaa.ie/fixtures/', { headers: { 'User-Agent': UA } });
+  if (!res.ok) return [];
+  const leagues = new Map();
+  for (const m of (await res.text()).matchAll(/league\/(\d+)"?>([^<]*\bMinor\b[^<]*)</gi)) leagues.set(m[1], decodeEntities(m[2]));
+  const out = [];
+  await Promise.all([...leagues].map(async ([id, name]) => {
+    const r2 = await fetch(`https://www.waterfordgaa.ie/league/${id}/`, { headers: { 'User-Agent': UA } });
+    if (!r2.ok) return;
+    for (const r of parseSportLomoRows(await r2.text())) {
+      const stage = (r.comment || '').trim();
+      if (!/\bfinal\b/i.test(stage) || /semi|quarter/i.test(stage)) continue;
+      const g = name.match(/\bMinor\b.*$/i);
+      out.push({
+        county: 'Waterford', teamA: r.home, teamB: r.away, date: shortDateToFull(r.date), time: r.time,
+        venue: r.venue, competition: (g ? g[0] : name).trim(), round: stage,
+        sport: /hurling/i.test(name) ? 'Hurling' : 'Football',
+      });
+    }
+  }));
+  return out;
+}
+
+async function fetchAllMinorFinals(debug) {
+  const results = await Promise.all([
+    ...MINOR_CAC_SOURCES.map(src => fetchCacMinorFinals(src, debug).catch(() => [])),
+    fetchWaterfordMinorFinals().catch(() => []),
+  ]);
+  return results.flat().map(fixNames);
+}
+
 // ---- Carlow: static data ----
 // Static fixtures are kept as a fallback / supplement for competitions not
 // on carlowgaa.ie, and for historical rounds already passed.
@@ -2427,7 +2529,7 @@ const CACHE_A_KEY = 'cache_A'; // Cork, Waterford
 const CACHE_B_KEY = 'cache_B'; // Laois, Wexford, Kildare, Carlow, Louth
 const CACHE_C_KEY = 'cache_C'; // Kerry, Offaly, Tipperary GAA
 const CACHE_D_KEY = 'cache_D'; // Kilkenny, Meath, Monaghan, Roscommon, Longford
-const CACHE_E_KEY = 'cache_E'; // Tipperary Camogie, Kilkenny Camogie, London, Munster + Leinster club
+const CACHE_E_KEY = 'cache_E'; // Tipperary Camogie, Kilkenny Camogie, London, Munster + Leinster club, county minor finals
 
 // Same composite key the dashboard uses client-side to match a fixture
 // across reloads (county|competition|teamA|teamB|date), so Approve/Reject/
@@ -2692,15 +2794,16 @@ async function scrapeGroupD(kv, env) {
   await writeGroupCache(kv, CACHE_D_KEY, fixtures);
 }
 
-// Group E: Tipperary Camogie, Kilkenny Camogie, London, Munster + Leinster club — then run Teams alert
+// Group E: Tipperary Camogie, Kilkenny Camogie, London, Munster + Leinster club, county minor finals — then run Teams alert
 async function scrapeGroupE(kv) {
   const cacDebug = [];
-  const [tipperaryCamogieResults, kilkennyCamogieResults, londonResults, munsterResults, leinsterResults] = await Promise.all([
+  const [tipperaryCamogieResults, kilkennyCamogieResults, londonResults, munsterResults, leinsterResults, minorFinals] = await Promise.all([
     fetchTipperaryCamogieFixtures().catch(() => []),
     fetchKilkennyAmogieCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Kilkenny', 'kilkennycamogie.ie', c, cacDebug)))).catch(() => []),
     fetchLondonFixtures().catch(() => []),
     fetchMunsterClubFixtures().catch(() => []),
     fetchLeinsterClubFixtures().catch(() => []),
+    fetchAllMinorFinals(cacDebug).catch(() => []),
   ]);
   const fixtures = [
     ...tipperaryCamogieResults,
@@ -2708,6 +2811,7 @@ async function scrapeGroupE(kv) {
     ...londonResults,
     ...munsterResults,
     ...leinsterResults,
+    ...minorFinals,
   ];
   await writeGroupCache(kv, CACHE_E_KEY, fixtures);
 }

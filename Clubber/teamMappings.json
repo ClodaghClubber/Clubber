@@ -290,6 +290,9 @@
     }
   },
   "Offaly": {
+    "St Manchans": {"id": "86b13916-0f86-4ef0-8467-e38a2a9e9011", "name": "St. Manchan's"},
+    "St Manchan's": {"id": "86b13916-0f86-4ef0-8467-e38a2a9e9011", "name": "St. Manchan's"},
+    "St. Manchans": {"id": "86b13916-0f86-4ef0-8467-e38a2a9e9011", "name": "St. Manchan's"},
     "SBK": {
       "id": "24e3e93c-e2dd-46c5-a6d5-e79ac6040984",
       "name": "Shinrone Ballyskenach Killavilla"

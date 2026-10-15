@@ -3532,8 +3532,8 @@ function deriveGrade(county, competition) {
     return 'Intermediate 1';
   }
 
-  // Minor / U20 / U21
-  if (/Minor|U20|U21/i.test(c)) return 'Minor';
+  // Minor / U20 / U21 (Laois runs its minor grade as U17)
+  if (/Minor|U20|U21|\bU-?1[78]\b/i.test(c)) return 'Minor';
 
   // Junior
   if (/Premier\s+Junior/i.test(c)) return 'Junior 1';
@@ -3660,9 +3660,11 @@ function buildGamePayload(f) {
   // Draws list unconfirmed teams ("X or Y", "Winner of QF1", "Clare
   // representatives", "A, B, C or D", or just a county name like "Carlow")
   // - never export those, or the fuzzy matcher would silently pick a club.
-  const unconfirmed = t => isProvincial && (/\s+or\s+|^winner\b|^loser\b|representatives|^tb[cd]\b/i.test(t)
-    || (t.match(/,/g) || []).length >= 2
-    || ALL_GAA_COUNTIES.some(c => c.toLowerCase() === t.toLowerCase()));
+  // County feeds use generic placeholders too ("Winner Semi Final 1", "SF Loser").
+  const unconfirmed = t => /^winner\b|^loser\b|\b(winner|loser)$|semi[\s-]?final|^tb[cd]\b/i.test(t)
+    || (isProvincial && (/\s+or\s+|representatives/i.test(t)
+      || (t.match(/,/g) || []).length >= 2
+      || ALL_GAA_COUNTIES.some(c => c.toLowerCase() === t.toLowerCase())));
   [normA, normB].forEach(t => { if (unconfirmed(t)) errors.push(`Team not confirmed yet: "${t}"`); });
   const findTeam = (name, county) => {
     if (f.county !== 'Leinster' || county !== 'Leinster') return lookupTeam(name, county);
