@@ -2177,5 +2177,29 @@
       "id": "afa3465d-6d72-4f9c-905d-9757e42152cb",
       "name": "Wandsworth Gaels"
     }
+  },
+  "Westmeath": {
+    "Na Dúnta": {
+      "id": "da5a8038-c2e9-4db4-b7ef-467e4314f4d5",
+      "name": "The Downs"
+    },
+    "Na Dunta": {
+      "id": "da5a8038-c2e9-4db4-b7ef-467e4314f4d5",
+      "name": "The Downs"
+    },
+    "The Downs": {
+      "id": "da5a8038-c2e9-4db4-b7ef-467e4314f4d5",
+      "name": "The Downs"
+    }
+  },
+  "Wicklow": {
+    "Emmet Carn An Bhua": {
+      "id": "25a0b823-6a4e-4ae8-a6ad-04a63683a384",
+      "name": "Carnew Emmets"
+    },
+    "Carnew Emmets": {
+      "id": "25a0b823-6a4e-4ae8-a6ad-04a63683a384",
+      "name": "Carnew Emmets"
+    }
   }
 }

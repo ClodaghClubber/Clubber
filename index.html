@@ -3632,6 +3632,9 @@ function dublinToUtc(dateStr, time24h) {
   return `${String(utcH).padStart(2,'0')}:${String(utcM).padStart(2,'0')}`;
 }
 
+const LEINSTER_COUNTIES = ['Carlow','Dublin','Kildare','Kilkenny','Laois','Longford','Louth','Meath','Offaly','Westmeath','Wexford','Wicklow'];
+const ALL_GAA_COUNTIES = ['Antrim','Armagh','Carlow','Cavan','Clare','Cork','Derry','Donegal','Down','Dublin','Fermanagh','Galway','Kerry','Kildare','Kilkenny','Laois','Leitrim','Limerick','Longford','Louth','Mayo','Meath','Monaghan','Offaly','Roscommon','Sligo','Tipperary','Tyrone','Waterford','Westmeath','Wexford','Wicklow','London'];
+
 function buildGamePayload(f) {
   const errors = [];
   const warnings = [];
@@ -3639,23 +3642,46 @@ function buildGamePayload(f) {
   const normA = (f.teamA || '').replace(/\s+/g, ' ').trim();
   const normB = (f.teamB || '').replace(/\s+/g, ' ').trim();
 
-  // Provincial fixtures (e.g. Munster club) carry each team's own county
+  // Provincial club fixtures. Munster rows carry each team's own county
+  // (teamACounty/teamBCounty); Leinster's feed doesn't, so Leinster clubs are
+  // looked up across all Leinster counties and accepted only if unambiguous.
+  const isProvincial = f.county === 'Munster' || f.county === 'Leinster';
   const countyA = f.teamACounty || f.county;
   const countyB = f.teamBCounty || f.county;
-  // Munster club draws list unconfirmed teams ("X or Y", "Winner of QF1",
-  // "Clare representatives", "A, B, C or D") - never export those, or the
-  // fuzzy matcher would silently pick one of the candidates.
-  if (f.county === 'Munster') {
-    const unconfirmed = t => /\s+or\s+|^winner\b|^loser\b|representatives|^tb[cd]$/i.test(t) || (t.match(/,/g) || []).length >= 2;
-    [normA, normB].forEach(t => { if (unconfirmed(t)) errors.push(`Team not confirmed yet: "${t}"`); });
-  }
-  const teamAResult = lookupTeam(f.teamA, countyA);
-  if (!teamAResult) errors.push(`Club not found for "${normA}" (${countyA}) — add to teamMappings.json`);
-  else if (teamAResult.autoMatched) warnings.push(`"${normA}" auto-matched to "${teamAResult.matchedName}" — verify this is correct`);
-
-  const teamBResult = lookupTeam(f.teamB, countyB);
-  if (!teamBResult) errors.push(`Club not found for "${normB}" (${countyB}) — add to teamMappings.json`);
-  else if (teamBResult.autoMatched) warnings.push(`"${normB}" auto-matched to "${teamBResult.matchedName}" — verify this is correct`);
+  // Draws list unconfirmed teams ("X or Y", "Winner of QF1", "Clare
+  // representatives", "A, B, C or D", or just a county name like "Carlow")
+  // - never export those, or the fuzzy matcher would silently pick a club.
+  const unconfirmed = t => isProvincial && (/\s+or\s+|^winner\b|^loser\b|representatives|^tb[cd]$/i.test(t)
+    || (t.match(/,/g) || []).length >= 2
+    || ALL_GAA_COUNTIES.some(c => c.toLowerCase() === t.toLowerCase()));
+  [normA, normB].forEach(t => { if (unconfirmed(t)) errors.push(`Team not confirmed yet: "${t}"`); });
+  const findTeam = (name, county) => {
+    if (f.county !== 'Leinster' || county !== 'Leinster') return lookupTeam(name, county);
+    const hits = new Map();
+    LEINSTER_COUNTIES.forEach(c => {
+      const r = lookupTeam(name, c);
+      if (r && r.clubId && LEINSTER_COUNTIES.includes(r.county)) hits.set(r.clubId, r);
+    });
+    if (hits.size === 1) return [...hits.values()][0];
+    // A teamMappings entry (not auto-matched) beats fuzzy partial matches
+    const mapped = [...hits.values()].filter(r => !r.autoMatched);
+    if (mapped.length === 1) return mapped[0];
+    if (hits.size > 1) return { ambiguous: [...hits.values()].map(r => r.matchedName + ' (' + r.county + ')') };
+    return null;
+  };
+  const resolveTeam = (name, norm, county, label) => {
+    if (unconfirmed(norm)) return null; // already reported above
+    const r = findTeam(name, county);
+    if (r && r.ambiguous) {
+      errors.push(`"${norm}" matches several ${label === 'A' ? 'home' : 'away'} clubs: ${r.ambiguous.join(', ')} — add it to teamMappings.json under the right county`);
+      return null;
+    }
+    if (!r) errors.push(`Club not found for "${norm}" (${county}) — add to teamMappings.json`);
+    else if (r.autoMatched) warnings.push(`"${norm}" auto-matched to "${r.matchedName}" — verify this is correct`);
+    return r;
+  };
+  const teamAResult = resolveTeam(f.teamA, normA, countyA, 'A');
+  const teamBResult = resolveTeam(f.teamB, normB, countyB, 'B');
 
   // Validate exported names exactly match Clubber's registered names
   [{ result: teamAResult, label: 'Club' }, { result: teamBResult, label: 'Competitor club' }].forEach(({ result, label }) => {
@@ -3681,6 +3707,8 @@ function buildGamePayload(f) {
     ? (isAceGirls ? 'RFU ACE Girls League' : 'RFU ACE Boys League')
     : f.county === 'Munster'
     ? 'Munster Club'
+    : f.county === 'Leinster'
+    ? 'Leinster GAA'
     : isRugby
     ? 'Champ Rugby'
     : lookupClubberCompetition(
@@ -3713,7 +3741,7 @@ function buildGamePayload(f) {
   }
 
   const county = isRugby ? 'UK'
-    : f.county === 'Munster' ? (teamAResult?.county || countyA)
+    : isProvincial ? (teamAResult?.county || countyA)
     : (f.county || '').replace(/ LGFA$/i, '');
 
   const rawTime = f.time ? from12h(f.time) : '';

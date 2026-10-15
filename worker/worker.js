@@ -1424,6 +1424,55 @@ async function fetchMunsterClubFixtures() {
   }
 }
 
+// ---- Leinster: club championships ----
+// leinstergaa.ie is a JS app backed by a public JSON API (Foireann data).
+// All upcoming non-school fixtures are AIB Leinster Club championships.
+// Undecided teams appear as a county name ("Carlow") or are missing (-> TBC);
+// fixtures with no start date yet are skipped. A 00:00Z start means time TBC.
+const LEINSTER_FIXTURES_API = 'https://api.leinstergaa.ie/gaa-api/fixtures';
+async function fetchLeinsterClubFixtures() {
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const dublinParts = iso => {
+    const p = {};
+    new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Dublin', year: 'numeric', month: 'numeric', day: 'numeric',
+      hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(new Date(iso)).forEach(x => { p[x.type] = x.value; });
+    return p;
+  };
+  try {
+    const records = [];
+    const LIMIT = 100;
+    for (let skip = 0; skip < 1000; skip += LIMIT) {
+      const url = `${LEINSTER_FIXTURES_API}?skip=${skip}&limit=${LIMIT}&needCount=true&sortOrder=1&isSchool=false&searchTerm=&needPast=false&isResult=false&sortKey=startDate`;
+      const res = await fetch(url, { headers: { 'User-Agent': UA, 'Accept': 'application/json' } });
+      if (!res.ok) { console.error('fetchLeinsterClubFixtures HTTP', res.status); break; }
+      const page = (await res.json()).records || [];
+      records.push(...page);
+      if (page.length < LIMIT) break;
+    }
+    const out = [];
+    for (const r of records) {
+      const compName = (r.competition && r.competition.name) || '';
+      if (!/leinster club/i.test(compName) || !r.startDate) continue;
+      const p = dublinParts(r.startDate);
+      const tbcTime = /T00:00(:00(\.0+)?)?Z$/.test(r.startDate);
+      const competition = compName.replace(/^AIB\s+/i, '').replace(/\s+20\d\d\s*$/, '').trim();
+      const f = mkStatic('Leinster',
+        (r.homeTeam && r.homeTeam.name || 'TBC').trim(),
+        (r.awayTeam && r.awayTeam.name || 'TBC').trim(),
+        `${parseInt(p.day, 10)} ${MONTHS[parseInt(p.month, 10) - 1]} ${p.year}`,
+        tbcTime ? '' : `${p.hour}:${p.minute}`,
+        ((r.place && r.place.name) || '').trim(),
+        competition, (r.round || '').trim());
+      f.sport = r.competition.activity === 'hurling' ? 'Hurling' : 'Football';
+      out.push(f);
+    }
+    return out;
+  } catch (e) {
+    console.error('fetchLeinsterClubFixtures failed:', e);
+    return [];
+  }
+}
+
 // ---- Carlow: static data ----
 // Static fixtures are kept as a fallback / supplement for competitions not
 // on carlowgaa.ie, and for historical rounds already passed.
@@ -2381,7 +2430,7 @@ const CACHE_A_KEY = 'cache_A'; // Cork, Waterford
 const CACHE_B_KEY = 'cache_B'; // Laois, Wexford, Kildare, Carlow, Louth
 const CACHE_C_KEY = 'cache_C'; // Kerry, Offaly, Tipperary GAA
 const CACHE_D_KEY = 'cache_D'; // Kilkenny, Meath, Monaghan, Roscommon, Longford
-const CACHE_E_KEY = 'cache_E'; // Tipperary Camogie, Kilkenny Camogie, London, Munster club
+const CACHE_E_KEY = 'cache_E'; // Tipperary Camogie, Kilkenny Camogie, London, Munster + Leinster club
 
 // Same composite key the dashboard uses client-side to match a fixture
 // across reloads (county|competition|teamA|teamB|date), so Approve/Reject/
@@ -2646,20 +2695,22 @@ async function scrapeGroupD(kv, env) {
   await writeGroupCache(kv, CACHE_D_KEY, fixtures);
 }
 
-// Group E: Tipperary Camogie, Kilkenny Camogie, London, Munster club — then run Teams alert
+// Group E: Tipperary Camogie, Kilkenny Camogie, London, Munster + Leinster club — then run Teams alert
 async function scrapeGroupE(kv) {
   const cacDebug = [];
-  const [tipperaryCamogieResults, kilkennyCamogieResults, londonResults, munsterResults] = await Promise.all([
+  const [tipperaryCamogieResults, kilkennyCamogieResults, londonResults, munsterResults, leinsterResults] = await Promise.all([
     fetchTipperaryCamogieFixtures().catch(() => []),
     fetchKilkennyAmogieCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Kilkenny', 'kilkennycamogie.ie', c, cacDebug)))).catch(() => []),
     fetchLondonFixtures().catch(() => []),
     fetchMunsterClubFixtures().catch(() => []),
+    fetchLeinsterClubFixtures().catch(() => []),
   ]);
   const fixtures = [
     ...tipperaryCamogieResults,
     ...kilkennyCamogieResults.flat().map(f => ({ ...fixNames(f), sport: 'Camogie' })),
     ...londonResults,
     ...munsterResults,
+    ...leinsterResults,
   ];
   await writeGroupCache(kv, CACHE_E_KEY, fixtures);
 }
