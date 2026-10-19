@@ -1579,13 +1579,15 @@ async function fetchMunsterMatchCentre() {
 // Specific schools competitions on ClubAndCounty sites, filed under their own
 // "<Province> PPS" county so they stay apart from club fixtures. The Harty
 // Cup is listed by its Irish name, "TUS Corn an Artaigh (19 A H)", on the
-// Munster PPS site; the Br. Bosco Cup is the Leinster PPS Senior Football "A"
+// Munster PPS site, alongside Corn Ui Mhuiri (19 A F, U19 A football); the Br. Bosco Cup is the Leinster PPS Senior Football "A"
 // competition. It has one ID across the Leinster county sites, but each site
 // only lists games involving its own county's schools, so every site is read
 // and duplicates are dropped.
 const PPS_COMPETITIONS = [
   { county: 'Munster PPS', domains: ['munstergaapps.ie'], name: 'Harty Cup', sport: 'hurling', grade: 'U19',
     slug: 'tus-corn-an-artaigh-19-a-h', uuid: 'fa015fcd-4489-4737-b192-bc952d131a4c' },
+  { county: 'Munster PPS', domains: ['munstergaapps.ie'], name: 'Corn Ui Mhuiri', sport: 'football', grade: 'U19',
+    slug: 'tus-corn-ui-mhuiri-19-a-f', uuid: 'bf11bc9c-2754-4a52-8303-4237f71a38b3' },
   { county: 'Leinster PPS', name: 'Br Bosco Cup',
     domains: ['offaly.gaa.ie', 'kildaregaa.ie', 'laoisgaa.ie', 'meath.gaa.ie', 'wexford.clubandcounty.com', 'kilkennygaa.ie'], sport: 'football', grade: 'juvenile',
     slug: 'leinster-pps-2026-27-leinster-senior-football-a-br-bosco-cup', uuid: 'f6269ea0-dd99-4c39-9833-bfd0d3d14625' },
