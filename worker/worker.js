@@ -1524,6 +1524,32 @@ async function fetchLeinsterCamogieFixtures() {
   }
 }
 
+// ---- Post-primary schools cups ----
+// Specific schools competitions on ClubAndCounty sites, filed under their own
+// "<Province> PPS" county so they stay apart from club fixtures. The Harty
+// Cup is listed by its Irish name, "TUS Corn an Artaigh (19 A H)", on the
+// Munster PPS site; the Br. Bosco Cup is the Leinster PPS Senior Football "A"
+// competition, shared across the Leinster county sites.
+const PPS_COMPETITIONS = [
+  { county: 'Munster PPS', domain: 'munstergaapps.ie', name: 'Harty Cup', sport: 'hurling', grade: 'U19',
+    slug: 'tus-corn-an-artaigh-19-a-h', uuid: 'fa015fcd-4489-4737-b192-bc952d131a4c' },
+  { county: 'Leinster PPS', domain: 'offaly.gaa.ie', name: 'Br Bosco Cup', sport: 'football', grade: 'juvenile',
+    slug: 'leinster-pps-2026-27-leinster-senior-football-a-br-bosco-cup', uuid: 'f6269ea0-dd99-4c39-9833-bfd0d3d14625' },
+];
+async function fetchPpsCompetitions(debug) {
+  const results = await Promise.all(PPS_COMPETITIONS.map(async c => {
+    const comp = { path: `/fixtures-results/${c.sport}/school/${c.grade}/${c.slug}/${c.uuid}/`, uuid: c.uuid,
+      sport: c.sport, level: 'school', grade: c.grade, name: c.name };
+    const rows = await fetchCacDirectCompetition(c.county, c.domain, comp, debug);
+    return rows.map(({ _rawComp, ...f }) => {
+      const roinn = (_rawComp || '').match(/\bRoinn\s+(\w+)/i);   // Leinster PPS sections
+      return { ...f, competition: roinn ? `${f.competition} Roinn ${roinn[1]}` : f.competition,
+        sport: c.sport === 'hurling' ? 'Hurling' : 'Football' };
+    });
+  }));
+  return results.flat();
+}
+
 // ---- Minor finals (all counties) ----
 // The adult scrapers deliberately skip underage grades. This pulls only the
 // FINALS of each county's minor competitions (Laois calls its minor grade U17
@@ -2583,7 +2609,7 @@ const CACHE_A_KEY = 'cache_A'; // Cork, Waterford
 const CACHE_B_KEY = 'cache_B'; // Laois, Wexford, Kildare, Carlow, Louth
 const CACHE_C_KEY = 'cache_C'; // Kerry, Offaly, Tipperary GAA
 const CACHE_D_KEY = 'cache_D'; // Kilkenny, Meath, Monaghan, Roscommon, Longford
-const CACHE_E_KEY = 'cache_E'; // Tipperary Camogie, Kilkenny Camogie, London, Munster + Leinster club, Leinster camogie, county minor finals
+const CACHE_E_KEY = 'cache_E'; // Tipperary Camogie, Kilkenny Camogie, London, Munster + Leinster club, Leinster camogie, Harty + Br Bosco Cups, county minor finals
 
 // Same composite key the dashboard uses client-side to match a fixture
 // across reloads (county|competition|teamA|teamB|date), so Approve/Reject/
@@ -2851,7 +2877,7 @@ async function scrapeGroupD(kv, env) {
 // Group E: Tipperary Camogie, Kilkenny Camogie, London, Munster + Leinster club, county minor finals — then run Teams alert
 async function scrapeGroupE(kv) {
   const cacDebug = [];
-  const [tipperaryCamogieResults, kilkennyCamogieResults, londonResults, munsterResults, leinsterResults, minorFinals, leinsterCamogieResults] = await Promise.all([
+  const [tipperaryCamogieResults, kilkennyCamogieResults, londonResults, munsterResults, leinsterResults, minorFinals, leinsterCamogieResults, ppsResults] = await Promise.all([
     fetchTipperaryCamogieFixtures().catch(() => []),
     fetchKilkennyAmogieCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Kilkenny', 'kilkennycamogie.ie', c, cacDebug)))).catch(() => []),
     fetchLondonFixtures().catch(() => []),
@@ -2868,6 +2894,7 @@ async function scrapeGroupE(kv) {
     ...leinsterResults,
     ...minorFinals,
     ...leinsterCamogieResults,
+    ...ppsResults,
   ];
   await writeGroupCache(kv, CACHE_E_KEY, fixtures);
 }
