@@ -1470,6 +1470,60 @@ async function fetchLeinsterClubFixtures() {
   }
 }
 
+// ---- Leinster Camogie: club championships ----
+// leinstercamogie.ie/fixtures-results/ is server-rendered: "lcr-date-header"
+// divs ("Saturday October 24, 2026" or "Date TBC") followed by
+// "camogieResult camogieFixture" cards (results are camogieResult only).
+// Competition and round share one line: "AIB Leinster Junior 'B' Championship
+// (Semi-Final)". Undated fixtures are skipped until a date is published.
+async function fetchLeinsterCamogieFixtures() {
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const text = s => decodeEntities((s || '').replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim();
+  try {
+    const res = await fetch('https://leinstercamogie.ie/fixtures-results/', { headers: { 'User-Agent': UA, 'Accept': 'text/html' } });
+    if (!res.ok) { console.error('fetchLeinsterCamogieFixtures HTTP', res.status); return []; }
+    const html = await res.text();
+    const out = [];
+    let date = null;
+    const re = /class="lcr-date-header">([^<]*)<|<div class="camogieResult camogieFixture">([\s\S]*?)lcr-meta-container([\s\S]*?)<\/div>\s*<\/div>\s*<\/div>/g;
+    let m;
+    while ((m = re.exec(html))) {
+      if (m[1] !== undefined) {
+        const d = m[1].trim().match(/([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4})$/);
+        date = d && MONTHS.includes(d[1]) ? `${parseInt(d[2], 10)} ${d[1]} ${d[3]}` : null;
+        continue;
+      }
+      if (!date) continue;
+      const card = m[2], meta = m[3];
+      const pick = r => { const x = card.match(r); return x ? text(x[1]) : ''; };
+      const compLine = pick(/lcr-competition">\s*([^<]*)/);
+      const cm = compLine.match(/^(.*?)\s*\(([^)]*)\)\s*$/);
+      const comp = (cm ? cm[1] : compLine).replace(/^AIB\s+/i, '').replace(/^Leinster\s+/i, '');
+      const t12 = pick(/lcr-time">\s*([^<]*)/).match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+      let time = '';
+      if (t12) {
+        let h = parseInt(t12[1], 10) % 12;
+        if (t12[3].toUpperCase() === 'PM') h += 12;
+        time = `${String(h).padStart(2, '0')}:${t12[2]}`;
+      }
+      const vm = meta.match(/<strong>Venue:<\/strong>\s*([^<]*)/);
+      const f = mkStatic('Leinster',
+        pick(/lcr-home-team">([^<]*)</) || 'TBC',
+        pick(/lcr-away-team">([^<]*)</) || 'TBC',
+        date, time, vm ? text(vm[1]) : '',
+        `Leinster Camogie ${comp}`.replace(/\s+/g, ' ').trim(),
+        (cm ? cm[2].trim() : '').replace(/^(\d+)(?:st|nd|rd|th)\s+Round$/i, 'Round $1'));
+      f.sport = 'Camogie';
+      if (/live on clubber tv/i.test(card)) f.broadcast = 'Clubber TV';
+      out.push(f);
+    }
+    return out;
+  } catch (e) {
+    console.error('fetchLeinsterCamogieFixtures failed:', e);
+    return [];
+  }
+}
+
 // ---- Minor finals (all counties) ----
 // The adult scrapers deliberately skip underage grades. This pulls only the
 // FINALS of each county's minor competitions (Laois calls its minor grade U17
@@ -2529,7 +2583,7 @@ const CACHE_A_KEY = 'cache_A'; // Cork, Waterford
 const CACHE_B_KEY = 'cache_B'; // Laois, Wexford, Kildare, Carlow, Louth
 const CACHE_C_KEY = 'cache_C'; // Kerry, Offaly, Tipperary GAA
 const CACHE_D_KEY = 'cache_D'; // Kilkenny, Meath, Monaghan, Roscommon, Longford
-const CACHE_E_KEY = 'cache_E'; // Tipperary Camogie, Kilkenny Camogie, London, Munster + Leinster club, county minor finals
+const CACHE_E_KEY = 'cache_E'; // Tipperary Camogie, Kilkenny Camogie, London, Munster + Leinster club, Leinster camogie, county minor finals
 
 // Same composite key the dashboard uses client-side to match a fixture
 // across reloads (county|competition|teamA|teamB|date), so Approve/Reject/
@@ -2797,13 +2851,14 @@ async function scrapeGroupD(kv, env) {
 // Group E: Tipperary Camogie, Kilkenny Camogie, London, Munster + Leinster club, county minor finals — then run Teams alert
 async function scrapeGroupE(kv) {
   const cacDebug = [];
-  const [tipperaryCamogieResults, kilkennyCamogieResults, londonResults, munsterResults, leinsterResults, minorFinals] = await Promise.all([
+  const [tipperaryCamogieResults, kilkennyCamogieResults, londonResults, munsterResults, leinsterResults, minorFinals, leinsterCamogieResults] = await Promise.all([
     fetchTipperaryCamogieFixtures().catch(() => []),
     fetchKilkennyAmogieCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Kilkenny', 'kilkennycamogie.ie', c, cacDebug)))).catch(() => []),
     fetchLondonFixtures().catch(() => []),
     fetchMunsterClubFixtures().catch(() => []),
     fetchLeinsterClubFixtures().catch(() => []),
     fetchAllMinorFinals(cacDebug).catch(() => []),
+    fetchLeinsterCamogieFixtures().catch(() => []),
   ]);
   const fixtures = [
     ...tipperaryCamogieResults,
@@ -2812,6 +2867,7 @@ async function scrapeGroupE(kv) {
     ...munsterResults,
     ...leinsterResults,
     ...minorFinals,
+    ...leinsterCamogieResults,
   ];
   await writeGroupCache(kv, CACHE_E_KEY, fixtures);
 }
