@@ -1529,25 +1529,33 @@ async function fetchLeinsterCamogieFixtures() {
 // "<Province> PPS" county so they stay apart from club fixtures. The Harty
 // Cup is listed by its Irish name, "TUS Corn an Artaigh (19 A H)", on the
 // Munster PPS site; the Br. Bosco Cup is the Leinster PPS Senior Football "A"
-// competition, shared across the Leinster county sites.
+// competition. It has one ID across the Leinster county sites, but each site
+// only lists games involving its own county's schools, so every site is read
+// and duplicates are dropped.
 const PPS_COMPETITIONS = [
-  { county: 'Munster PPS', domain: 'munstergaapps.ie', name: 'Harty Cup', sport: 'hurling', grade: 'U19',
+  { county: 'Munster PPS', domains: ['munstergaapps.ie'], name: 'Harty Cup', sport: 'hurling', grade: 'U19',
     slug: 'tus-corn-an-artaigh-19-a-h', uuid: 'fa015fcd-4489-4737-b192-bc952d131a4c' },
-  { county: 'Leinster PPS', domain: 'offaly.gaa.ie', name: 'Br Bosco Cup', sport: 'football', grade: 'juvenile',
+  { county: 'Leinster PPS', name: 'Br Bosco Cup',
+    domains: ['offaly.gaa.ie', 'kildaregaa.ie', 'laoisgaa.ie', 'meath.gaa.ie', 'wexford.clubandcounty.com', 'kilkennygaa.ie'], sport: 'football', grade: 'juvenile',
     slug: 'leinster-pps-2026-27-leinster-senior-football-a-br-bosco-cup', uuid: 'f6269ea0-dd99-4c39-9833-bfd0d3d14625' },
 ];
 async function fetchPpsCompetitions(debug) {
-  const results = await Promise.all(PPS_COMPETITIONS.map(async c => {
+  const jobs = PPS_COMPETITIONS.flatMap(c => c.domains.map(domain => ({ c, domain })));
+  const results = await Promise.all(jobs.map(async ({ c, domain }) => {
     const comp = { path: `/fixtures-results/${c.sport}/school/${c.grade}/${c.slug}/${c.uuid}/`, uuid: c.uuid,
       sport: c.sport, level: 'school', grade: c.grade, name: c.name };
-    const rows = await fetchCacDirectCompetition(c.county, c.domain, comp, debug);
+    const rows = await fetchCacDirectCompetition(c.county, domain, comp, debug).catch(() => []);
     return rows.map(({ _rawComp, ...f }) => {
       const roinn = (_rawComp || '').match(/\bRoinn\s+(\w+)/i);   // Leinster PPS sections
       return { ...f, competition: roinn ? `${f.competition} Roinn ${roinn[1]}` : f.competition,
         sport: c.sport === 'hurling' ? 'Hurling' : 'Football' };
     });
   }));
-  return results.flat();
+  const seen = new Set();
+  return results.flat().filter(f => {
+    const k = [f.county, f.competition, f.teamA, f.teamB, f.date].join('|');
+    return seen.has(k) ? false : (seen.add(k), true);
+  });
 }
 
 // ---- Minor finals (all counties) ----
