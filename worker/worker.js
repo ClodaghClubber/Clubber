@@ -1524,6 +1524,57 @@ async function fetchLeinsterCamogieFixtures() {
   }
 }
 
+// ---- Munster GAA homepage "Match Centre" ----
+// The munster.gaa.ie homepage carousel features headline games (county
+// finals, internationals, Munster club ties). Munster Club ties come from the
+// club championships page and Cork/Tipperary/Kerry/Waterford from their own
+// county scrapers, so those are skipped here to avoid duplicates; everything
+// else (e.g. Limerick/Clare finals, Shinty internationals) is kept.
+const MUNSTER_MC_SKIP_COUNTIES = ['Cork', 'Tipperary', 'Kerry', 'Waterford'];
+const MUNSTER_COUNTIES = ['Clare', 'Cork', 'Kerry', 'Limerick', 'Tipperary', 'Waterford'];
+async function fetchMunsterMatchCentre() {
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const text = s => decodeEntities((s || '').replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim();
+  try {
+    const res = await fetch('https://munster.gaa.ie/', { headers: { 'User-Agent': UA, 'Accept': 'text/html' } });
+    if (!res.ok) { console.error('fetchMunsterMatchCentre HTTP', res.status); return []; }
+    const html = await res.text();
+    const a = html.indexOf('BEGIN HOME-PAGE EVENTS SLIDER');
+    if (a < 0) return [];
+    const block = html.slice(a, html.indexOf('</ul>', a));
+    const out = [];
+    for (const card of block.match(/<li class="splide__slide">[\s\S]*?<\/li>/g) || []) {
+      const kind = text((card.match(/text-uppercase py-1">([\s\S]*?)<\/div>/) || [])[1]);
+      if (!/^fixture$/i.test(kind)) continue;                          // skip results
+      const comp = text((card.match(/line-clamp-1">([\s\S]*?)<\/p>/) || [])[1]);
+      if (!comp || /munster\s+club/i.test(comp)) continue;
+      const county = MUNSTER_COUNTIES.find(c => comp.startsWith(c + ' '));
+      if (county && MUNSTER_MC_SKIP_COUNTIES.includes(county)) continue;
+      const dm = text((card.match(/<h4[^>]*>([\s\S]*?)<\/h4>/) || [])[1]).match(/(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]{3})\w*\s+(\d{4})/);
+      if (!dm) continue;
+      const mi = MONTHS.findIndex(m => m.slice(0, 3).toLowerCase() === dm[2].toLowerCase());
+      const teams = (card.match(/class="team-name[^"]*"[^>]*>([\s\S]*?)<\/div>/g) || [])
+        .map(t => text(t.replace(/^[^>]*>/, '')));
+      if (teams.length < 2 || mi < 0) continue;
+      const time = text((card.match(/<span class="badge[^"]*"[^>]*>([\s\S]*?)<\/span>/) || [])[1]);
+      const venue = text((card.match(/Venue:([\s\S]*?)<\/p>/) || [])[1]);
+      const isFinal = /\bfinal\b/i.test(comp) && !/semi|quarter/i.test(comp);
+      const compName = county ? comp.slice(county.length + 1) : comp;   // other counties' names omit the county
+      const f = mkStatic(county || 'International', teams[0], teams[1], `${parseInt(dm[1], 10)} ${MONTHS[mi]} ${dm[3]}`,
+        /^\d{1,2}:\d{2}$/.test(time) && time !== '00:00' ? time : '', venue,
+        isFinal ? compName.replace(/\s+Final$/i, '') : compName, isFinal ? 'Final' : '');
+      f.sport = /camogie/i.test(comp) ? 'Camogie' : /hurling|SHC|IHC|JHC/i.test(comp) ? 'Hurling' : 'Football';
+      const bc = text((card.match(/Broadcast via([\s\S]*?)<\/p>/i) || [])[1]);
+      if (bc) f.broadcast = bc;
+      out.push(f);
+    }
+    return out;
+  } catch (e) {
+    console.error('fetchMunsterMatchCentre failed:', e);
+    return [];
+  }
+}
+
 // ---- Post-primary schools cups ----
 // Specific schools competitions on ClubAndCounty sites, filed under their own
 // "<Province> PPS" county so they stay apart from club fixtures. The Harty
@@ -2617,7 +2668,7 @@ const CACHE_A_KEY = 'cache_A'; // Cork, Waterford
 const CACHE_B_KEY = 'cache_B'; // Laois, Wexford, Kildare, Carlow, Louth
 const CACHE_C_KEY = 'cache_C'; // Kerry, Offaly, Tipperary GAA
 const CACHE_D_KEY = 'cache_D'; // Kilkenny, Meath, Monaghan, Roscommon, Longford
-const CACHE_E_KEY = 'cache_E'; // Tipperary Camogie, Kilkenny Camogie, London, Munster + Leinster club, Leinster camogie, Harty + Br Bosco Cups, county minor finals
+const CACHE_E_KEY = 'cache_E'; // Tipperary Camogie, Kilkenny Camogie, London, Munster + Leinster club, Leinster camogie, Harty + Br Bosco Cups, Munster match centre, county minor finals
 
 // Same composite key the dashboard uses client-side to match a fixture
 // across reloads (county|competition|teamA|teamB|date), so Approve/Reject/
@@ -2885,7 +2936,7 @@ async function scrapeGroupD(kv, env) {
 // Group E: Tipperary Camogie, Kilkenny Camogie, London, Munster + Leinster club, county minor finals — then run Teams alert
 async function scrapeGroupE(kv) {
   const cacDebug = [];
-  const [tipperaryCamogieResults, kilkennyCamogieResults, londonResults, munsterResults, leinsterResults, minorFinals, leinsterCamogieResults, ppsResults] = await Promise.all([
+  const [tipperaryCamogieResults, kilkennyCamogieResults, londonResults, munsterResults, leinsterResults, minorFinals, leinsterCamogieResults, ppsResults, munsterMcResults] = await Promise.all([
     fetchTipperaryCamogieFixtures().catch(() => []),
     fetchKilkennyAmogieCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Kilkenny', 'kilkennycamogie.ie', c, cacDebug)))).catch(() => []),
     fetchLondonFixtures().catch(() => []),
@@ -2893,6 +2944,8 @@ async function scrapeGroupE(kv) {
     fetchLeinsterClubFixtures().catch(() => []),
     fetchAllMinorFinals(cacDebug).catch(() => []),
     fetchLeinsterCamogieFixtures().catch(() => []),
+    fetchPpsCompetitions(cacDebug).catch(() => []),
+    fetchMunsterMatchCentre().catch(() => []),
   ]);
   const fixtures = [
     ...tipperaryCamogieResults,
@@ -2903,6 +2956,7 @@ async function scrapeGroupE(kv) {
     ...minorFinals,
     ...leinsterCamogieResults,
     ...ppsResults,
+    ...munsterMcResults,
   ];
   await writeGroupCache(kv, CACHE_E_KEY, fixtures);
 }
