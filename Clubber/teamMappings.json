@@ -1632,6 +1632,7 @@
     }
   },
   "Cork": {
+    "Árdscoil Uí Urmaltaigh Bandon": {"id": "14b91eb6-0816-40f9-a709-c53520c1e33c", "name": "Hamilton Highschool Bandon"},
     "Clonakilty Community College": {"id": "6998e014-b413-4c96-8278-449afb94cd66", "name": "Clonakilty Community College"},
     "Coláiste Choilm Ballincollig": {"id": "0b9f2f1b-e7f5-42fb-a743-09e211149cd7", "name": "Colaiste Choilm Ballincollig"},
     "De La Salle College Macroom": {"id": "22f3e591-5a91-4401-b334-0cecc9656816", "name": "De La Salle College Macroom"},
@@ -1724,6 +1725,7 @@
     "Newmarket": "78cda545-2b11-4598-b9bc-e3a663bbb96f"
   },
   "Waterford": {
+    "De La Salle College Waterford": {"id": "4977a437-def4-43c9-837d-01d73651b4fa", "name": "DeLaSalle Waterford"},
     "Blackwater Community School Lismore": {"id": "b4546b67-ac5c-423d-8f9d-96bbc464fe33", "name": "Blackwater Community School"},
     "Abbeyside-Ballinacourty": {
       "id": "ef6ad607-f0f2-41a4-b936-94b31a91d7d2",
