@@ -1382,7 +1382,8 @@ function takeSnapshot(){
   fixtures.filter(f=>!f.manual).forEach(f=>{
     snap[stableKeyOf(f)]={
       county:f.county,teamA:f.teamA,teamB:f.teamB,competition:f.competition,
-      round:f.round||'',code:f.code||'',date:f.date,time:f.time,venue:f.venue||''
+      round:f.round||'',code:f.code||'',date:f.date,time:f.time,venue:f.venue||'',
+      sourceUrl:f.sourceUrl||''
     };
   });
   return snap;
@@ -1405,7 +1406,8 @@ function detectChanges(newSnap){
       fixtureChangelog[sk]={
         type:isFirstLoad?'unchanged':'new',
         data:{county:nf.county,teamA:nf.teamA,teamB:nf.teamB,competition:nf.competition,date:nf.date,time:nf.time,venue:nf.venue,round:nf.round,code:nf.code},
-        history:[{at:now,note:'Loaded from source',diffs:[]}]
+        history:[{at:now,note:nf.sourceUrl?`Loaded from ${nf.sourceUrl}`:'Loaded from source',diffs:[]}],
+        ...(nf.sourceUrl?{sourceNoted:nf.sourceUrl}:{})
       };
     } else {
       // Compare against last known state (incremental diffs per refresh)
@@ -1418,11 +1420,31 @@ function detectChanges(newSnap){
         fixtureChangelog[sk].data={county:nf.county,teamA:nf.teamA,teamB:nf.teamB,competition:nf.competition,date:nf.date,time:nf.time,venue:nf.venue,round:nf.round,code:nf.code};
         bl.lastKnown={date:nf.date,time:nf.time,venue:nf.venue,round:nf.round};
       }
+      // Fixtures loaded from a site other than their county board: note the
+      // source website once (covers fixtures first seen before this existed)
+      if(nf.sourceUrl){
+        if(!fixtureChangelog[sk]) fixtureChangelog[sk]={type:'unchanged',data:{county:nf.county,teamA:nf.teamA,teamB:nf.teamB,competition:nf.competition,date:nf.date,time:nf.time,venue:nf.venue,round:nf.round,code:nf.code},history:[]};
+        if(fixtureChangelog[sk].sourceNoted!==nf.sourceUrl){
+          fixtureChangelog[sk].history.push({at:now,note:`Source website: ${nf.sourceUrl}`,diffs:[]});
+          fixtureChangelog[sk].sourceNoted=nf.sourceUrl;
+        }
+      }
       // Badge type: changed if current differs from the original baseline values
       if(fixtureChangelog[sk]){
         const orig=bl.original;
         fixtureChangelog[sk].type=TRACKED.some(field=>orig[field]!==nf[field])?'changed':'unchanged';
       }
+    }
+  });
+
+  // Manual fixtures imported from another website carry sourceUrl too
+  manualFixtures.forEach(f=>{
+    if(!f.sourceUrl) return;
+    const sk=stableKeyOf(f);
+    if(!fixtureChangelog[sk]) fixtureChangelog[sk]={type:'unchanged',data:{county:f.county,teamA:f.teamA,teamB:f.teamB,competition:f.competition,date:f.date,time:f.time,venue:f.venue||'',round:f.round||'',code:f.code||''},history:[]};
+    if(fixtureChangelog[sk].sourceNoted!==f.sourceUrl){
+      fixtureChangelog[sk].history.push({at:now,note:`Source website: ${f.sourceUrl}`,diffs:[]});
+      fixtureChangelog[sk].sourceNoted=f.sourceUrl;
     }
   });
 
@@ -2934,7 +2956,7 @@ async function loadFixtures(isRefresh){
       }
       saveOverrides();
     }
-    const incoming=(json.fixtures||[]).map(f=>({...mk(f.county,f.teamA,f.teamB,f.date,f.time,f.venue,f.competition,f.round), code:f.code||deriveCode(f.competition,f.sport), status:f.status||'Proposed', ...(f.clubberCreated!==undefined?{clubberCreated:f.clubberCreated}:{}), ...(f.teamACounty?{teamACounty:f.teamACounty}:{}), ...(f.teamBCounty?{teamBCounty:f.teamBCounty}:{})}));
+    const incoming=(json.fixtures||[]).map(f=>({...mk(f.county,f.teamA,f.teamB,f.date,f.time,f.venue,f.competition,f.round), code:f.code||deriveCode(f.competition,f.sport), status:f.status||'Proposed', ...(f.clubberCreated!==undefined?{clubberCreated:f.clubberCreated}:{}), ...(f.teamACounty?{teamACounty:f.teamACounty}:{}), ...(f.teamBCounty?{teamBCounty:f.teamBCounty}:{}), ...(f.sourceUrl?{sourceUrl:f.sourceUrl}:{})}));
     mergeFixtures(incoming);
     detectChanges(takeSnapshot());
     updateClearChangesBtn();

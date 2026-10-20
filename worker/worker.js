@@ -1401,6 +1401,7 @@ async function fetchMunsterClubFixtures() {
         const f = mkStatic('Munster', a.name, b.name, `${parseInt(dm[1], 10)} ${MONTHS[parseInt(dm[2], 10) - 1]} ${year}`,
           time, venuePart, competition, round);
         f.sport = sport;
+        f.sourceUrl = MUNSTER_CLUB_URL;
         if (a.county) f.teamACounty = a.county;
         if (b.county) f.teamBCounty = b.county;
         out.push(f);
@@ -1453,6 +1454,7 @@ async function fetchLeinsterClubFixtures() {
         ((r.place && r.place.name) || '').trim(),
         competition, (r.round || '').trim());
       f.sport = r.competition.activity === 'hurling' ? 'Hurling' : 'Football';
+      f.sourceUrl = 'https://leinstergaa.ie/fixtures';
       out.push(f);
     }
     // Undrawn games in the same round are identical ("TBC v TBC", same day)
@@ -1514,6 +1516,7 @@ async function fetchLeinsterCamogieFixtures() {
         `Leinster Camogie ${comp}`.replace(/\s+/g, ' ').trim(),
         (cm ? cm[2].trim() : '').replace(/^(\d+)(?:st|nd|rd|th)\s+Round$/i, 'Round $1'));
       f.sport = 'Camogie';
+      f.sourceUrl = 'https://leinstercamogie.ie/fixtures-results/';
       if (/live on clubber tv/i.test(card)) f.broadcast = 'Clubber TV';
       out.push(f);
     }
@@ -1547,7 +1550,8 @@ async function fetchMunsterCamogieFixtures(debug) {
         const parts = decodeEntities(_rawComp || '').replace(/\s+/g, ' ').trim().split(/\s+[-–]\s+/);
         const round = parts.length > 1 ? parts.pop() : '';
         const comp = parts.join(' - ').replace(/^20\d\d\s+/, '').replace(/^Munster\s+/i, '');
-        out.push({ ...f, competition: `Munster Camogie ${comp}`, round, sport: 'Camogie' });
+        out.push({ ...f, competition: `Munster Camogie ${comp}`, round, sport: 'Camogie',
+          sourceUrl: 'https://munstercamogie.ie/fixtures-results/' });
       }
     } catch (e) {
       debug.push({ county: 'Munster Camogie', level, grade, stage: 'threw', error: String(e) });
@@ -1600,6 +1604,7 @@ async function fetchMunsterMatchCentre() {
         /^\d{1,2}:\d{2}$/.test(time) && time !== '00:00' ? time : '', venue,
         isFinal ? compName.replace(/\s+Final$/i, '') : compName, isFinal ? 'Final' : '');
       f.sport = /camogie/i.test(comp) ? 'Camogie' : /hurling|SHC|IHC|JHC/i.test(comp) ? 'Hurling' : 'Football';
+      f.sourceUrl = 'https://munster.gaa.ie/';
       const bc = text((card.match(/Broadcast via([\s\S]*?)<\/p>/i) || [])[1]);
       if (bc) f.broadcast = bc;
       out.push(f);
@@ -1641,7 +1646,8 @@ async function fetchPpsCompetitions(debug) {
       const clean = s => (s || '').replace(/[\u0000-\u001f\u007f-\u009f]/g, '').trim();
       return { ...f, teamA: clean(f.teamA), teamB: clean(f.teamB), venue: clean(f.venue),
         competition: roinn ? `${f.competition} Roinn ${roinn[1]}` : f.competition,
-        sport: c.sport === 'hurling' ? 'Hurling' : 'Football' };
+        sport: c.sport === 'hurling' ? 'Hurling' : 'Football',
+        sourceUrl: `https://${domain}${comp.path}` };
     });
   }));
   const seen = new Set();
