@@ -1524,6 +1524,42 @@ async function fetchLeinsterCamogieFixtures() {
   }
 }
 
+// ---- Munster Camogie (munstercamogie.ie, ClubAndCounty) ----
+// Adult provincial and inter-county camogie only: the grade feeds for
+// province/senior and inter_county senior + intermediate. Club-level grades
+// on this site are individual counties' championships (Cork, Clare...), and
+// minor/U16/féile/schools are underage, so neither is read here.
+const MUNSTER_CAMOGIE_FEEDS = [['province', 'senior'], ['inter_county', 'senior'], ['inter_county', 'intermediate']];
+async function fetchMunsterCamogieFixtures(debug) {
+  const out = [];
+  await Promise.all(MUNSTER_CAMOGIE_FEEDS.map(async ([level, grade]) => {
+    const baseUrl = `https://munstercamogie.ie/fixtures-results/camogie/${level}/${grade}/`;
+    const url = `${baseUrl}?ajax=1&feed_type=fixtures&page=0&size=100&sport=camogie&level=${level}&grade=${grade}`;
+    try {
+      const res = await fetch(url, { headers: { 'User-Agent': UA, Accept: 'application/json', Referer: baseUrl } });
+      if (!res.ok) { debug.push({ county: 'Munster Camogie', level, grade, stage: 'http', status: res.status }); return; }
+      const json = JSON.parse(stripBom(await res.text()));
+      if (!json.ok) return;
+      const rows = [];
+      parseCacHtmlDirect(json.html, rows, 'Munster', '');
+      for (const { _rawComp, ...f } of rows) {
+        // "Munster Senior Championship - Cup Division 1 - Preliminary Round"
+        const parts = decodeEntities(_rawComp || '').replace(/\s+/g, ' ').trim().split(/\s+[-–]\s+/);
+        const round = parts.length > 1 ? parts.pop() : '';
+        const comp = parts.join(' - ').replace(/^20\d\d\s+/, '').replace(/^Munster\s+/i, '');
+        out.push({ ...f, competition: `Munster Camogie ${comp}`, round, sport: 'Camogie' });
+      }
+    } catch (e) {
+      debug.push({ county: 'Munster Camogie', level, grade, stage: 'threw', error: String(e) });
+    }
+  }));
+  const seen = new Set();
+  return out.filter(f => {
+    const k = [f.competition, f.teamA, f.teamB, f.date].join('|');
+    return seen.has(k) ? false : (seen.add(k), true);
+  });
+}
+
 // ---- Munster GAA homepage "Match Centre" ----
 // The munster.gaa.ie homepage carousel features headline games (county
 // finals, internationals, Munster club ties). Munster Club ties come from the
@@ -2674,7 +2710,7 @@ const CACHE_A_KEY = 'cache_A'; // Cork, Waterford
 const CACHE_B_KEY = 'cache_B'; // Laois, Wexford, Kildare, Carlow, Louth
 const CACHE_C_KEY = 'cache_C'; // Kerry, Offaly, Tipperary GAA
 const CACHE_D_KEY = 'cache_D'; // Kilkenny, Meath, Monaghan, Roscommon, Longford
-const CACHE_E_KEY = 'cache_E'; // Tipperary Camogie, Kilkenny Camogie, London, Munster + Leinster club, Leinster camogie, Harty + Br Bosco Cups, Munster match centre, county minor finals
+const CACHE_E_KEY = 'cache_E'; // Tipperary Camogie, Kilkenny Camogie, London, Munster + Leinster club, Leinster camogie, Harty + Br Bosco Cups, Munster match centre, Munster camogie, county minor finals
 
 // Same composite key the dashboard uses client-side to match a fixture
 // across reloads (county|competition|teamA|teamB|date), so Approve/Reject/
@@ -2942,7 +2978,7 @@ async function scrapeGroupD(kv, env) {
 // Group E: Tipperary Camogie, Kilkenny Camogie, London, Munster + Leinster club, county minor finals — then run Teams alert
 async function scrapeGroupE(kv) {
   const cacDebug = [];
-  const [tipperaryCamogieResults, kilkennyCamogieResults, londonResults, munsterResults, leinsterResults, minorFinals, leinsterCamogieResults, ppsResults, munsterMcResults] = await Promise.all([
+  const [tipperaryCamogieResults, kilkennyCamogieResults, londonResults, munsterResults, leinsterResults, minorFinals, leinsterCamogieResults, ppsResults, munsterMcResults, munsterCamogieResults] = await Promise.all([
     fetchTipperaryCamogieFixtures().catch(() => []),
     fetchKilkennyAmogieCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Kilkenny', 'kilkennycamogie.ie', c, cacDebug)))).catch(() => []),
     fetchLondonFixtures().catch(() => []),
@@ -2952,6 +2988,7 @@ async function scrapeGroupE(kv) {
     fetchLeinsterCamogieFixtures().catch(() => []),
     fetchPpsCompetitions(cacDebug).catch(() => []),
     fetchMunsterMatchCentre().catch(() => []),
+    fetchMunsterCamogieFixtures(cacDebug).catch(() => []),
   ]);
   const fixtures = [
     ...tipperaryCamogieResults,
@@ -2963,6 +3000,7 @@ async function scrapeGroupE(kv) {
     ...leinsterCamogieResults,
     ...ppsResults,
     ...munsterMcResults,
+    ...munsterCamogieResults,
   ];
   await writeGroupCache(kv, CACHE_E_KEY, fixtures);
 }

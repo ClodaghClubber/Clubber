@@ -3680,11 +3680,14 @@ function buildGamePayload(f) {
       });
       return hits.size === 1 ? [...hits.values()][0] : null;
     }
-    if (f.county !== 'Leinster' || county !== 'Leinster') return lookupTeam(name, county);
+    // Provincial fixtures with no per-team county (Leinster feed, Munster
+    // camogie) search every county in the province
+    if (!isProvincial || county !== f.county) return lookupTeam(name, county);
+    const provinceCounties = f.county === 'Munster' ? MUNSTER_COUNTIES : LEINSTER_COUNTIES;
     const hits = new Map();
-    LEINSTER_COUNTIES.forEach(c => {
+    provinceCounties.forEach(c => {
       const r = lookupTeam(name, c);
-      if (r && r.clubId && LEINSTER_COUNTIES.includes(r.county)) hits.set(r.clubId, r);
+      if (r && r.clubId && provinceCounties.includes(r.county)) hits.set(r.clubId, r);
     });
     if (hits.size === 1) return [...hits.values()][0];
     // A teamMappings entry (not auto-matched) beats fuzzy partial matches
