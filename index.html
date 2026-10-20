@@ -3667,6 +3667,16 @@ function buildGamePayload(f) {
       || ALL_GAA_COUNTIES.some(c => c.toLowerCase() === t.toLowerCase())));
   [normA, normB].forEach(t => { if (unconfirmed(t)) errors.push(`Team not confirmed yet: "${t}"`); });
   const findTeam = (name, county) => {
+    // Schools: only accept a teamMappings entry (filed under the school's own
+    // county) - fuzzy matching would pick a club, e.g. "Naas CBS" -> Naas GAA.
+    if (f.county === 'Leinster PPS') {
+      const hits = new Map();
+      LEINSTER_COUNTIES.forEach(c => {
+        const r = lookupTeam(name, c);
+        if (r && r.clubId && !r.autoMatched && LEINSTER_COUNTIES.includes(r.county)) hits.set(r.clubId, r);
+      });
+      return hits.size === 1 ? [...hits.values()][0] : null;
+    }
     if (f.county !== 'Leinster' || county !== 'Leinster') return lookupTeam(name, county);
     const hits = new Map();
     LEINSTER_COUNTIES.forEach(c => {
@@ -3720,6 +3730,8 @@ function buildGamePayload(f) {
     ? 'Munster Club'
     : f.county === 'Leinster'
     ? 'Leinster GAA'
+    : f.county === 'Leinster PPS'
+    ? 'Post Primary'
     : isRugby
     ? 'Champ Rugby'
     : lookupClubberCompetition(
@@ -3752,7 +3764,7 @@ function buildGamePayload(f) {
   }
 
   const county = isRugby ? 'UK'
-    : isProvincial ? (teamAResult?.county || countyA)
+    : (isProvincial || f.county === 'Leinster PPS') ? (teamAResult?.county || countyA)
     : (f.county || '').replace(/ LGFA$/i, '');
 
   const rawTime = f.time ? from12h(f.time) : '';
@@ -3760,7 +3772,7 @@ function buildGamePayload(f) {
   const utcTime = rawTime && rawTime.includes(':') ? dublinToUtc(f.date, rawTime) : '00:01';
 
   const payload = {
-    gameScope: f.county === 'BUCS' ? 'University' : f.county === 'ACE' ? 'School' : 'Club',
+    gameScope: f.county === 'BUCS' ? 'University' : (f.county === 'ACE' || f.county === 'Leinster PPS') ? 'School' : 'Club',
     date: f.date,
     time: utcTime,
     county,

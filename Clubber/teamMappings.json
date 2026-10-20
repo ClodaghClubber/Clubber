@@ -1,5 +1,6 @@
 {
   "Carlow": {
+    "Knockbeg College": {"id": "398fd0c1-0073-4b4c-a2d5-e3287eff56d1", "name": "St. Mary’s Knockbeg"},
     "Naomh Moling": "a12de09d-c16f-4ed5-bdba-19707931544b",
     "Ballinkillen": {
       "id": "7e58bcb9-c486-436e-a0c9-dcebb9d2bdbe",
@@ -290,6 +291,8 @@
     }
   },
   "Offaly": {
+    "Coláiste Choilm Tullamore": {"id": "975f107d-40c4-4223-8b96-19edeb26c1d2", "name": "Coláiste Choilm Tullamore"},
+    "St. Mary's Edenderry": {"id": "ce54f81b-c631-4449-8bb5-119df9a5aeb9", "name": "St. Mary's Edenderry"},
     "St Manchans": {"id": "86b13916-0f86-4ef0-8467-e38a2a9e9011", "name": "St. Manchan's"},
     "St Manchan's": {"id": "86b13916-0f86-4ef0-8467-e38a2a9e9011", "name": "St. Manchan's"},
     "St. Manchans": {"id": "86b13916-0f86-4ef0-8467-e38a2a9e9011", "name": "St. Manchan's"},
@@ -575,6 +578,7 @@
     }
   },
   "Wexford": {
+    "Good Counsel College New Ross": {"id": "615a8b15-37a6-4a79-b6fb-905cbfc8672a", "name": "Good Counsel College"},
     "Naomh Éanna": {
       "id": "42a3a58b-2a91-4f23-ab3c-8fa6fbc6b237",
       "name": "Naomh Eanna"
@@ -1456,6 +1460,8 @@
     }
   },
   "Kildare": {
+    "Naas CBS": {"id": "d4ca53a0-40c9-4d39-8d46-71ea5fe037fa", "name": "Naas CBS"},
+    "Ardscoil na Trionoide": {"id": "cefe934c-4d05-4ebf-9ddc-8df5d40ee0c5", "name": "Ardscoil na Trionoide Athy"},
     "Castledermot GAA": {
       "id": "2af20de6-75a1-4e48-bc98-22069dfa0ddc",
       "name": "Castledermot"
@@ -2182,6 +2188,9 @@
     }
   },
   "Westmeath": {
+    "Moate Community School": {"id": "f0b00698-c5b6-4f8b-b946-3be1dc1c8194", "name": "Moate C.S"},
+    "Colaiste Mhuire Mullingar": {"id": "2d73ac14-9293-4977-b812-e837ba37979a", "name": "Colaiste Mhuire Mullingar"},
+    "Marist College Athlone": {"id": "b654727d-74cd-475c-9dc5-e36f5673f537", "name": "Marist College Athlone"},
     "Na Dúnta": {
       "id": "da5a8038-c2e9-4db4-b7ef-467e4314f4d5",
       "name": "The Downs"
