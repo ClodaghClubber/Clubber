@@ -83,6 +83,7 @@
     }
   },
   "Tipperary": {
+    "Father Sheehys": {"id": "5cddbc2e-4b54-4cb0-95af-29e65b40752a", "name": "Fr. Sheehys"},
     "Cashel C.S": {"id": "f423b678-40c3-403b-92cc-8bf0dae3a099", "name": "Cashel Community School"},
     "Nenagh C.B.S": {"id": "c75ce58d-550f-4e4b-bde1-f17ae9fdbb19", "name": "Nenagh CBS"},
     "Thurles C.B.S": {"id": "58558aff-c614-43ce-91a2-2647cdaefdc5", "name": "Thurles CBS"},
