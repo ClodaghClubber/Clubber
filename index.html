@@ -3641,6 +3641,7 @@ function dublinToUtc(dateStr, time24h) {
   return `${String(utcH).padStart(2,'0')}:${String(utcM).padStart(2,'0')}`;
 }
 
+const MUNSTER_COUNTIES = ['Clare','Cork','Kerry','Limerick','Tipperary','Waterford'];
 const LEINSTER_COUNTIES = ['Carlow','Dublin','Kildare','Kilkenny','Laois','Longford','Louth','Meath','Offaly','Westmeath','Wexford','Wicklow'];
 const ALL_GAA_COUNTIES = ['Antrim','Armagh','Carlow','Cavan','Clare','Cork','Derry','Donegal','Down','Dublin','Fermanagh','Galway','Kerry','Kildare','Kilkenny','Laois','Leitrim','Limerick','Longford','Louth','Mayo','Meath','Monaghan','Offaly','Roscommon','Sligo','Tipperary','Tyrone','Waterford','Westmeath','Wexford','Wicklow','London'];
 
@@ -3655,6 +3656,7 @@ function buildGamePayload(f) {
   // (teamACounty/teamBCounty); Leinster's feed doesn't, so Leinster clubs are
   // looked up across all Leinster counties and accepted only if unambiguous.
   const isProvincial = f.county === 'Munster' || f.county === 'Leinster';
+  const isPPS = f.county === 'Leinster PPS' || f.county === 'Munster PPS'; // post-primary schools
   const countyA = f.teamACounty || f.county;
   const countyB = f.teamBCounty || f.county;
   // Draws list unconfirmed teams ("X or Y", "Winner of QF1", "Clare
@@ -3669,11 +3671,12 @@ function buildGamePayload(f) {
   const findTeam = (name, county) => {
     // Schools: only accept a teamMappings entry (filed under the school's own
     // county) - fuzzy matching would pick a club, e.g. "Naas CBS" -> Naas GAA.
-    if (f.county === 'Leinster PPS') {
+    if (isPPS) {
+      const provinceCounties = f.county === 'Munster PPS' ? MUNSTER_COUNTIES : LEINSTER_COUNTIES;
       const hits = new Map();
-      LEINSTER_COUNTIES.forEach(c => {
+      provinceCounties.forEach(c => {
         const r = lookupTeam(name, c);
-        if (r && r.clubId && !r.autoMatched && LEINSTER_COUNTIES.includes(r.county)) hits.set(r.clubId, r);
+        if (r && r.clubId && !r.autoMatched && provinceCounties.includes(r.county)) hits.set(r.clubId, r);
       });
       return hits.size === 1 ? [...hits.values()][0] : null;
     }
@@ -3716,7 +3719,7 @@ function buildGamePayload(f) {
 
   const isRugby = (f.county === 'Champ' || f.county === 'BUCS' || f.county === 'ACE' || (f.code || '').toLowerCase() === 'rugby');
 
-  const grade = isRugby ? '' : f.county === 'Leinster PPS' ? 'Senior 1' : deriveGrade(f.county, f.competition);
+  const grade = isRugby ? '' : isPPS ? 'Senior 1' : deriveGrade(f.county, f.competition);
   if (!isRugby && !grade) errors.push(`grade could not be derived from competition "${f.competition}"`);
   if (!isRugby && !(f.code || '').trim()) errors.push(`Code is missing — set a code (e.g. Football, Hurling, LGFA) before exporting`);
 
@@ -3730,7 +3733,7 @@ function buildGamePayload(f) {
     ? 'Munster Club'
     : f.county === 'Leinster'
     ? 'Leinster GAA'
-    : f.county === 'Leinster PPS'
+    : isPPS
     ? 'Post Primary'
     : isRugby
     ? 'Champ Rugby'
@@ -3764,7 +3767,7 @@ function buildGamePayload(f) {
   }
 
   const county = isRugby ? 'UK'
-    : (isProvincial || f.county === 'Leinster PPS') ? (teamAResult?.county || countyA)
+    : (isProvincial || isPPS) ? (teamAResult?.county || countyA)
     : (f.county || '').replace(/ LGFA$/i, '');
 
   const rawTime = f.time ? from12h(f.time) : '';
@@ -3772,7 +3775,7 @@ function buildGamePayload(f) {
   const utcTime = rawTime && rawTime.includes(':') ? dublinToUtc(f.date, rawTime) : '00:01';
 
   const payload = {
-    gameScope: f.county === 'BUCS' ? 'University' : (f.county === 'ACE' || f.county === 'Leinster PPS') ? 'School' : 'Club',
+    gameScope: f.county === 'BUCS' ? 'University' : (f.county === 'ACE' || isPPS) ? 'School' : 'Club',
     date: f.date,
     time: utcTime,
     county,

@@ -1600,7 +1600,11 @@ async function fetchPpsCompetitions(debug) {
     const rows = await fetchCacDirectCompetition(c.county, domain, comp, debug).catch(() => []);
     return rows.map(({ _rawComp, ...f }) => {
       const roinn = (_rawComp || '').match(/\bRoinn\s+(\w+)/i);   // Leinster PPS sections
-      return { ...f, competition: roinn ? `${f.competition} Roinn ${roinn[1]}` : f.competition,
+      // The Munster PPS site leaves invisible control chars on some names
+      // ("Thurles C.B.S" + U+009D), which breaks teamMappings lookups.
+      const clean = s => (s || '').replace(/[\u0000-\u001f\u007f-\u009f]/g, '').trim();
+      return { ...f, teamA: clean(f.teamA), teamB: clean(f.teamB), venue: clean(f.venue),
+        competition: roinn ? `${f.competition} Roinn ${roinn[1]}` : f.competition,
         sport: c.sport === 'hurling' ? 'Hurling' : 'Football' };
     });
   }));

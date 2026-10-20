@@ -83,6 +83,11 @@
     }
   },
   "Tipperary": {
+    "Cashel C.S": {"id": "f423b678-40c3-403b-92cc-8bf0dae3a099", "name": "Cashel Community School"},
+    "Nenagh C.B.S": {"id": "c75ce58d-550f-4e4b-bde1-f17ae9fdbb19", "name": "Nenagh CBS"},
+    "Thurles C.B.S": {"id": "58558aff-c614-43ce-91a2-2647cdaefdc5", "name": "Thurles CBS"},
+    "Clonmel High School": {"id": "79aeeca8-033e-4f67-83a2-59dfc2e0d2aa", "name": "Highschool Clonmel"},
+    "Our Ladys Secondary School Templemore": {"id": "8a4582fb-3200-4bb5-9bcf-7e7b0ee0c4da", "name": "Our Ladys Templemore"},
     "Drom-Inch": {
       "id": "865a689d-57a6-49f2-b423-9920302f6039",
       "name": "Drom & Inch"
@@ -1627,6 +1632,14 @@
     }
   },
   "Cork": {
+    "Clonakilty Community College": {"id": "6998e014-b413-4c96-8278-449afb94cd66", "name": "Clonakilty Community College"},
+    "Coláiste Choilm Ballincollig": {"id": "0b9f2f1b-e7f5-42fb-a743-09e211149cd7", "name": "Colaiste Choilm Ballincollig"},
+    "De La Salle College Macroom": {"id": "22f3e591-5a91-4401-b334-0cecc9656816", "name": "De La Salle College Macroom"},
+    "St. Francis College Rochestown": {"id": "cf1b9f1d-b7e1-4a83-bd66-7644f122241d", "name": "St Francis College Rochestown"},
+    "CBS Midleton": {"id": "5f9b4288-3da7-4d6b-8e08-13e2a54e963d", "name": "Midleton CBS"},
+    "Christian Brothers College, Cork": {"id": "c23818ee-b2ca-43d0-8be4-020a95928972", "name": "CBC"},
+    "Gaelcholáiste Mhuire an Mhainistir Thuaigh": {"id": "992cabc2-cc74-46d2-8e1f-599cbcd04b87", "name": "Gaelcholaiste Mhuire an Mhainistir Thuaidh"},
+    "Mount St. Michael Rosscarbery": {"id": "93ca0910-8dc1-4229-8b90-bc8132644a51", "name": "Mount St. Michael's Rosscarbery"},
     "Aghabullogue": "9aa7871b-4c23-40e9-857f-4c7af658848c",
     "Aghada": "6d5d5fd5-3dff-48cb-9650-2e17f7f147b9",
     "Ballyhea": "be93d948-1e5d-461c-9930-d70a3db477f8",
@@ -1711,6 +1724,7 @@
     "Newmarket": "78cda545-2b11-4598-b9bc-e3a663bbb96f"
   },
   "Waterford": {
+    "Blackwater Community School Lismore": {"id": "b4546b67-ac5c-423d-8f9d-96bbc464fe33", "name": "Blackwater Community School"},
     "Abbeyside-Ballinacourty": {
       "id": "ef6ad607-f0f2-41a4-b936-94b31a91d7d2",
       "name": "Abbeyside Ballinacourty"
@@ -1763,6 +1777,11 @@
     }
   },
   "Kerry": {
+    "Mercy Mounthawk": {"id": "1d18d407-091f-4518-a876-a4b53868eeea", "name": "Mercy Mounthawk"},
+    "St Brendans Killarney": {"id": "94785398-4fbb-4012-bf07-9a44c0ab64a1", "name": "St Brendan's, Killarney"},
+    "Tralee CBS": {"id": "0975b7ae-520a-4ad9-9605-29356c9cf464", "name": "Tralee CBS"},
+    "I.S. Killorglin": {"id": "514002ce-f12f-4fc1-b71c-abd9f65c5a15", "name": "Intermediate School Killorglin"},
+    "Presentation Secondary School Miltown": {"id": "286b0f64-da41-41ed-a166-bbcd63a9c2ce", "name": "Presentation SS Milltown"},
     "St Brendans Board": {
       "id": "83e33440-332d-44ad-85c3-9d64a2f936b9",
       "name": "St. Brendan's Board"
@@ -2212,6 +2231,30 @@
     "Carnew Emmets": {
       "id": "25a0b823-6a4e-4ae8-a6ad-04a63683a384",
       "name": "Carnew Emmets"
+    }
+  },
+  "Limerick": {
+    "Castletroy College": {
+      "id": "c8f037eb-c4ef-485d-a212-a16cf25fff82",
+      "name": "Castletroy College"
+    },
+    "John The Baptist Community School": {
+      "id": "0319e172-1c83-414d-a476-b587e5178550",
+      "name": "John The Baptist CS"
+    },
+    "Árdscoil Rís North Circular Limerick": {
+      "id": "8559da7a-7390-4b94-90fb-a6172a592ec5",
+      "name": "Ardscoil Rís"
+    }
+  },
+  "Clare": {
+    "St. Flannans College Ennis": {
+      "id": "ecb339d6-db12-4e22-8484-7494f3264a2e",
+      "name": "St Flannans College, Ennis"
+    },
+    "St. Josephs Tulla": {
+      "id": "c3aee129-0fcb-4170-8fe4-9fe24e5f7c38",
+      "name": "St Josephs Tulla"
     }
   }
 }
