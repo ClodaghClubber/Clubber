@@ -3733,7 +3733,7 @@ function buildGamePayload(f) {
     : f.county === 'ACE'
     ? (isAceGirls ? 'RFU ACE Girls League' : 'RFU ACE Boys League')
     : f.county === 'Munster'
-    ? 'Munster Club'
+    ? (/^Munster Camogie\b/i.test(f.competition || '') ? 'Munster Camogie' : 'Munster Club')
     : f.county === 'Leinster'
     ? 'Leinster GAA'
     : isPPS
