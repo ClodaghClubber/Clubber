@@ -3716,7 +3716,7 @@ function buildGamePayload(f) {
 
   const isRugby = (f.county === 'Champ' || f.county === 'BUCS' || f.county === 'ACE' || (f.code || '').toLowerCase() === 'rugby');
 
-  const grade = isRugby ? '' : deriveGrade(f.county, f.competition);
+  const grade = isRugby ? '' : f.county === 'Leinster PPS' ? 'Senior 1' : deriveGrade(f.county, f.competition);
   if (!isRugby && !grade) errors.push(`grade could not be derived from competition "${f.competition}"`);
   if (!isRugby && !(f.code || '').trim()) errors.push(`Code is missing — set a code (e.g. Football, Hurling, LGFA) before exporting`);
 
