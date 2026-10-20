@@ -1632,6 +1632,7 @@
     }
   },
   "Cork": {
+    "Coláiste Cholmáin Fermoy": {"id": "ed555f4f-23ee-4f62-b9e8-288711a50867", "name": "St Colman's College, Fermoy"},
     "Árdscoil Uí Urmaltaigh Bandon": {"id": "14b91eb6-0816-40f9-a709-c53520c1e33c", "name": "Hamilton Highschool Bandon"},
     "Clonakilty Community College": {"id": "6998e014-b413-4c96-8278-449afb94cd66", "name": "Clonakilty Community College"},
     "Coláiste Choilm Ballincollig": {"id": "0b9f2f1b-e7f5-42fb-a743-09e211149cd7", "name": "Colaiste Choilm Ballincollig"},
