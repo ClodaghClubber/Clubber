@@ -141,6 +141,30 @@
   #importFixtureBtn:hover{color:var(--text);border-color:var(--accent);}
   #csvImportBtn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:6px 12px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;}
   #csvImportBtn:hover{color:var(--text);border-color:var(--accent);}
+  /* ---- Add from screenshot (AI import) ---- */
+  #aiImportBtn{background:none;border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:6px 12px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;font-weight:600;}
+  #aiImportBtn:hover{background:rgba(90,79,207,.08);}
+  #aiImportModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;align-items:flex-start;justify-content:center;padding-top:30px;}
+  #aiImportModal.open{display:flex;}
+  #aiImportModal .modal-box{width:min(1180px,97vw);max-height:calc(100vh - 50px);display:flex;flex-direction:column;}
+  #aiDrop{border:2px dashed var(--border);border-radius:10px;padding:22px;text-align:center;color:var(--muted);font-size:13px;cursor:pointer;}
+  #aiDrop.dragover,#aiDrop:hover{border-color:var(--accent);background:rgba(90,79,207,.06);}
+  #aiFileList{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0;}
+  .ai-chip{display:inline-flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:3px 10px;font-size:12px;}
+  .ai-chip button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:0;}
+  #aiText,#aiNote{width:100%;box-sizing:border-box;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-family:inherit;font-size:13px;}
+  #aiText{min-height:70px;resize:vertical;}
+  #aiQuestions{background:#fff7ed;border:1px solid #fdba74;color:#7c2d12;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:10px;}
+  #aiQuestions ul{margin:6px 0 0 18px;padding:0;}
+  #aiTableWrap{overflow:auto;flex:1;min-height:120px;border:1px solid var(--border);border-radius:8px;}
+  #aiTable{border-collapse:collapse;width:100%;font-size:12px;}
+  #aiTable th{position:sticky;top:0;background:var(--panel);text-align:left;padding:6px;border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase;color:var(--muted);white-space:nowrap;}
+  #aiTable td{padding:4px;border-bottom:1px solid var(--border);vertical-align:top;}
+  #aiTable input,#aiTable select{width:100%;box-sizing:border-box;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:4px 5px;font-family:inherit;font-size:12px;}
+  #aiTable input.ai-missing{border-color:#dc2626;background:rgba(220,38,38,.06);}
+  #aiTable tr.ai-dup{opacity:.55;}
+  .ai-check{font-size:11px;line-height:1.35;}
+  .ai-ok{color:#16a34a;} .ai-warn{color:#b45309;} .ai-err{color:#dc2626;}
   #csvImportModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;align-items:flex-start;justify-content:center;padding-top:30px;}
   #csvImportModal.open{display:flex;}
   #csvImportModal .modal-box{width:min(960px,96vw);max-height:calc(100vh - 60px);display:flex;flex-direction:column;}
@@ -475,6 +499,12 @@
     <button class="btn-remove" id="removeBtn" disabled>Remove</button>
     <button class="btn-remove" id="clearChangesBtn" style="display:none;" title="Clear all change markers">Clear changes</button>
     <button class="btn-modal-add" id="addFixtureBtn">+ Add Fixture</button>
+    <button id="aiImportBtn" title="Add fixtures from a screenshot, PDF, spreadsheet or pasted text">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="1" y="2.5" width="12" height="9" rx="1.5"/><circle cx="5" cy="6" r="1.2"/><path d="M13 9.5l-3.5-3-5 4.5"/>
+      </svg>
+      Add from screenshot
+    </button>
     <button id="csvImportBtn" title="Import fixtures from spreadsheet CSV">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
         <path d="M7 1v8M4.5 6.5l2.5 2.5 2.5-2.5"/><path d="M1 11h12v1.5H1z"/>
@@ -901,6 +931,46 @@
     <div class="modal-actions" style="margin-top:14px;">
       <button type="button" onclick="closeCsvImportModal()" class="btn-modal-cancel">Cancel</button>
       <button type="button" id="csvImportDoBtn" class="btn-modal-add" disabled>Import Selected</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add from screenshot (AI import) Modal -->
+<div id="aiImportModal">
+  <div class="modal-box">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <h2 style="margin:0;">Add fixtures from a screenshot or file</h2>
+      <button type="button" id="aiCloseBtn" style="background:none;border:none;cursor:pointer;font-size:20px;line-height:1;color:var(--muted);padding:4px 6px;" aria-label="Close">&times;</button>
+    </div>
+    <div id="aiStep1">
+      <div id="aiDrop" tabindex="0">
+        <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;">Drop screenshots, PDFs or spreadsheets here</div>
+        <div>or click to choose files &middot; or paste a screenshot (Ctrl+V) anywhere in this window</div>
+        <input type="file" id="aiFileInput" multiple accept="image/png,image/jpeg,image/gif,image/webp,application/pdf,.csv,.txt,.xlsx,.xls" style="display:none;">
+      </div>
+      <div id="aiFileList"></div>
+      <div style="margin-top:12px;">
+        <label style="font-size:12px;font-weight:600;color:var(--muted);">Or paste a fixture list as text</label>
+        <textarea id="aiText" placeholder="e.g. copied from a website, email or WhatsApp"></textarea>
+      </div>
+      <div style="margin-top:10px;">
+        <label style="font-size:12px;font-weight:600;color:var(--muted);">Anything Claude should know? (optional)</label>
+        <input id="aiNote" placeholder="e.g. These are Clare camogie club championship games, 2026">
+      </div>
+    </div>
+    <div id="aiStep2" style="display:none;flex:1;min-height:0;flex-direction:column;">
+      <div id="aiQuestions" style="display:none;"></div>
+      <div id="aiSummary" style="font-size:13px;color:var(--muted);margin-bottom:8px;"></div>
+      <div id="aiTableWrap"><table id="aiTable"><thead><tr>
+        <th></th><th>County</th><th>Code</th><th>Team A</th><th>Team B</th><th>Date</th><th>Time</th><th>Venue</th><th>Competition</th><th>Round</th><th style="min-width:170px;">Checks</th>
+      </tr></thead><tbody id="aiBody"></tbody></table></div>
+      <datalist id="aiCountyList"></datalist>
+    </div>
+    <div id="aiStatus" style="font-size:13px;margin-top:10px;min-height:18px;"></div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px;">
+      <button type="button" id="aiBackBtn" class="btn-remove" style="display:none;">&larr; Change input</button>
+      <button type="button" id="aiReadBtn" class="btn-modal-add">Read fixtures</button>
+      <button type="button" id="aiAddBtn" class="btn-modal-add" style="display:none;" disabled>Add fixtures</button>
     </div>
   </div>
 </div>
@@ -5009,5 +5079,251 @@ async function handleLogout() {
 // ===== END CSV IMPORT =====
 </script>
 </div><!-- #dashboardWrap -->
+<script>
+// ===== Add fixtures from a screenshot / PDF / spreadsheet (Claude extraction) =====
+// The worker's 'extractFixtures' action reads the input with Claude and
+// returns rows in the dashboard's shape. Every row is shown here for review
+// (club matches, duplicates, missing fields) before it is added as a
+// Proposed manual fixture.
+(function(){
+  const modal=document.getElementById('aiImportModal');
+  const drop=document.getElementById('aiDrop');
+  const fileInput=document.getElementById('aiFileInput');
+  const statusEl=document.getElementById('aiStatus');
+  let aiInputs=[];   // {name, kind:'image'|'pdf'|'text', mediaType, data|text}
+  let aiRows=[];     // extracted + edited rows
+  let aiLabel='';    // what the fixtures were read from, for history
+
+  const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  const setStatus=(msg,cls)=>{ statusEl.className=cls||''; statusEl.innerHTML=msg||''; };
+
+  function openModal(){
+    if(!authToken){ alert('Please log in first - adding fixtures from a screenshot needs a logged-in user.'); return; }
+    resetModal(); modal.classList.add('open');
+  }
+  function closeModal(){ modal.classList.remove('open'); }
+  function resetModal(){
+    aiInputs=[]; aiRows=[]; aiLabel='';
+    document.getElementById('aiText').value='';
+    document.getElementById('aiNote').value='';
+    renderChips(); showStep(1); setStatus('');
+  }
+  function showStep(n){
+    document.getElementById('aiStep1').style.display=n===1?'':'none';
+    document.getElementById('aiStep2').style.display=n===2?'flex':'none';
+    document.getElementById('aiReadBtn').style.display=n===1?'':'none';
+    document.getElementById('aiBackBtn').style.display=n===2?'':'none';
+    document.getElementById('aiAddBtn').style.display=n===2?'':'none';
+  }
+  function renderChips(){
+    document.getElementById('aiFileList').innerHTML=aiInputs.map((f,i)=>
+      '<span class="ai-chip">'+esc(f.name)+' <button type="button" data-rm="'+i+'" title="Remove">&times;</button></span>').join('');
+  }
+  document.getElementById('aiFileList').addEventListener('click',e=>{
+    const i=e.target.getAttribute('data-rm'); if(i===null) return;
+    aiInputs.splice(+i,1); renderChips();
+  });
+
+  // ---- reading inputs ----
+  function readAs(file,how){
+    return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=()=>rej(r.error);
+      if(how==='text') r.readAsText(file,'UTF-8'); else if(how==='buffer') r.readAsArrayBuffer(file); else r.readAsDataURL(file); });
+  }
+  // Screenshots are re-encoded at most 2000px on the long side to keep requests small
+  function imageToJpeg(file){
+    return new Promise((res,rej)=>{
+      const url=URL.createObjectURL(file); const img=new Image();
+      img.onload=()=>{
+        const scale=Math.min(1,2000/Math.max(img.width,img.height));
+        const c=document.createElement('canvas'); c.width=Math.round(img.width*scale); c.height=Math.round(img.height*scale);
+        const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height); ctx.drawImage(img,0,0,c.width,c.height);
+        URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg',0.9).split(',')[1]);
+      };
+      img.onerror=()=>{ URL.revokeObjectURL(url); rej(new Error('Could not read image')); };
+      img.src=url;
+    });
+  }
+  let sheetJsLoading=null;
+  function loadSheetJs(){
+    if(window.XLSX) return Promise.resolve();
+    if(!sheetJsLoading) sheetJsLoading=new Promise((res,rej)=>{
+      const s=document.createElement('script'); s.src='https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';
+      s.onload=res; s.onerror=()=>rej(new Error('Could not load the spreadsheet reader')); document.head.appendChild(s);
+    });
+    return sheetJsLoading;
+  }
+  async function addFiles(list){
+    for(const file of list){
+      const name=file.name||'pasted image';
+      try{
+        if(/^image\//.test(file.type)){
+          aiInputs.push({name, kind:'image', mediaType:'image/jpeg', data:await imageToJpeg(file)});
+        } else if(file.type==='application/pdf'||/\.pdf$/i.test(name)){
+          if(file.size>25*1024*1024){ setStatus('That PDF is too large (25 MB max).','ai-err'); continue; }
+          aiInputs.push({name, kind:'pdf', mediaType:'application/pdf', data:(await readAs(file,'url')).split(',')[1]});
+        } else if(/\.(xlsx|xls)$/i.test(name)){
+          await loadSheetJs();
+          const wb=XLSX.read(await readAs(file,'buffer'),{type:'array'});
+          const text=wb.SheetNames.map(n=>'Sheet: '+n+'\n'+XLSX.utils.sheet_to_csv(wb.Sheets[n])).join('\n\n');
+          aiInputs.push({name, kind:'text', text});
+        } else {
+          aiInputs.push({name, kind:'text', text:await readAs(file,'text')});
+        }
+      }catch(err){ setStatus('Could not read '+esc(name)+': '+esc(err.message),'ai-err'); }
+    }
+    renderChips();
+  }
+  drop.addEventListener('click',()=>fileInput.click());
+  fileInput.addEventListener('change',e=>{ addFiles([...e.target.files]); fileInput.value=''; });
+  drop.addEventListener('dragover',e=>{ e.preventDefault(); drop.classList.add('dragover'); });
+  drop.addEventListener('dragleave',()=>drop.classList.remove('dragover'));
+  drop.addEventListener('drop',e=>{ e.preventDefault(); drop.classList.remove('dragover'); addFiles([...e.dataTransfer.files]); });
+  // Paste a screenshot straight from the clipboard while the modal is open
+  document.addEventListener('paste',e=>{
+    if(!modal.classList.contains('open')||document.getElementById('aiStep1').style.display==='none') return;
+    const imgs=[...(e.clipboardData&&e.clipboardData.items||[])].filter(it=>it.type.startsWith('image/')).map(it=>it.getAsFile()).filter(Boolean);
+    if(imgs.length){ e.preventDefault(); addFiles(imgs.map((f,i)=>new File([f],'pasted screenshot '+(aiInputs.length+i+1)+'.png',{type:f.type}))); }
+  });
+
+  // ---- extraction ----
+  async function readFixtures(){
+    const pasted=document.getElementById('aiText').value.trim();
+    const note=document.getElementById('aiNote').value.trim();
+    if(!aiInputs.length&&!pasted){ setStatus('Add a screenshot, file or some text first.','ai-err'); return; }
+    const files=aiInputs.filter(f=>f.kind!=='text').map(f=>({mediaType:f.mediaType,data:f.data}));
+    const texts=aiInputs.filter(f=>f.kind==='text').map(f=>({name:f.name,text:f.text}));
+    if(pasted) texts.push({name:'Pasted text',text:pasted});
+    aiLabel=aiInputs.map(f=>f.name).concat(pasted?['pasted text']:[]).join(', ');
+    const knownCounties=[...new Set(fixtures.map(f=>f.county).filter(Boolean))].sort();
+    const btn=document.getElementById('aiReadBtn'); btn.disabled=true;
+    setStatus('<span class="spinner active" style="display:inline-block;vertical-align:middle;margin-right:6px;"></span>Reading fixtures with Claude - this can take up to a minute...');
+    try{
+      const res=await authFetch(WORKER_URL,{method:'POST',body:JSON.stringify({action:'extractFixtures',files,texts,note,knownCounties})});
+      const json=await res.json().catch(()=>({ok:false,error:'Unexpected response ('+res.status+')'}));
+      if(!json.ok) throw new Error(json.error||('Request failed ('+res.status+')'));
+      aiRows=(json.fixtures||[]).map(r=>({
+        include:true,
+        county:normaliseCounty(r.county||''), code:r.code||deriveCode(r.competition||'',null)||'',
+        teamA:r.teamA||'', teamB:r.teamB||'', date:r.date||'', time:r.time||'', venue:r.venue||'',
+        competition:r.competition||'', round:r.round||'', uncertain:r.uncertain||''
+      }));
+      if(!aiRows.length){ setStatus('Claude didn\'t find any fixtures in that input.','ai-warn'); return; }
+      renderReview(json.questions||[]);
+      setStatus('');
+    }catch(err){
+      setStatus('Could not read fixtures: '+esc(err.message),'ai-err');
+    }finally{ btn.disabled=false; }
+  }
+
+  // ---- review ----
+  const sameTeams=(f,r)=>{
+    const a=normClubName(r.teamA), b=normClubName(r.teamB);
+    const x=normClubName(f.teamA), y=normClubName(f.teamB);
+    return (a===x&&b===y)||(a===y&&b===x);
+  };
+  function checkRow(r,i){
+    const notes=[]; let blocking=false;
+    ['county','teamA','teamB','date'].forEach(k=>{ if(!String(r[k]||'').trim()){ blocking=true; } });
+    if(blocking) notes.push('<span class="ai-err">Needs county, both teams and a date</span>');
+    if(r.date&&!/^\d{4}-\d{2}-\d{2}$/.test(r.date)){ blocking=true; notes.push('<span class="ai-err">Date must be YYYY-MM-DD</span>'); }
+    const dup=r.date&&fixtures.some(f=>f.date===r.date&&sameTeams(f,r));
+    const dupBatch=aiRows.some((o,j)=>j<i&&o.include&&o.date===r.date&&sameTeams(o,r));
+    if(dup) notes.push('<span class="ai-warn">Already on the dashboard</span>');
+    else if(dupBatch) notes.push('<span class="ai-warn">Duplicate of a row above</span>');
+    // Same rules as the Clubber export, so this column agrees with what export will do
+    if(!blocking){
+      const g={...r, county:normaliseCounty(r.county), time:r.time?to12h(r.time):'', code:r.code||deriveCode(r.competition||'',null)};
+      const b=buildGamePayload(g);
+      if(!b.errors.length) notes.push('<span class="ai-ok">&#10003; Ready to export: '+esc(b.payload.club)+' v '+esc(b.payload.competitorClubName)+'</span>');
+      else notes.push('<span class="ai-warn">Can be added, but not exported yet: '+b.errors.map(esc).join('; ')+'</span>');
+    }
+    if(r.uncertain) notes.push('<span class="ai-warn">Claude: '+esc(r.uncertain)+'</span>');
+    return {blocking, dup:dup||dupBatch, html:notes.join('<br>')};
+  }
+  function renderReview(questions){
+    const q=document.getElementById('aiQuestions');
+    if(questions.length){
+      q.style.display='';
+      q.innerHTML='<strong>Claude has some questions</strong> - fix the rows below, or answer in the note box under "Change input" and read again:<ul>'+questions.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>';
+    } else q.style.display='none';
+    document.getElementById('aiCountyList').innerHTML=[...new Set(fixtures.map(f=>f.county).filter(Boolean))].sort().map(c=>'<option value="'+esc(c)+'">').join('');
+    aiRows.forEach((r,i)=>{ if(checkRow(r,i).dup) r.include=false; });
+    const codes=['','Football','Hurling','Camogie','LGFA','Rugby'];
+    document.getElementById('aiBody').innerHTML=aiRows.map((r,i)=>{
+      const inp=(k,type,extra)=>'<input data-i="'+i+'" data-k="'+k+'" type="'+(type||'text')+'" value="'+esc(r[k])+'"'+(extra||'')+'>';
+      return '<tr data-row="'+i+'">'+
+        '<td><input type="checkbox" data-i="'+i+'" data-k="include"'+(r.include?' checked':'')+' style="width:auto;"></td>'+
+        '<td style="min-width:110px;">'+inp('county','text',' list="aiCountyList"')+'</td>'+
+        '<td style="min-width:90px;"><select data-i="'+i+'" data-k="code">'+codes.map(c=>'<option'+(c===r.code?' selected':'')+'>'+c+'</option>').join('')+'</select></td>'+
+        '<td style="min-width:130px;">'+inp('teamA')+'</td>'+
+        '<td style="min-width:130px;">'+inp('teamB')+'</td>'+
+        '<td style="min-width:125px;">'+inp('date','date')+'</td>'+
+        '<td style="min-width:90px;">'+inp('time','time')+'</td>'+
+        '<td style="min-width:110px;">'+inp('venue')+'</td>'+
+        '<td style="min-width:160px;">'+inp('competition')+'</td>'+
+        '<td style="min-width:90px;">'+inp('round')+'</td>'+
+        '<td class="ai-check" id="aiCheck'+i+'"></td></tr>';
+    }).join('');
+    refreshChecks();
+    showStep(2);
+  }
+  function refreshChecks(){
+    let addable=0;
+    aiRows.forEach((r,i)=>{
+      const c=checkRow(r,i);
+      document.getElementById('aiCheck'+i).innerHTML=c.html;
+      const tr=document.querySelector('#aiBody tr[data-row="'+i+'"]');
+      tr.classList.toggle('ai-dup',c.dup&&!r.include);
+      ['county','teamA','teamB','date'].forEach(k=>{
+        const el=tr.querySelector('[data-k="'+k+'"]'); if(el) el.classList.toggle('ai-missing',!String(r[k]||'').trim());
+      });
+      if(r.include&&!c.blocking) addable++;
+    });
+    const btn=document.getElementById('aiAddBtn');
+    btn.disabled=!addable; btn.textContent='Add '+addable+' fixture'+(addable===1?'':'s');
+    document.getElementById('aiSummary').textContent='Claude found '+aiRows.length+' fixture'+(aiRows.length===1?'':'s')+' in '+aiLabel+'. Check each row - edit anything that\'s wrong, untick rows you don\'t want.';
+  }
+  document.getElementById('aiBody').addEventListener('input',e=>{
+    const i=e.target.getAttribute('data-i'), k=e.target.getAttribute('data-k'); if(i===null) return;
+    aiRows[+i][k]=k==='include'?e.target.checked:e.target.value;
+    refreshChecks();
+  });
+  document.getElementById('aiBody').addEventListener('change',e=>{
+    const i=e.target.getAttribute('data-i'), k=e.target.getAttribute('data-k'); if(i===null) return;
+    aiRows[+i][k]=k==='include'?e.target.checked:e.target.value;
+    refreshChecks();
+  });
+
+  function addFixtures(){
+    let added=0;
+    aiRows.forEach((r,i)=>{
+      if(!r.include||checkRow(r,i).blocking) return;
+      const f={
+        id:'m'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+        county:normaliseCounty(r.county.trim()), teamA:r.teamA.trim(), teamB:r.teamB.trim(),
+        date:r.date, day:dayName(r.date), time:r.time?to12h(r.time):'',
+        venue:r.venue.trim(), competition:r.competition.trim(), round:r.round.trim(),
+        code:r.code||deriveCode(r.competition||'',null), status:'Proposed',
+        manual:true, source:'screenshot-import', importedFrom:aiLabel, importedBy:currentUser||''
+      };
+      manualFixtures.push(f); fixtures.push(f);
+      recordManualCreate(f,'screenshot import ('+aiLabel+')');
+      added++;
+    });
+    if(!added) return;
+    saveManualFixtures(); saveCache(); saveChangelog();
+    populateFilterOptions(); render();
+    closeModal();
+    showConflictToast('✓ Added '+added+' fixture'+(added===1?'':'s')+' from '+aiLabel,'#16a34a');
+  }
+
+  document.getElementById('aiImportBtn').addEventListener('click',openModal);
+  document.getElementById('aiCloseBtn').addEventListener('click',closeModal);
+  modal.addEventListener('click',e=>{ if(e.target===modal) closeModal(); });
+  document.getElementById('aiReadBtn').addEventListener('click',readFixtures);
+  document.getElementById('aiBackBtn').addEventListener('click',()=>{ showStep(1); setStatus(''); });
+  document.getElementById('aiAddBtn').addEventListener('click',addFixtures);
+})();
+</script>
 </body>
 </html>

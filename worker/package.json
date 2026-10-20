@@ -1,0 +1,8 @@
+{
+  "name": "gaa-fixtures-proxy-v2",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.135.0"
+  }
+}
