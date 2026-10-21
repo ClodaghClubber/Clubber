@@ -141,6 +141,20 @@
   #importFixtureBtn:hover{color:var(--text);border-color:var(--accent);}
   #csvImportBtn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:6px 12px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;}
   #csvImportBtn:hover{color:var(--text);border-color:var(--accent);}
+  /* ---- Tabs + Approved fixtures view ---- */
+  .view-tabs{display:flex;gap:4px;padding:0 24px;border-bottom:1px solid var(--border);margin-bottom:4px;}
+  .view-tab{background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);font-size:14px;font-weight:600;padding:10px 14px 8px;cursor:pointer;font-family:inherit;}
+  .view-tab:hover{color:var(--text);}
+  .view-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+  .view-tab .tab-count{display:inline-block;min-width:18px;padding:0 6px;margin-left:6px;border-radius:10px;background:rgba(90,79,207,.12);color:var(--accent);font-size:11px;line-height:18px;text-align:center;}
+  #approvedView{padding:8px 24px 40px;}
+  .ap-filters{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin-bottom:10px;}
+  .ap-filters label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:3px;}
+  .ap-filters input,.ap-filters select{background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-family:inherit;font-size:13px;}
+  #apTable{width:100%;border-collapse:collapse;font-size:13px;}
+  #apTable th{position:sticky;top:0;background:var(--panel);text-align:left;font-size:11px;text-transform:uppercase;color:var(--muted);padding:8px;border-bottom:1px solid var(--border);white-space:nowrap;}
+  #apTable td{padding:8px;border-bottom:1px solid var(--border);vertical-align:top;}
+  #apTable tr.ap-day td{background:var(--bg);font-weight:700;font-size:12px;color:var(--muted);padding:6px 8px;}
   /* ---- Add from screenshot (AI import) ---- */
   #aiImportBtn{background:none;border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:6px 12px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;font-weight:600;}
   #aiImportBtn:hover{background:rgba(90,79,207,.08);}
@@ -466,6 +480,25 @@
   </div>
 </header>
 
+<div class="view-tabs" id="viewTabs">
+  <button type="button" class="view-tab active" data-tab="main">All fixtures</button>
+  <button type="button" class="view-tab" data-tab="approved">Approved fixtures<span class="tab-count" id="apTabCount">0</span></button>
+</div>
+<div id="approvedView" style="display:none;">
+  <div class="ap-filters">
+    <div><label>Search</label><input id="apSearch" placeholder="Team, venue, competition..." style="width:220px;"></div>
+    <div><label>County</label><select id="apCounty"><option value="">All</option></select></div>
+    <div><label>Code</label><select id="apCode"><option value="">All</option></select></div>
+    <div><label>From</label><input type="date" id="apFrom"></div>
+    <div><label>To</label><input type="date" id="apTo"></div>
+    <div><label style="display:flex;align-items:center;gap:6px;margin:0 0 8px;"><input type="checkbox" id="apRugby" style="width:auto;"> Include rugby</label></div>
+    <div><button type="button" class="btn-remove" id="apClear" style="margin-bottom:2px;">Clear filters</button></div>
+  </div>
+  <div id="apSummary" style="font-size:13px;color:var(--muted);margin-bottom:8px;"></div>
+  <div style="overflow:auto;"><table id="apTable"><thead><tr>
+    <th>Time</th><th>County</th><th>Code</th><th>Team A</th><th>Team B</th><th>Venue</th><th>Competition</th><th>Round</th><th>Clubber</th><th>Pick</th>
+  </tr></thead><tbody id="apBody"></tbody></table></div>
+</div>
 <div class="toolbar">
   <div>
     <label>County</label>
@@ -5572,6 +5605,78 @@ let currentIsAdmin = false;
     if (data.ok && data.needsSetup) { showSignIn('setupPanel'); return; }
   } catch (_) {}
   showSignIn('loginPanel');
+})();
+</script>
+<script>
+// ===== Approved fixtures tab =====
+// Read-only list of upcoming Approved fixtures with its own filters, so it
+// never changes the main page's filters. Rugby is excluded unless ticked.
+(function(){
+  const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  let activeTab='main';
+  const today=()=>new Date().toISOString().slice(0,10);
+  const timeKey=t=>{ const h=from12h(t||''); return /^\d{2}:\d{2}$/.test(h)?h:'99:99'; };
+  const approved=()=>fixtures.filter(f=>f.status==='Approved'&&f.date>=today());
+  const els=id=>document.getElementById(id);
+
+  function fillSelect(id,values){
+    const sel=els(id), cur=sel.value;
+    sel.innerHTML='<option value="">All</option>'+values.map(v=>'<option'+(v===cur?' selected':'')+'>'+esc(v)+'</option>').join('');
+  }
+  function filtered(){
+    const q=els('apSearch').value.trim().toLowerCase();
+    const county=els('apCounty').value, code=els('apCode').value, from=els('apFrom').value, to=els('apTo').value;
+    const rugby=els('apRugby').checked;
+    return approved().filter(f=>{
+      if(!rugby&&isRugbyFixture(f)) return false;
+      if(county&&f.county!==county) return false;
+      if(code&&f.code!==code) return false;
+      if(from&&f.date<from) return false;
+      if(to&&f.date>to) return false;
+      if(q&&![f.teamA,f.teamB,f.venue,f.competition,f.county,f.round].join(' ').toLowerCase().includes(q)) return false;
+      return true;
+    }).sort((a,b)=>a.date.localeCompare(b.date)||timeKey(a.time).localeCompare(timeKey(b.time))||a.county.localeCompare(b.county));
+  }
+  window.renderApproved=function(){
+    const all=approved();
+    const base=els('apRugby').checked?all:all.filter(f=>!isRugbyFixture(f));
+    els('apTabCount').textContent=base.length;
+    if(activeTab!=='approved') return;
+    fillSelect('apCounty',[...new Set(base.map(f=>f.county).filter(Boolean))].sort());
+    fillSelect('apCode',[...new Set(base.map(f=>f.code).filter(Boolean))].sort());
+    const list=filtered();
+    const hiddenRugby=els('apRugby').checked?0:all.filter(f=>isRugbyFixture(f)).length;
+    els('apSummary').textContent=list.length+' upcoming approved fixture'+(list.length===1?'':'s')+
+      (hiddenRugby?' \u00b7 '+hiddenRugby+' rugby fixture'+(hiddenRugby===1?'':'s')+' hidden':'');
+    let html='', day='';
+    list.forEach(f=>{
+      if(f.date!==day){ day=f.date; html+='<tr class="ap-day"><td colspan="10">'+esc(f.day||dayName(f.date))+' '+esc(f.date)+'</td></tr>'; }
+      html+='<tr><td style="white-space:nowrap;">'+esc(f.time||'TBC')+'</td><td>'+esc(f.county)+'</td><td>'+esc(f.code)+'</td>'+
+        '<td>'+esc(f.teamA)+'</td><td>'+esc(f.teamB)+'</td><td>'+esc(f.venue)+'</td><td>'+esc(f.competition)+'</td><td>'+esc(f.round)+'</td>'+
+        '<td>'+(f.clubberCreated?'<span class="ai-ok">&#10003;</span>':'')+'</td><td>'+(f.clubberPick?'&#9733;':'')+'</td></tr>';
+    });
+    els('apBody').innerHTML=html||'<tr><td colspan="10" style="color:var(--muted);padding:16px;">No approved fixtures match these filters.</td></tr>';
+  };
+  function showTab(tab){
+    activeTab=tab;
+    if(tab==='approved'&&typeof vidViewActive!=='undefined'&&vidViewActive) toggleVidView();
+    document.querySelectorAll('#viewTabs .view-tab').forEach(b=>b.classList.toggle('active',b.getAttribute('data-tab')===tab));
+    const main=tab==='main';
+    els('approvedView').style.display=main?'none':'';
+    const container=document.querySelector('.container'), toolbar=document.querySelector('.toolbar');
+    if(container) container.style.display=main?'':'none';
+    if(toolbar) toolbar.style.display=main?'':'none';
+    const rowCountBar=document.querySelector('div[style*="justify-content:space-between"][style*="padding:6px 24px"]');
+    if(rowCountBar) rowCountBar.style.display=main?'':'none';
+    if(!main) renderApproved();
+  }
+  document.getElementById('viewTabs').addEventListener('click',e=>{ const b=e.target.closest('.view-tab'); if(b) showTab(b.getAttribute('data-tab')); });
+  ['apSearch','apCounty','apCode','apFrom','apTo','apRugby'].forEach(id=>els(id).addEventListener(id==='apSearch'?'input':'change',renderApproved));
+  els('apClear').addEventListener('click',()=>{ ['apSearch','apCounty','apCode','apFrom','apTo'].forEach(id=>els(id).value=''); els('apRugby').checked=false; renderApproved(); });
+  // Keep the tab up to date whenever the dashboard re-renders (new data, status changes)
+  const baseRender=render;
+  render=function(){ const r=baseRender.apply(this,arguments); try{ renderApproved(); }catch(_){} return r; };
+  renderApproved();
 })();
 </script>
 </body>
