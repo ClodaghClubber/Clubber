@@ -755,6 +755,12 @@
         <option value="all">All fixtures</option>
         <option value="unassigned">Unassigned only</option>
       </select>
+      <label style="font-size:12px;color:var(--muted);margin-left:6px;">Sport</label>
+      <select id="vidSportFilter" onchange="try{localStorage.setItem('gaaVidSport',this.value)}catch(_){};renderVidView()" style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg);">
+        <option value="all">GAA + Rugby</option>
+        <option value="gaa">GAA only</option>
+        <option value="rugby">Rugby only</option>
+      </select>
       <button onclick="toggleVidView()" style="background:var(--border);color:var(--text);border:none;border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;">← Back to Fixtures</button>
     </div>
   </div>
@@ -4580,6 +4586,15 @@ function renderVidView() {
   if (filter === 'clubber') viewFixtures = viewFixtures.filter(f => f.clubberCreated && f.date >= today);
   if (filter === 'upcoming') viewFixtures = viewFixtures.filter(f => f.date >= today);
   if (filter === 'unassigned') viewFixtures = viewFixtures.filter(f => !f.videographer && f.date >= today);
+  // Sport: GAA, Rugby, or both (remembered per browser)
+  const sportSel = document.getElementById('vidSportFilter');
+  if (sportSel && !sportSel.dataset.restored) {
+    sportSel.dataset.restored = '1';
+    try { const saved = localStorage.getItem('gaaVidSport'); if (saved) sportSel.value = saved; } catch (_) {}
+  }
+  const sport = sportSel ? sportSel.value : 'all';
+  if (sport === 'gaa') viewFixtures = viewFixtures.filter(f => !isRugbyFixture(f));
+  if (sport === 'rugby') viewFixtures = viewFixtures.filter(f => isRugbyFixture(f));
   viewFixtures.sort((a, b) => {
     if (a.date !== b.date) return a.date < b.date ? -1 : 1;
     return (a.time || '') < (b.time || '') ? -1 : 1;
