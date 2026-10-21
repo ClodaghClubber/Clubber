@@ -5410,7 +5410,9 @@ async function handleLogout() {
 
   document.getElementById('aiImportBtn').addEventListener('click',openModal);
   document.getElementById('aiCloseBtn').addEventListener('click',closeModal);
-  modal.addEventListener('click',e=>{ if(e.target===modal) closeModal(); });
+  let downOnBackdrop=false; // close only when press and release are both on the backdrop
+  modal.addEventListener('mousedown',e=>{ downOnBackdrop=e.target===modal; });
+  modal.addEventListener('click',e=>{ if(e.target===modal&&downOnBackdrop) closeModal(); downOnBackdrop=false; });
   document.getElementById('aiReadBtn').addEventListener('click',readFixtures);
   document.getElementById('aiBackBtn').addEventListener('click',()=>{ showStep(1); setStatus(''); });
   document.getElementById('aiAddBtn').addEventListener('click',addFixtures);
@@ -5426,7 +5428,13 @@ let currentIsAdmin = false;
   const openM=id=>document.getElementById(id).classList.add('open');
   const closeM=id=>document.getElementById(id).classList.remove('open');
   document.querySelectorAll('.um-close').forEach(b=>b.addEventListener('click',()=>closeM(b.getAttribute('data-close'))));
-  document.querySelectorAll('.um-modal').forEach(m=>m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('open'); }));
+  // Close on a backdrop click only when the press also started on the backdrop -
+  // otherwise selecting/copying text and releasing outside the box closed it
+  document.querySelectorAll('.um-modal').forEach(m=>{
+    let downOnBackdrop=false;
+    m.addEventListener('mousedown',e=>{ downOnBackdrop=e.target===m; });
+    m.addEventListener('click',e=>{ if(e.target===m&&downOnBackdrop) m.classList.remove('open'); downOnBackdrop=false; });
+  });
 
   // Signed-in identity drives attribution (history, audit trail) from now on
   window.applyAccount=function(data){
