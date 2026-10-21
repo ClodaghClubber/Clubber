@@ -344,7 +344,23 @@
   .chg-diff-from{text-decoration:line-through;color:var(--muted);}
   .chg-diff-to{font-weight:600;}
   /* Auth */
-  #authOverlay{display:none!important;}
+  #authOverlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9000;display:flex;align-items:center;justify-content:center;}
+  .um-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1100;align-items:flex-start;justify-content:center;padding-top:50px;}
+  .um-modal.open{display:flex;}
+  .um-close{background:none;border:none;cursor:pointer;font-size:20px;line-height:1;color:var(--muted);padding:4px 6px;}
+  .um-section{border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:12px;}
+  .um-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px;}
+  .um-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;}
+  .um-table{width:100%;border-collapse:collapse;font-size:13px;}
+  .um-table th{text-align:left;font-size:11px;text-transform:uppercase;color:var(--muted);padding:6px;border-bottom:1px solid var(--border);}
+  .um-table td{padding:6px;border-bottom:1px solid var(--border);}
+  .um-btn{background:none;border:1px solid var(--border);color:var(--text);border-radius:5px;padding:4px 9px;font-size:12px;cursor:pointer;font-family:inherit;}
+  .um-btn:hover{border-color:var(--accent);}
+  .um-danger{color:#dc2626;}
+  .um-notice{background:#ecfdf5;border:1px solid #6ee7b7;color:#065f46;border-radius:6px;padding:10px 12px;font-size:13px;line-height:1.6;}
+  .um-code{font-size:14px;font-weight:700;background:#fff;border:1px solid #6ee7b7;border-radius:4px;padding:1px 6px;user-select:all;}
+  .hdr-btn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;font-family:inherit;}
+  .hdr-btn:hover{color:var(--text);border-color:var(--accent);}
   #authOverlay.hidden{display:none;}
   .auth-box{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:40px 36px;width:360px;box-shadow:0 8px 40px rgba(0,0,0,.3);}
   .auth-box h2{margin:0 0 6px;font-size:20px;}
@@ -419,10 +435,24 @@
       <div class="auth-error" id="changePasswordError"></div>
     </form>
   </div>
+  <!-- First admin setup (only while no accounts exist) -->
+  <div class="auth-box" id="setupPanel" style="display:none;">
+    <h2>Set up the first admin account</h2>
+    <p>No accounts exist yet. Create yours - you can then add your team from "Manage users".</p>
+    <form id="setupForm">
+      <div class="auth-field"><label>Admin key (the worker's ADMIN_KEY secret)</label><input type="password" id="setupKey" autocomplete="off" required></div>
+      <div class="auth-field"><label>Username</label><input type="text" id="setupUser" autocomplete="username" required></div>
+      <div class="auth-field"><label>Display name</label><input type="text" id="setupName" placeholder="e.g. Clodagh"></div>
+      <div class="auth-field"><label>Password (at least 8 characters)</label><input type="password" id="setupPass1" autocomplete="new-password" required minlength="8"></div>
+      <div class="auth-field"><label>Confirm password</label><input type="password" id="setupPass2" autocomplete="new-password" required minlength="8"></div>
+      <button type="submit" class="auth-submit" id="setupSubmit">Create admin account</button>
+      <div class="auth-error" id="setupError"></div>
+    </form>
+  </div>
 </div>
 
 <!-- Main dashboard (hidden until authenticated) -->
-<div id="dashboardWrap">
+<div id="dashboardWrap" style="display:none;">
 <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;">
   <div>
     <h1>Fixtures Dashboard</h1>
@@ -430,6 +460,8 @@
   </div>
   <div style="display:flex;align-items:center;gap:10px;padding-top:8px;white-space:nowrap;">
     <span id="authUserLabel" style="font-size:12px;color:var(--muted);"></span>
+    <button type="button" class="hdr-btn" id="manageUsersBtn" style="display:none;">Manage users</button>
+    <button type="button" class="hdr-btn" id="changePwBtn">Change password</button>
     <button id="logoutBtn" onclick="handleLogout()">Sign out</button>
   </div>
 </header>
@@ -975,6 +1007,53 @@
   </div>
 </div>
 
+<!-- Change password (signed-in users) -->
+<div id="changePwModal" class="um-modal">
+  <div class="modal-box" style="width:400px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <h2 style="margin:0;">Change password</h2>
+      <button type="button" class="um-close" data-close="changePwModal" aria-label="Close">&times;</button>
+    </div>
+    <form id="changePwForm">
+      <div class="auth-field"><label>Current password</label><input type="password" id="cpCurrent" autocomplete="current-password" required></div>
+      <div class="auth-field"><label>New password (at least 8 characters)</label><input type="password" id="cpNew1" autocomplete="new-password" required minlength="8"></div>
+      <div class="auth-field"><label>Confirm new password</label><input type="password" id="cpNew2" autocomplete="new-password" required minlength="8"></div>
+      <button type="submit" class="auth-submit" id="cpSubmit">Change password</button>
+      <div class="auth-error" id="cpError"></div>
+    </form>
+  </div>
+</div>
+
+<!-- Manage users (admins) -->
+<div id="usersModal" class="um-modal">
+  <div class="modal-box" style="width:min(820px,96vw);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <h2 style="margin:0;">Manage users</h2>
+      <button type="button" class="um-close" data-close="usersModal" aria-label="Close">&times;</button>
+    </div>
+    <div class="um-section">
+      <div class="um-title">Add a user</div>
+      <form id="umAddForm" class="um-grid">
+        <div class="auth-field"><label>Username</label><input id="umUser" required placeholder="e.g. aoife" autocomplete="off"></div>
+        <div class="auth-field"><label>Display name</label><input id="umName" placeholder="e.g. Aoife Murphy" autocomplete="off"></div>
+        <div class="auth-field"><label>Temporary password</label>
+          <div style="display:flex;gap:6px;"><input id="umPass" required minlength="8" autocomplete="off"><button type="button" class="um-btn" id="umGen">Generate</button></div>
+        </div>
+        <div class="auth-field" style="display:flex;align-items:flex-end;gap:12px;">
+          <label style="display:flex;align-items:center;gap:6px;margin:0 0 10px;"><input type="checkbox" id="umAdmin" style="width:auto;"> Admin</label>
+          <button type="submit" class="btn-modal-add" style="margin-bottom:6px;">Add user</button>
+        </div>
+      </form>
+      <div id="umNotice" class="um-notice" style="display:none;"></div>
+    </div>
+    <div class="um-section">
+      <div class="um-title">Users</div>
+      <div style="overflow:auto;max-height:45vh;"><table class="um-table"><thead><tr><th>Username</th><th>Display name</th><th>Role</th><th>Status</th><th>Last sign-in</th><th></th></tr></thead><tbody id="umBody"></tbody></table></div>
+    </div>
+    <div class="auth-error" id="umError"></div>
+  </div>
+</div>
+
 <!-- Add Fixture Modal -->
 <div id="addModal">
   <div class="modal-box">
@@ -1379,7 +1458,23 @@ async function pushUserNameToServer(name) {
 function authFetch(url, opts = {}) {
   const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
   if (authToken) headers['Authorization'] = 'Bearer ' + authToken;
-  return fetch(url, { ...opts, headers });
+  return fetch(url, { ...opts, headers }).then(res => {
+    // Session expired or revoked during use: ask the user to sign in again
+    // (previously saves failed silently and only lived in this browser)
+    if (res.status === 401 && authToken) {
+      let action = '';
+      try { action = JSON.parse(opts.body || '{}').action || ''; } catch (_) {}
+      if (!['login', 'validateSession', 'changePassword', 'setupFirstAdmin', 'logout'].includes(action)) {
+        authToken = '';
+        localStorage.removeItem(AUTH_TOKEN_KEY);
+        const err = document.getElementById('loginError');
+        if (err) err.textContent = 'Your session has expired - please sign in again.';
+        document.getElementById('dashboardWrap').style.display = 'none';
+        if (typeof showSignIn === 'function') showSignIn('loginPanel');
+      }
+    }
+    return res;
+  });
 }
 
 // ---- App state ----
@@ -4514,12 +4609,7 @@ async function handleLogin(e) {
     if (!data.ok) throw new Error(data.error || 'Login failed');
     authToken = data.token;
     localStorage.setItem(AUTH_TOKEN_KEY, authToken);
-    // Only use login username if user hasn't set a display name — preserves "Set name" value across logins
-    if (!currentUser) {
-      currentUser = data.username;
-      localStorage.setItem(USER_KEY, currentUser);
-      setUserCookie(currentUser);
-    }
+    applyAccount(data);
     if (data.mustChangePassword) {
       document.getElementById('loginPanel').style.display = 'none';
       document.getElementById('changePasswordPanel').style.display = '';
@@ -4573,7 +4663,10 @@ async function handleLogout() {
     await authFetch(WORKER_URL, { method: 'POST', body: JSON.stringify({ action: 'logout', token: authToken }) });
   } catch (_) {}
   authToken = '';
+  currentIsAdmin = false;
   localStorage.removeItem(AUTH_TOKEN_KEY);
+  document.getElementById('manageUsersBtn').style.display = 'none';
+  document.getElementById('setupPanel').style.display = 'none';
   document.getElementById('dashboardWrap').style.display = 'none';
   document.getElementById('authOverlay').classList.remove('hidden');
   document.getElementById('loginPanel').style.display = '';
@@ -4582,8 +4675,6 @@ async function handleLogout() {
   document.getElementById('loginError').textContent = '';
 }
 
-// Auth disabled — bypass login
-(async () => { finishAuth('guest'); })();
 // ===== END AUTH =====
 
 // ===== CSV IMPORT =====
@@ -5323,6 +5414,156 @@ async function handleLogout() {
   document.getElementById('aiReadBtn').addEventListener('click',readFixtures);
   document.getElementById('aiBackBtn').addEventListener('click',()=>{ showStep(1); setStatus(''); });
   document.getElementById('aiAddBtn').addEventListener('click',addFixtures);
+})();
+</script>
+<script>
+// ===== Accounts: sign-in, first-admin setup, change password, manage users =====
+let currentIsAdmin = false;
+(function(){
+  const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  const post=(body)=>authFetch(WORKER_URL,{method:'POST',body:JSON.stringify(body)}).then(async r=>{
+    const d=await r.json().catch(()=>({ok:false,error:'Unexpected response ('+r.status+')'})); if(!d.ok) throw new Error(d.error||('Request failed ('+r.status+')')); return d; });
+  const openM=id=>document.getElementById(id).classList.add('open');
+  const closeM=id=>document.getElementById(id).classList.remove('open');
+  document.querySelectorAll('.um-close').forEach(b=>b.addEventListener('click',()=>closeM(b.getAttribute('data-close'))));
+  document.querySelectorAll('.um-modal').forEach(m=>m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('open'); }));
+
+  // Signed-in identity drives attribution (history, audit trail) from now on
+  window.applyAccount=function(data){
+    currentUser=data.displayName||data.username||currentUser;
+    currentIsAdmin=!!data.isAdmin;
+    localStorage.setItem(USER_KEY,currentUser);
+    if(typeof setUserCookie==='function') setUserCookie(currentUser);
+    if(typeof updateUserBtn==='function') updateUserBtn();
+    document.getElementById('manageUsersBtn').style.display=currentIsAdmin?'':'none';
+  };
+  function showPanel(id){
+    ['loginPanel','changePasswordPanel','setupPanel'].forEach(p=>{ const el=document.getElementById(p); if(el) el.style.display=p===id?'':'none'; });
+    document.getElementById('authOverlay').classList.remove('hidden');
+  }
+  window.showSignIn=showPanel;
+
+  // ---- first admin setup (only offered while no accounts exist) ----
+  document.getElementById('setupForm').addEventListener('submit',async e=>{
+    e.preventDefault();
+    const err=document.getElementById('setupError'), btn=document.getElementById('setupSubmit');
+    const p1=document.getElementById('setupPass1').value, p2=document.getElementById('setupPass2').value;
+    err.textContent='';
+    if(p1!==p2){ err.textContent='Passwords do not match'; return; }
+    btn.disabled=true;
+    try{
+      const username=document.getElementById('setupUser').value.trim();
+      await post({action:'setupFirstAdmin',adminKey:document.getElementById('setupKey').value,username,
+        displayName:document.getElementById('setupName').value.trim(),password:p1});
+      const res=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'login',username,password:p1})});
+      const data=await res.json(); if(!data.ok) throw new Error(data.error||'Sign-in failed');
+      authToken=data.token; localStorage.setItem(AUTH_TOKEN_KEY,authToken);
+      applyAccount(data); finishAuth(currentUser);
+    }catch(ex){ err.textContent=ex.message; }
+    finally{ btn.disabled=false; }
+  });
+
+  // ---- change own password ----
+  document.getElementById('changePwBtn').addEventListener('click',()=>{
+    ['cpCurrent','cpNew1','cpNew2'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('cpError').textContent=''; openM('changePwModal');
+  });
+  document.getElementById('changePwForm').addEventListener('submit',async e=>{
+    e.preventDefault();
+    const err=document.getElementById('cpError'), btn=document.getElementById('cpSubmit');
+    const p1=document.getElementById('cpNew1').value, p2=document.getElementById('cpNew2').value;
+    err.textContent='';
+    if(p1!==p2){ err.textContent='New passwords do not match'; return; }
+    btn.disabled=true;
+    try{
+      await post({action:'changePassword',currentPassword:document.getElementById('cpCurrent').value,newPassword:p1});
+      closeM('changePwModal'); showConflictToast('✓ Password changed','#16a34a');
+    }catch(ex){ err.textContent=ex.message; }
+    finally{ btn.disabled=false; }
+  });
+
+  // ---- manage users (admins) ----
+  const genPass=()=>{ const c='abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'; const a=crypto.getRandomValues(new Uint32Array(12)); return [...a].map(n=>c[n%c.length]).join(''); };
+  const umErr=t=>{ document.getElementById('umError').textContent=t||''; };
+  function notice(html){ const n=document.getElementById('umNotice'); n.innerHTML=html; n.style.display=html?'':'none'; }
+  async function loadUsers(){
+    umErr('');
+    try{
+      const d=await post({action:'usersList'});
+      document.getElementById('umBody').innerHTML=d.users.map(u=>{
+        const me=u.displayName===currentUser&&u.isAdmin===currentIsAdmin;
+        return '<tr data-u="'+esc(u.username)+'">'+
+          '<td><strong>'+esc(u.username)+'</strong></td>'+
+          '<td>'+esc(u.displayName)+'</td>'+
+          '<td>'+(u.isAdmin?'Admin':'User')+'</td>'+
+          '<td>'+(u.mustChangePassword?'<span style="color:#b45309;">Needs to set password</span>':'Active')+'</td>'+
+          '<td>'+(u.lastLogin?esc(new Date(u.lastLogin).toLocaleString('en-IE')):'Never')+'</td>'+
+          '<td style="white-space:nowrap;">'+
+            '<button type="button" class="um-btn" data-act="reset">Reset password</button> '+
+            '<button type="button" class="um-btn" data-act="admin" data-to="'+(u.isAdmin?'0':'1')+'">'+(u.isAdmin?'Remove admin':'Make admin')+'</button> '+
+            '<button type="button" class="um-btn um-danger" data-act="delete">Remove</button>'+
+          '</td></tr>';
+      }).join('');
+    }catch(ex){ umErr(ex.message); }
+  }
+  document.getElementById('manageUsersBtn').addEventListener('click',()=>{ notice(''); document.getElementById('umAddForm').reset(); openM('usersModal'); loadUsers(); });
+  document.getElementById('umGen').addEventListener('click',()=>{ document.getElementById('umPass').value=genPass(); });
+  document.getElementById('umAddForm').addEventListener('submit',async e=>{
+    e.preventDefault(); umErr('');
+    const username=document.getElementById('umUser').value.trim().toLowerCase();
+    const tempPassword=document.getElementById('umPass').value;
+    try{
+      await post({action:'usersCreate',username,displayName:document.getElementById('umName').value.trim(),tempPassword,isAdmin:document.getElementById('umAdmin').checked});
+      notice('<strong>'+esc(username)+'</strong> added. Give them their username and this temporary password: <code class="um-code">'+esc(tempPassword)+'</code> '+
+             '<button type="button" class="um-btn" id="umCopy">Copy</button><br>They\'ll be asked to choose their own password the first time they sign in. This password won\'t be shown again.');
+      const cp=document.getElementById('umCopy'); cp.addEventListener('click',()=>{ navigator.clipboard.writeText('Username: '+username+'\nTemporary password: '+tempPassword).then(()=>{ cp.textContent='Copied'; }); });
+      document.getElementById('umAddForm').reset(); loadUsers();
+    }catch(ex){ umErr(ex.message); }
+  });
+  document.getElementById('umBody').addEventListener('click',async e=>{
+    const b=e.target.closest('button[data-act]'); if(!b) return;
+    const username=b.closest('tr').getAttribute('data-u'); const act=b.getAttribute('data-act'); umErr('');
+    try{
+      if(act==='reset'){
+        const tempPassword=genPass();
+        if(!confirm('Reset the password for '+username+'? They will be signed out and must choose a new password at next sign-in.')) return;
+        await post({action:'usersReset',username,tempPassword});
+        notice('New temporary password for <strong>'+esc(username)+'</strong>: <code class="um-code">'+esc(tempPassword)+'</code> '+
+               '<button type="button" class="um-btn" id="umCopy">Copy</button><br>They\'ve been signed out and will choose their own password at next sign-in.');
+        const cp=document.getElementById('umCopy'); cp.addEventListener('click',()=>{ navigator.clipboard.writeText('Username: '+username+'\nTemporary password: '+tempPassword).then(()=>{ cp.textContent='Copied'; }); });
+      } else if(act==='admin'){
+        await post({action:'usersUpdate',username,isAdmin:b.getAttribute('data-to')==='1'});
+      } else if(act==='delete'){
+        if(!confirm('Remove '+username+'? They will be signed out and can no longer sign in.')) return;
+        await post({action:'usersDelete',username});
+      }
+      loadUsers();
+    }catch(ex){ umErr(ex.message); }
+  });
+})();
+
+// On load: restore the session, or show sign-in / first-admin setup
+(async () => {
+  if (authToken) {
+    try {
+      const res = await authFetch(WORKER_URL, { method: 'POST', body: JSON.stringify({ action: 'validateSession' }) });
+      const data = await res.json();
+      if (data.ok) {
+        applyAccount(data);
+        if (data.mustChangePassword) { showSignIn('changePasswordPanel'); return; }
+        finishAuth(currentUser);
+        return;
+      }
+    } catch (_) {}
+    authToken = '';
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+  }
+  try {
+    const res = await fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'setupStatus' }) });
+    const data = await res.json();
+    if (data.ok && data.needsSetup) { showSignIn('setupPanel'); return; }
+  } catch (_) {}
+  showSignIn('loginPanel');
 })();
 </script>
 </body>

@@ -2425,64 +2425,167 @@ function hexToBytes(hex) {
 async function getUsers(kv)   { return JSON.parse(await kv.get(USERS_KV_KEY) || '{}'); }
 async function putUsers(kv, u) { await kv.put(USERS_KV_KEY, JSON.stringify(u)); }
 
-async function validateSession(kv, request) {
+// Returns { username, user } for a valid session, else null. A session is
+// invalidated when its user is removed or their tokenVersion is bumped
+// (password reset by an admin), so those sign the user out everywhere.
+async function getSessionUser(kv, request) {
   const auth = request.headers.get('Authorization') || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : null;
   if (!token) return null;
   const raw = await kv.get(SESSION_PREFIX + token);
   if (!raw) return null;
   const session = JSON.parse(raw);
-  return session.username || null;
+  const users = await getUsers(kv);
+  const user = users[session.username];
+  if (!user) return null;
+  if ((user.tokenVersion || 0) !== (session.ver || 0)) return null;
+  return { username: session.username, user };
 }
+async function validateSession(kv, request) {
+  const s = await getSessionUser(kv, request);
+  return s ? s.username : null;
+}
+const displayNameOf = (username, user) => (user && user.displayName) || username;
+const publicUser = (username, u) => ({
+  username, displayName: displayNameOf(username, u), isAdmin: !!u.isAdmin,
+  mustChangePassword: !!u.mustChangePassword, createdAt: u.createdAt || '', lastLogin: u.lastLogin || '',
+});
+const LOGIN_FAIL_PREFIX = 'auth_fail:';
+const LOGIN_MAX_FAILS = 5;
+const LOGIN_LOCK_SEC = 15 * 60;
+const USERNAME_RE = /^[a-z0-9._-]{2,40}$/;
 
 async function handleAuth(action, body, kv, request, adminKey) {
-  // ---- login ----
-  if (action === 'login') {
-    const { username, password } = body || {};
-    if (!username || !password) return jsonResp({ ok: false, error: 'Missing credentials' }, 400);
+  body = body || {};
+  // ---- setupStatus: tells the login screen whether the first admin still needs creating ----
+  if (action === 'setupStatus') {
     const users = await getUsers(kv);
-    const user = users[username.toLowerCase()];
-    if (!user) return jsonResp({ ok: false, error: 'Invalid username or password' }, 401);
-    const hash = await pbkdf2Hash(password, user.salt);
-    if (hash !== user.hash) return jsonResp({ ok: false, error: 'Invalid username or password' }, 401);
-    const token = randomHex(32);
-    await kv.put(SESSION_PREFIX + token, JSON.stringify({ username: username.toLowerCase(), createdAt: new Date().toISOString() }), { expirationTtl: SESSION_TTL_SEC });
-    return jsonResp({ ok: true, token, mustChangePassword: !!user.mustChangePassword, username: username.toLowerCase() });
+    return jsonResp({ ok: true, needsSetup: Object.keys(users).length === 0 });
   }
-
-  // ---- logout ----
-  if (action === 'logout') {
-    const { token } = body || {};
-    if (token) await kv.delete(SESSION_PREFIX + token);
+  // ---- setupFirstAdmin: only while no users exist, and only with the ADMIN_KEY secret ----
+  if (action === 'setupFirstAdmin') {
+    const users = await getUsers(kv);
+    if (Object.keys(users).length) return jsonResp({ ok: false, error: 'Setup has already been completed' }, 409);
+    if (!adminKey || body.adminKey !== adminKey) return jsonResp({ ok: false, error: 'Admin key is not correct' }, 403);
+    const key = String(body.username || '').trim().toLowerCase();
+    if (!USERNAME_RE.test(key)) return jsonResp({ ok: false, error: 'Username: 2-40 letters, numbers, dots, dashes or underscores' }, 400);
+    if (!body.password || body.password.length < 8) return jsonResp({ ok: false, error: 'Password must be at least 8 characters' }, 400);
+    const salt = randomHex(16);
+    users[key] = {
+      salt, hash: await pbkdf2Hash(body.password, salt), mustChangePassword: false, isAdmin: true,
+      displayName: String(body.displayName || '').trim().slice(0, 60) || key,
+      createdAt: new Date().toISOString(), tokenVersion: 0,
+    };
+    await putUsers(kv, users);
     return jsonResp({ ok: true });
   }
-
+  // ---- login (5 wrong passwords locks the username for 15 minutes) ----
+  if (action === 'login') {
+    const { username, password } = body;
+    if (!username || !password) return jsonResp({ ok: false, error: 'Missing credentials' }, 400);
+    const key = String(username).trim().toLowerCase();
+    const failKey = LOGIN_FAIL_PREFIX + key;
+    const fails = parseInt(await kv.get(failKey) || '0', 10);
+    if (fails >= LOGIN_MAX_FAILS) return jsonResp({ ok: false, error: 'Too many failed attempts - try again in 15 minutes' }, 429);
+    const users = await getUsers(kv);
+    const user = users[key];
+    const ok = user && (await pbkdf2Hash(password, user.salt)) === user.hash;
+    if (!ok) {
+      await kv.put(failKey, String(fails + 1), { expirationTtl: LOGIN_LOCK_SEC });
+      return jsonResp({ ok: false, error: 'Invalid username or password' }, 401);
+    }
+    if (fails) await kv.delete(failKey);
+    const token = randomHex(32);
+    await kv.put(SESSION_PREFIX + token, JSON.stringify({ username: key, ver: user.tokenVersion || 0, createdAt: new Date().toISOString() }), { expirationTtl: SESSION_TTL_SEC });
+    user.lastLogin = new Date().toISOString();
+    await putUsers(kv, users);
+    return jsonResp({ ok: true, token, ...publicUser(key, user) });
+  }
+  // ---- logout ----
+  if (action === 'logout') {
+    if (body.token) await kv.delete(SESSION_PREFIX + body.token);
+    return jsonResp({ ok: true });
+  }
   // ---- validateSession ----
   if (action === 'validateSession') {
-    const username = await validateSession(kv, request);
-    if (!username) return jsonResp({ ok: false, error: 'Invalid or expired session' }, 401);
-    return jsonResp({ ok: true, username });
+    const s = await getSessionUser(kv, request);
+    if (!s) return jsonResp({ ok: false, error: 'Invalid or expired session' }, 401);
+    return jsonResp({ ok: true, ...publicUser(s.username, s.user) });
   }
-
-  // ---- changePassword (requires valid session) ----
+  // ---- changePassword: own password; current password needed unless it's a first-login change ----
   if (action === 'changePassword') {
-    const username = await validateSession(kv, request);
-    if (!username) return jsonResp({ ok: false, error: 'Not authenticated' }, 401);
-    const { newPassword } = body || {};
+    const s = await getSessionUser(kv, request);
+    if (!s) return jsonResp({ ok: false, error: 'Not authenticated' }, 401);
+    const { newPassword, currentPassword } = body;
     if (!newPassword || newPassword.length < 8) return jsonResp({ ok: false, error: 'Password must be at least 8 characters' }, 400);
     const users = await getUsers(kv);
-    if (!users[username]) return jsonResp({ ok: false, error: 'User not found' }, 404);
+    const u = users[s.username];
+    if (!u.mustChangePassword) {
+      if (!currentPassword || (await pbkdf2Hash(currentPassword, u.salt)) !== u.hash) {
+        return jsonResp({ ok: false, error: 'Current password is not correct' }, 403);
+      }
+    }
     const salt = randomHex(16);
-    users[username].salt = salt;
-    users[username].hash = await pbkdf2Hash(newPassword, salt);
-    users[username].mustChangePassword = false;
+    u.salt = salt;
+    u.hash = await pbkdf2Hash(newPassword, salt);
+    u.mustChangePassword = false;
     await putUsers(kv, users);
     return jsonResp({ ok: true });
   }
 
-  // ---- adminResetPassword (requires ADMIN_KEY secret) ----
+  // ---- user management (admins, via their own session) ----
+  if (['usersList', 'usersCreate', 'usersReset', 'usersUpdate', 'usersDelete'].includes(action)) {
+    const s = await getSessionUser(kv, request);
+    if (!s) return jsonResp({ ok: false, error: 'Not authenticated' }, 401);
+    if (!s.user.isAdmin) return jsonResp({ ok: false, error: 'Only admins can manage users' }, 403);
+    const users = await getUsers(kv);
+    const key = String(body.username || '').trim().toLowerCase();
+    if (action === 'usersList') {
+      return jsonResp({ ok: true, users: Object.entries(users).map(([k, u]) => publicUser(k, u)).sort((a, b) => a.username.localeCompare(b.username)) });
+    }
+    if (action === 'usersCreate') {
+      if (!USERNAME_RE.test(key)) return jsonResp({ ok: false, error: 'Username: 2-40 letters, numbers, dots, dashes or underscores' }, 400);
+      if (users[key]) return jsonResp({ ok: false, error: 'That username is already taken' }, 409);
+      if (!body.tempPassword || body.tempPassword.length < 8) return jsonResp({ ok: false, error: 'Temporary password must be at least 8 characters' }, 400);
+      const salt = randomHex(16);
+      users[key] = {
+        salt, hash: await pbkdf2Hash(body.tempPassword, salt), mustChangePassword: true, isAdmin: !!body.isAdmin,
+        displayName: String(body.displayName || '').trim().slice(0, 60) || key,
+        createdAt: new Date().toISOString(), createdBy: s.username, tokenVersion: 0,
+      };
+      await putUsers(kv, users);
+      return jsonResp({ ok: true, user: publicUser(key, users[key]) });
+    }
+    if (!users[key]) return jsonResp({ ok: false, error: 'User not found' }, 404);
+    if (action === 'usersReset') {
+      if (!body.tempPassword || body.tempPassword.length < 8) return jsonResp({ ok: false, error: 'Temporary password must be at least 8 characters' }, 400);
+      const salt = randomHex(16);
+      Object.assign(users[key], { salt, hash: await pbkdf2Hash(body.tempPassword, salt), mustChangePassword: true,
+        tokenVersion: (users[key].tokenVersion || 0) + 1 });
+      await putUsers(kv, users);
+      await kv.delete(LOGIN_FAIL_PREFIX + key);
+      return jsonResp({ ok: true });
+    }
+    if (action === 'usersUpdate') {
+      if (typeof body.displayName === 'string' && body.displayName.trim()) users[key].displayName = body.displayName.trim().slice(0, 60);
+      if (typeof body.isAdmin === 'boolean') {
+        if (key === s.username && !body.isAdmin) return jsonResp({ ok: false, error: "You can't remove your own admin rights" }, 400);
+        users[key].isAdmin = body.isAdmin;
+      }
+      await putUsers(kv, users);
+      return jsonResp({ ok: true, user: publicUser(key, users[key]) });
+    }
+    if (action === 'usersDelete') {
+      if (key === s.username) return jsonResp({ ok: false, error: "You can't remove your own account" }, 400);
+      delete users[key];
+      await putUsers(kv, users);
+      return jsonResp({ ok: true });
+    }
+  }
+
+  // ---- legacy ADMIN_KEY actions (kept for scripts) ----
   if (action === 'adminResetPassword') {
-    const { adminKey: ak, username, newPassword } = body || {};
+    const { adminKey: ak, username, newPassword } = body;
     if (!adminKey || ak !== adminKey) return jsonResp({ ok: false, error: 'Forbidden' }, 403);
     if (!username || !newPassword) return jsonResp({ ok: false, error: 'Missing fields' }, 400);
     const users = await getUsers(kv);
@@ -2493,26 +2596,24 @@ async function handleAuth(action, body, kv, request, adminKey) {
       salt,
       hash: await pbkdf2Hash(newPassword, salt),
       mustChangePassword: true,
-      createdAt: users[key]?.createdAt || new Date().toISOString(),
+      tokenVersion: ((users[key] && users[key].tokenVersion) || 0) + 1,
+      createdAt: (users[key] && users[key].createdAt) || new Date().toISOString(),
     };
     await putUsers(kv, users);
     return jsonResp({ ok: true });
   }
-
-  // ---- adminCreateUser (requires ADMIN_KEY secret) ----
   if (action === 'adminCreateUser') {
-    const { adminKey: ak, username, password } = body || {};
+    const { adminKey: ak, username, password } = body;
     if (!adminKey || ak !== adminKey) return jsonResp({ ok: false, error: 'Forbidden' }, 403);
     if (!username || !password) return jsonResp({ ok: false, error: 'Missing fields' }, 400);
     const users = await getUsers(kv);
     const key = username.toLowerCase();
     if (users[key]) return jsonResp({ ok: false, error: 'User already exists' }, 409);
     const salt = randomHex(16);
-    users[key] = { salt, hash: await pbkdf2Hash(password, salt), mustChangePassword: true, createdAt: new Date().toISOString() };
+    users[key] = { salt, hash: await pbkdf2Hash(password, salt), mustChangePassword: true, createdAt: new Date().toISOString(), tokenVersion: 0 };
     await putUsers(kv, users);
     return jsonResp({ ok: true });
   }
-
   return null; // not an auth action
 }
 
@@ -3190,8 +3291,9 @@ export default {
       try {
         const body = await request.json();
 
-        // Auth actions (no session required for login/logout/validateSession)
-        const authActions = ['login','logout','validateSession','changePassword','adminResetPassword','adminCreateUser'];
+        // Auth actions (each checks its own session / admin rights where needed)
+        const authActions = ['login','logout','validateSession','changePassword','setupStatus','setupFirstAdmin',
+          'usersList','usersCreate','usersReset','usersUpdate','usersDelete','adminResetPassword','adminCreateUser'];
         if (authActions.includes(body.action)) {
           if (!kv) return jsonResp({ ok: false, error: 'KV not bound' }, 500);
           const authResp = await handleAuth(body.action, body, kv, request, env.ADMIN_KEY || '');
@@ -3220,13 +3322,12 @@ export default {
           return jsonResp({ ok: true });
         }
 
-        // All other POST actions require a valid session
-        const authedActions = ['setManualFixtures','setOverrides','extractFixtures'];
-        if (authedActions.includes(body.action)) {
-          if (!kv) return jsonResp({ ok: false, error: 'KV not bound' }, 500);
-          const username = await validateSession(kv, request);
-          if (!username) return jsonResp({ ok: false, error: 'Not authenticated' }, 401);
-        }
+        // Every other POST (fixture saves, status changes, screenshot import)
+        // requires a signed-in user; history records their display name.
+        if (!kv) return jsonResp({ ok: false, error: 'KV not bound' }, 500);
+        const sessionUser = await getSessionUser(kv, request);
+        if (!sessionUser) return jsonResp({ ok: false, error: 'Not authenticated' }, 401);
+        body.user = displayNameOf(sessionUser.username, sessionUser.user);
 
         // Read fixtures out of a screenshot / PDF / spreadsheet text with Claude
         if (body.action === 'extractFixtures') {
