@@ -2676,8 +2676,8 @@ function exportSelectedToExcel(){
   const exportStatuses=activeStatuses.length ? new Set(activeStatuses) : new Set(['Approved']);
   const selFixtures=fixtures.filter(f=>selected.has(f.id)&&visibleIds.has(f.id)&&exportStatuses.has(f.status));
   if(!selFixtures.length) return;
-  const headers=['County','Code','Team A','Team B','Date','Day','Time','Venue','Competition','Round','Abbreviation','Status','Clubber Pick','Hero'];
-  const rows=selFixtures.map(f=>[f.county,f.code||'',f.teamA,f.teamB,f.date,f.day,f.time,f.venue,f.competition,f.round,abbreviateFixture(f.competition,f.round,f.code),f.status,f.clubberPick?'Yes':'',f.hero?'Yes':'']);
+  const headers=['County','Team A','Team B','Date','Day','Time','Venue','Competition','Round','Code','Abbreviation','Status','Clubber Pick','Hero'];
+  const rows=selFixtures.map(f=>[f.county,f.teamA,f.teamB,f.date,f.day,f.time,f.venue,f.competition,f.round,f.code||'',abbreviateFixture(f.competition,f.round,f.code),f.status,f.clubberPick?'Yes':'',f.hero?'Yes':'']);
   const csv=[headers,...rows].map(row=>row.map(csvEscape).join(',')).join('\r\n');
   const blob=new Blob(['﻿'+csv],{type:'application/vnd.ms-excel;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
