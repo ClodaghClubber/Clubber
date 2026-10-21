@@ -59,7 +59,7 @@ A GAA fixtures dashboard hosted on GitHub Pages, backed by a Cloudflare Worker a
 - **Smart/curly quotes** (`'` `'`) in JS source cause syntax errors — always use plain ASCII apostrophes. Run `python -c "content=open('index.html','rb').read(); content=content.replace(b'\xe2\x80\x98',b\"'\").replace(b'\xe2\x80\x99',b\"'\"); open('index.html','wb').write(content)"` to clean them if they appear
 - **CSV file encoding** — all `FileReader.readAsText()` calls must pass `'UTF-8'` explicitly, otherwise Windows may use windows-1252 and corrupt fada characters
 - **Non-breaking spaces** (`\xc2\xa0`) can appear in club names copy-pasted from external sources — strip them when adding teamMappings entries
-- **Excel export** defaults to Approved-only when no status filter is active, to prevent Proposed fixtures leaking into exports
+- **Excel export** defaults to Approved-only when no status filter is active, to prevent Proposed fixtures leaking into exports. It writes a real .xlsx with ExcelJS (loaded from jsDelivr on first use) styled to match the team's "2026 Streaming Fixtures" workbook, sheet "2026 Ireland Ops": same column order, county row colours (`EXPORT_COUNTY_STYLE`), d-mmm dates, "Sun"-style centred days, h:mm AM/PM times, Aptos Narrow font
 
 ## Workflow for adding a new club to teamMappings.json
 1. Get the club's UUID from the Clubber site or API

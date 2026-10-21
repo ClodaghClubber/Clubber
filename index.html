@@ -2669,26 +2669,101 @@ function abbreviateFixture(competition, round, code) {
   return (abbr + (rnd ? ' ' + rnd : '')).trim();
 }
 
-function exportSelectedToExcel(){
+// Excel export formatted to match the team's "2026 Streaming Fixtures" workbook
+// ("2026 Ireland Ops" sheet): same column order, county row colours, d-mmm
+// dates, 3-letter centred days, h:mm AM/PM times, Aptos Narrow font.
+// ExcelJS (loaded on first use) is needed because a CSV can't carry formatting.
+const EXPORT_COUNTY_STYLE = {
+  // county: [fill, text]  (taken from the 2026 Ireland Ops sheet)
+  'Wexford':['7030A0','FFFFFF'], 'Tipperary':['0070C0','FFFFFF'], 'Tipperary Ladies':['0070C0','FFFFFF'],
+  'Kerry':['00B050','000000'], 'Kilkenny':['FFC000','000000'], 'Leinster':['F500CC','000000'],
+  'Cork':['FF0000','FFFFFF'], 'Meath':['8CFECA','000000'], 'Laois':['83CCEB','000000'],
+  'Kildare':['000000','FFFFFF'], 'Louth':['FF6E6E','FFFFFF'], 'Waterford':['FFFFFF','000000'],
+  'Roscommon':['FFFF00','000000'], 'Munster':['C65911','000000'], 'Carlow':['827A3E','FFFFFF'],
+  'Monaghan':['D9AAD4','000000'], 'Offaly':['92D050','000000'], 'Longford':['074F6B','FFFFFF'],
+  'London':['DCEDD5','000000'], 'Munster PPS':['C65911','FFFFFF'], 'Leinster PPS':['BB0594','FFFFFF'],
+  'Third Level':['009999','FFFFFF'], 'Galway':['92338B','FFFFFF']
+};
+// Camogie competitions filed under a province have their own colour in the sheet
+const EXPORT_COMP_STYLE = [[/^Leinster Camogie/i,['92D050','000000']],[/^Munster Camogie/i,['00B0F0','000000']]];
+const EXPORT_STATUS_STYLE = { Approved:'92D050', Rejected:'FF0000', Removed:'FF0000' };
+
+let excelJsLoading=null;
+function loadExcelJs(){
+  if(window.ExcelJS) return Promise.resolve();
+  if(!excelJsLoading) excelJsLoading=new Promise((res,rej)=>{
+    const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
+    s.onload=res; s.onerror=()=>{ excelJsLoading=null; rej(new Error('Could not load the Excel writer')); };
+    document.head.appendChild(s);
+  });
+  return excelJsLoading;
+}
+
+async function exportSelectedToExcel(){
   const visibleIds=new Set(getFiltered().map(f=>f.id));
   const activeStatuses=msGetValues('statusFilter');
   // If no status filter is set, default export to Approved only
   const exportStatuses=activeStatuses.length ? new Set(activeStatuses) : new Set(['Approved']);
-  const selFixtures=fixtures.filter(f=>selected.has(f.id)&&visibleIds.has(f.id)&&exportStatuses.has(f.status));
+  const selFixtures=fixtures.filter(f=>selected.has(f.id)&&visibleIds.has(f.id)&&exportStatuses.has(f.status))
+    .sort((a,b)=>a.date.localeCompare(b.date)||(from12h(a.time)||'99').localeCompare(from12h(b.time)||'99'));
   if(!selFixtures.length) return;
-  const headers=['County','Team A','Team B','Date','Day','Time','Venue','Competition','Round','Code','Abbreviation','Status','Clubber Pick','Hero'];
-  const rows=selFixtures.map(f=>[f.county,f.teamA,f.teamB,f.date,f.day,f.time,f.venue,f.competition,f.round,f.code||'',abbreviateFixture(f.competition,f.round,f.code),f.status,f.clubberPick?'Yes':'',f.hero?'Yes':'']);
-  const csv=[headers,...rows].map(row=>row.map(csvEscape).join(',')).join('\r\n');
-  const blob=new Blob(['﻿'+csv],{type:'application/vnd.ms-excel;charset=utf-8;'});
+  try{ await loadExcelJs(); }
+  catch(err){ alert(err.message+' - check your internet connection and try again.'); return; }
+
+  const wb=new ExcelJS.Workbook();
+  const ws=wb.addWorksheet('Fixtures',{views:[{state:'frozen',ySplit:1}]});
+  const cols=[
+    {h:' ',w:8.4},{h:'Fixture Created',w:5.6},{h:'County',w:16},{h:'Team A',w:20.4},{h:'Team B',w:19.6},
+    {h:'Date',w:11.4},{h:'Day',w:8.4},{h:'Time',w:10.5},{h:'Venue',w:30.9},{h:'Competition',w:23.6},{h:'Round',w:11.1},
+    {h:'Code',w:11.4},{h:'Unit',w:11.4},{h:'Abbreviation',w:14},{h:'Videographer',w:20},{h:'Clubber Pick',w:11},{h:'Hero',w:8}
+  ];
+  ws.columns=cols.map(c=>({width:c.w}));
+  const FONT='Aptos Narrow';
+  const hdr=ws.addRow(cols.map(c=>c.h));
+  hdr.eachCell((cell,i)=>{
+    cell.font={name:FONT,size:i===2?8:10,bold:true};
+    cell.alignment={horizontal:'center',vertical:'middle'};
+  });
+  const fillOf=hex=>({type:'pattern',pattern:'solid',fgColor:{argb:'FF'+hex}});
+  const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  selFixtures.forEach(f=>{
+    const [y,m,d]=f.date.split('-').map(Number);
+    const dateVal=new Date(Date.UTC(y,m-1,d));
+    const t24=from12h(f.time||'');
+    const timeVal=/^\d{1,2}:\d{2}$/.test(t24)?(()=>{ const [hh,mm]=t24.split(':').map(Number); return (hh*60+mm)/1440; })():(f.time||'TBC');
+    const round=(f.round||'').replace(/^Round\s+(\d+)$/i,'R$1');
+    const row=ws.addRow([
+      f.status==='Rejected'?'Reject':f.status, f.clubberCreated?'Yes':'No', f.county, f.teamA, f.teamB,
+      dateVal, DAYS[dateVal.getUTCDay()], timeVal, f.venue||'', f.competition||'', round,
+      f.code||'', f.unit||'', abbreviateFixture(f.competition,f.round,f.code), f.videographer||'',
+      f.clubberPick?'Yes':'', f.hero?'Yes':''
+    ]);
+    const comp=EXPORT_COMP_STYLE.find(([re])=>re.test(f.competition||''));
+    const [bg,fg]=comp?comp[1]:(EXPORT_COUNTY_STYLE[f.county]||[null,'000000']);
+    row.eachCell({includeEmpty:true},(cell,i)=>{
+      cell.font={name:FONT,size:11,color:{argb:'FF000000'}};
+      if(i>=3&&i<=11){ // County .. Round take the county colour
+        if(bg) cell.fill=fillOf(bg);
+        cell.font={name:FONT,size:11,color:{argb:'FF'+fg}};
+        if(i>=6) cell.alignment={horizontal:'center'};
+      } else if(i>=12){
+        cell.alignment={horizontal:'center'};
+      }
+    });
+    const st=EXPORT_STATUS_STYLE[f.status]; if(st) row.getCell(1).fill=fillOf(st);
+    row.getCell(2).fill=fillOf(f.clubberCreated?'00B050':'FF0000');
+    row.getCell(6).numFmt='d-mmm';
+    if(typeof timeVal==='number') row.getCell(8).numFmt='h:mm AM/PM';
+  });
+  ws.autoFilter={from:{row:1,column:1},to:{row:1,column:cols.length}};
+
+  const buf=await wb.xlsx.writeBuffer();
+  const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
-  const stamp=new Date().toISOString().slice(0,10);
-  a.href=url;
-  a.download=`gaa-fixtures-export-${stamp}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  a.href=url; a.download='gaa-fixtures-export-'+new Date().toISOString().slice(0,10)+'.xlsx';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
 exportBtn.addEventListener('click',()=>{ exportSelectedToExcel(); selected.clear(); render(); });
