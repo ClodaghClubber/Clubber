@@ -4698,12 +4698,13 @@ function vidAssignSuggested(fid, name) {
 }
 
 function vidDoAssign(fid, name) {
-  const f = fixtures.find(x => x.id === fid);
+  // ids arrive from onclick as strings; scraped fixtures have numeric ids
+  const f = fixtures.find(x => String(x.id) === String(fid));
   if (!f) return;
   const vid = VIDEOGRAPHERS.find(v => v.name === name) || { name, email: '' };
   f.videographer = name;
   f.videographerEmail = vid.email || '';
-  const origKey = keyOf(f);
+  const origKey = f._origKey || keyOf(f);
   const prev = fixtureOverrides[origKey] || {};
   prev.videographer = name;
   prev.videographerEmail = vid.email || '';
@@ -4711,10 +4712,12 @@ function vidDoAssign(fid, name) {
   saveOverrides();
   if (!f.manual) syncOverrides([{ key: origKey, fields: { videographer: name, videographerEmail: vid.email || '' } }]);
   if (f.manual) {
-    const mf = manualFixtures.find(m => m.id === fid);
+    const mf = manualFixtures.find(m => String(m.id) === String(fid));
     if (mf) { mf.videographer = name; mf.videographerEmail = vid.email || ''; }
     saveManualFixtures();
   }
+  saveCache();
+  render();
   renderVidView();
 }
 // Camera count and Replay are shared fields, saved like the videographer.
