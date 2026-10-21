@@ -594,7 +594,7 @@
   </div>
 </div>
 
-<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 24px 0;">
+<div id="exportBar" style="display:flex;align-items:center;justify-content:space-between;padding:6px 24px 0;">
   <div class="count" id="rowCount" style="padding:0;"></div>
   <div style="display:flex;align-items:center;gap:16px;">
     <button id="markClubberBtn" disabled title="Mark as Created in Clubber" style="background:none;border:none;cursor:pointer;padding:4px;opacity:.9;display:flex;align-items:center;gap:6px;color:#4a9e1a;font-size:12px;font-weight:600;">
@@ -4324,8 +4324,8 @@ function toggleVidView() {
     vidBtn.textContent = vidViewActive ? '✕ Close Resources' : 'Resources';
   }
   // Hide the row-count/action bar below toolbar too
-  const rowCountBar = document.querySelector('div[style*="justify-content:space-between"][style*="padding:6px 24px"]');
-  if (rowCountBar) rowCountBar.style.display = vidViewActive ? 'none' : '';
+  const rowCountBar = document.getElementById('exportBar');
+  if (rowCountBar) rowCountBar.style.display = vidViewActive ? 'none' : 'flex';
   if (vidViewActive) renderVidView();
 }
 
@@ -5666,8 +5666,8 @@ let currentIsAdmin = false;
     const container=document.querySelector('.container'), toolbar=document.querySelector('.toolbar');
     if(container) container.style.display=main?'':'none';
     if(toolbar) toolbar.style.display=main?'':'none';
-    const rowCountBar=document.querySelector('div[style*="justify-content:space-between"][style*="padding:6px 24px"]');
-    if(rowCountBar) rowCountBar.style.display=main?'':'none';
+    const rowCountBar=document.getElementById('exportBar');
+    if(rowCountBar) rowCountBar.style.display=main?'flex':'none';
     if(!main) renderApproved();
   }
   document.getElementById('viewTabs').addEventListener('click',e=>{ const b=e.target.closest('.view-tab'); if(b) showTab(b.getAttribute('data-tab')); });
