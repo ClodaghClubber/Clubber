@@ -4675,7 +4675,6 @@ function renderVidView() {
           <button class="vid-assign-btn${assigned?' assigned':''}" onclick="vidAssign('${fid}')">
             ${assigned ? '✓ Re-assign' : 'Assign'}
           </button>
-          ${top && !assigned ? `<button onclick="vidAssignSuggested('${fid}','${top.name.replace(/'/g,"\\'")}')" style="font-size:11px;padding:4px 8px;background:var(--border);color:var(--text);border:none;border-radius:4px;cursor:pointer;white-space:nowrap;">Use suggestion</button>` : ''}
         </div>
         <div></div>
         <div><select class="vid-cam" title="Cameras" onchange="vidSetFields('${fid}',{cameras:this.value})">${CAMERA_OPTIONS.map(c => '<option' + ((f.cameras || '1-Cam') === c ? ' selected' : '') + '>' + c + '</option>').join('')}</select></div>
@@ -4691,10 +4690,6 @@ function vidAssign(fid) {
   const sel = document.getElementById('vidsel_' + fid);
   if (!sel || !sel.value) { alert('Please select a videographer first.'); return; }
   vidDoAssign(fid, sel.value);
-}
-
-function vidAssignSuggested(fid, name) {
-  vidDoAssign(fid, name);
 }
 
 function vidDoAssign(fid, name) {
