@@ -391,8 +391,11 @@
   /* Videographer view */
   .vid-date-group{margin-bottom:20px;}
   .vid-date-hdr{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:4px 0;border-bottom:1px solid var(--border);margin-bottom:8px;}
-  .vid-row{display:grid;grid-template-columns:90px 1fr 1fr 140px 90px 200px 160px auto;gap:8px;align-items:center;padding:8px 12px;border-radius:6px;margin-bottom:4px;font-size:13px;background:var(--row-even);border:1px solid var(--border);}
+  .vid-row,.vid-head{display:grid;grid-template-columns:90px 1fr 1fr 140px 90px 200px 160px auto 92px 62px;gap:8px;align-items:center;padding:8px 12px;border-radius:6px;margin-bottom:4px;font-size:13px;background:var(--row-even);border:1px solid var(--border);}
   .vid-row:hover{background:var(--hover-bg);}
+  .vid-head{background:none;border:none;padding:4px 12px;margin-bottom:2px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);gap:8px;}
+  .vid-cam{font-size:12px;padding:3px 4px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);}
+  .vid-replay{width:18px;height:18px;cursor:pointer;}
   .vid-row.vid-assigned{border-left:3px solid #16a34a;}
   .vid-row.vid-conflict{border-left:3px solid #dc2626;}
   .vid-row.vid-nosuggestion{border-left:3px solid var(--border);}
@@ -1802,6 +1805,7 @@ function applyOverrides(){
     if(ov.socials!==undefined){f.socials=ov.socials;f.socialsEmail=ov.socialsEmail;}
     if(ov.support2!==undefined){f.support2=ov.support2;f.support2Email=ov.support2Email;}
     if(ov.replay!==undefined){f.replay=ov.replay;}
+    if(ov.cameras!==undefined){f.cameras=ov.cameras;}
     if(ov.videographer!==undefined){f.videographer=ov.videographer;f.videographerEmail=ov.videographerEmail;}
     if(ov.unitSystem!==undefined){f.unitSystem=ov.unitSystem;}
     if(ov.unit!==undefined){f.unit=ov.unit;}
@@ -4591,7 +4595,7 @@ function renderVidView() {
   }
   // pendingMap: tracks tentative suggestions made this render pass, so same-time fixtures get different picks
   const pendingMap = {};
-  let html = '';
+  let html = '<div class="vid-head"><div>Time</div><div>Fixture</div><div>Venue</div><div>Round</div><div>Suggestion</div><div>Videographer</div><div></div><div></div><div>Camera</div><div style="text-align:center;">Replay</div></div>';
   for (const [date, group] of Object.entries(byDate)) {
     const dStr = new Date(date + 'T12:00:00').toLocaleDateString('en-IE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     html += `<div class="vid-date-group"><div class="vid-date-hdr">${dStr} &mdash; ${group.length} fixture${group.length !== 1 ? 's' : ''}</div>`;
@@ -4658,6 +4662,9 @@ function renderVidView() {
           </button>
           ${top && !assigned ? `<button onclick="vidAssignSuggested('${fid}','${top.name.replace(/'/g,"\\'")}')" style="font-size:11px;padding:4px 8px;background:var(--border);color:var(--text);border:none;border-radius:4px;cursor:pointer;white-space:nowrap;">Use suggestion</button>` : ''}
         </div>
+        <div></div>
+        <div><select class="vid-cam" title="Cameras" onchange="vidSetFields('${fid}',{cameras:this.value})">${CAMERA_OPTIONS.map(c => '<option' + ((f.cameras || '1-Cam') === c ? ' selected' : '') + '>' + c + '</option>').join('')}</select></div>
+        <div style="text-align:center;"><input type="checkbox" class="vid-replay" title="Replay" ${f.replay ? 'checked' : ''} onchange="vidSetFields('${fid}',{replay:this.checked})"></div>
       </div>`;
     }
     html += '</div>';
@@ -4694,6 +4701,25 @@ function vidDoAssign(fid, name) {
     saveManualFixtures();
   }
   renderVidView();
+}
+// Camera count and Replay are shared fields, saved like the videographer.
+// Replay is the same field as the main table's Replay column.
+const CAMERA_OPTIONS = ['1-Cam', '2-Cam', '3-Cam', '4-Cam', '5-Cam'];
+function vidSetFields(fid, fields) {
+  const f = fixtures.find(x => String(x.id) === String(fid));
+  if (!f) return;
+  Object.assign(f, fields);
+  const origKey = f._origKey || keyOf(f);
+  fixtureOverrides[origKey] = Object.assign(fixtureOverrides[origKey] || {}, fields);
+  saveOverrides();
+  if (!f.manual) syncOverrides([{ key: origKey, fields }]);
+  if (f.manual) {
+    const mf = manualFixtures.find(m => String(m.id) === String(fid));
+    if (mf) Object.assign(mf, fields);
+    saveManualFixtures();
+  }
+  saveCache();
+  render(); // keep the main table's Replay column in step
 }
 // ===== END VIDEOGRAPHER SELECTOR =====
 
