@@ -2845,7 +2845,7 @@ function renderClubberConfirmRows() {
       <td style="white-space:nowrap">${f.date}<div class="sub-detail">${f.time||''}</div></td>
       <td>${p ? (p.championsType || p.county) : f.county}</td>
       <td>${p ? p.code : (f.code||'')}</td>
-      <td>${p ? `<select class="grade-edit" data-idx="${i}"><option value="">—</option><option value="Senior 1"${p.grade==='Senior 1'?' selected':''}>Senior 1</option><option value="Senior 2"${p.grade==='Senior 2'?' selected':''}>Senior 2</option><option value="Intermediate 1"${p.grade==='Intermediate 1'?' selected':''}>Intermediate 1</option><option value="Intermediate 2"${p.grade==='Intermediate 2'?' selected':''}>Intermediate 2</option><option value="Junior 1"${p.grade==='Junior 1'?' selected':''}>Junior 1</option><option value="Junior 2"${p.grade==='Junior 2'?' selected':''}>Junior 2</option><option value="Minor"${p.grade==='Minor'?' selected':''}>Minor</option></select>` : '—'}</td>
+      <td>${p ? `<select class="grade-edit" data-idx="${i}"><option value="">—</option>${CLUBBER_GRADES.map(g => '<option' + (p.grade === g ? ' selected' : '') + '>' + g + '</option>').join('')}${p.grade && !CLUBBER_GRADES.includes(p.grade) ? '<option selected>' + p.grade + '</option>' : ''}</select>` : '—'}</td>
       <td>${p ? `<select class="round-edit" data-idx="${i}"><option value="">—</option><option value="quarter-finals"${p.round==='quarter-finals'?' selected':''}>quarter-finals</option><option value="semi-finals"${p.round==='semi-finals'?' selected':''}>semi-finals</option><option value="final"${p.round==='final'?' selected':''}>final</option><option value="Round 1"${p.round==='Round 1'?' selected':''}>Round 1</option><option value="Round 2"${p.round==='Round 2'?' selected':''}>Round 2</option><option value="Round 3"${p.round==='Round 3'?' selected':''}>Round 3</option><option value="Round 4"${p.round==='Round 4'?' selected':''}>Round 4</option><option value="Round 5"${p.round==='Round 5'?' selected':''}>Round 5</option></select>` : '—'}</td>
       <td>${p ? p.season : ''}</td>
       <td>${p ? `<input class="price-edit" type="number" min="0" step="0.01" value="${price}" data-idx="${i}">` : '—'}</td>
@@ -3910,9 +3910,17 @@ function normClubName(n) {
     .replace(/\s+/g, ' ').trim();
 }
 
+// Grades Clubber accepts (Review Before Export dropdown)
+const CLUBBER_GRADES = ['Senior 1', 'Senior 2', 'Intermediate 1', 'Intermediate 2', 'Junior 1', 'Junior 2',
+  'Junior other', 'Underage 20/21', 'Minor', 'Underage other', 'Masters', 'Wheelchair Hurling'];
+
 function deriveGrade(county, competition) {
   if (!competition) return '';
   const c = competition;
+
+  if (/Wheelchair/i.test(c)) return 'Wheelchair Hurling';
+  if (/Masters/i.test(c)) return 'Masters';
+  if (/\bU-?2[01]\b|Under[\s-]?2[01]\b/i.test(c)) return 'Underage 20/21';
 
   // Senior
   if (/Premier\s+Senior/i.test(c)) return 'Senior 1';
@@ -3933,8 +3941,8 @@ function deriveGrade(county, competition) {
     return 'Intermediate 1';
   }
 
-  // Minor / U20 / U21 (Laois runs its minor grade as U17)
-  if (/Minor|U20|U21|\bU-?1[78]\b/i.test(c)) return 'Minor';
+  // Minor (Laois runs its minor grade as U17)
+  if (/Minor|\bU-?1[78]\b|Under[\s-]?1[78]\b/i.test(c)) return 'Minor';
 
   // Junior
   if (/Premier\s+Junior/i.test(c)) return 'Junior 1';
