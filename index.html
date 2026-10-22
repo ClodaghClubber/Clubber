@@ -4033,21 +4033,23 @@ function lookupClubberCompetition(countyA, countyB) {
   return entry ? entry.name : '';
 }
 
+// Irish local date + time -> UTC date + time (Clubber stores UTC). Handles
+// summer/winter time for the fixture's own date, and games before 1am in
+// summer, whose UTC date is the day before.
 function dublinToUtc(dateStr, time24h) {
   const [H, M] = time24h.split(':').map(Number);
-  // Create a Date treating the input as UTC, then check what Dublin shows for it
-  const probe = new Date(Date.UTC(
-    +dateStr.slice(0,4), +dateStr.slice(5,7)-1, +dateStr.slice(8,10), H, M
-  ));
-  const dublinStr = new Intl.DateTimeFormat('en-IE', {
-    timeZone:'Europe/Dublin', hour:'2-digit', minute:'2-digit', hour12:false
-  }).format(probe);
-  const [dH, dM] = dublinStr.split(':').map(Number);
-  const offsetMins = (dH * 60 + dM) - (H * 60 + M);
-  const utcTotalMins = (H * 60 + M) - offsetMins;
-  const utcH = Math.floor(((utcTotalMins % 1440) + 1440) % 1440 / 60);
-  const utcM = ((utcTotalMins % 60) + 60) % 60;
-  return `${String(utcH).padStart(2,'0')}:${String(utcM).padStart(2,'0')}`;
+  const [y, mo, d] = dateStr.split('-').map(Number);
+  // Treat the local time as UTC, then see how far Dublin's clock is ahead of it
+  const probe = Date.UTC(y, mo - 1, d, H, M);
+  const parts = {};
+  new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Dublin', year: 'numeric', month: 'numeric', day: 'numeric',
+    hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(probe)).forEach(x => { parts[x.type] = x.value; });
+  const shown = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute);
+  const utc = new Date(probe - (shown - probe));
+  return {
+    date: utc.toISOString().slice(0, 10),
+    time: utc.toISOString().slice(11, 16),
+  };
 }
 
 const MUNSTER_COUNTIES = ['Clare','Cork','Kerry','Limerick','Tipperary','Waterford'];
@@ -4189,11 +4191,12 @@ function buildGamePayload(f) {
 
   const rawTime = f.time ? from12h(f.time) : '';
   // No known time (blank/TBC) -> placeholder 00:01
-  const utcTime = rawTime && rawTime.includes(':') ? dublinToUtc(f.date, rawTime) : '00:01';
+  const utc = rawTime && rawTime.includes(':') ? dublinToUtc(f.date, rawTime) : null;
+  const utcTime = utc ? utc.time : '00:01';
 
   const payload = {
     gameScope: f.county === 'BUCS' ? 'University' : (f.county === 'ACE' || isPPS) ? 'School' : 'Club',
-    date: f.date,
+    date: utc ? utc.date : f.date,
     time: utcTime,
     county,
     club: teamAResult?.matchedName || normA,
