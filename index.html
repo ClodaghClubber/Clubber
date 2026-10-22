@@ -5877,7 +5877,7 @@ let currentIsAdmin = false;
       if(f.date!==day){ day=f.date; html+='<tr class="ap-day"><td colspan="10">'+esc(f.day||dayName(f.date))+' '+esc(f.date)+'</td></tr>'; }
       html+='<tr><td style="white-space:nowrap;">'+esc(f.time||'TBC')+'</td><td>'+esc(f.county)+'</td><td>'+esc(f.code)+'</td>'+
         '<td>'+esc(f.teamA)+'</td><td>'+esc(f.teamB)+'</td><td>'+esc(f.venue)+'</td><td>'+esc(f.competition)+'</td><td>'+esc(f.round)+'</td>'+
-        '<td>'+(f.clubberCreated?'<span class="ai-ok">&#10003;</span>':'')+'</td><td>'+(f.clubberPick?'&#9733;':'')+'</td></tr>';
+        '<td>'+(f.clubberCreated?'<span class="ai-ok" title="In Clubber">&#10003;</span>':'<span style="color:var(--reject);font-weight:700;" title="Not in Clubber yet">&#10007;</span>')+'</td><td>'+(f.clubberPick?'&#9733;':'')+'</td></tr>';
     });
     els('apBody').innerHTML=html||'<tr><td colspan="10" style="color:var(--muted);padding:16px;">No approved fixtures match these filters.</td></tr>';
   };
