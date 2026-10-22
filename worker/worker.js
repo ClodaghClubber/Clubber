@@ -2904,6 +2904,7 @@ const VALID_STATUSES = ['Proposed', 'Approved', 'Rejected', 'Removed'];
 const STATUS_KV_KEY = 'statuses';
 const OVERRIDES_KV_KEY = 'overrides';
 const MANUAL_KV_KEY = 'manualFixtures';
+const TEAM_MAPPINGS_EXTRA_KEY = 'teamMappingsExtra';
 const STATUS_HISTORY_KV_KEY = 'statusHistory';
 const STATUS_HISTORY_MAX = 500;
 const CLUBBER_SNAPSHOT_KV_KEY = 'clubberSnapshot';
@@ -3328,6 +3329,33 @@ export default {
         const sessionUser = await getSessionUser(kv, request);
         if (!sessionUser) return jsonResp({ ok: false, error: 'Not authenticated' }, 401);
         body.user = displayNameOf(sessionUser.username, sessionUser.user);
+
+        // Club mappings added from the dashboard's Review Before Export dialog.
+        // Same shape as teamMappings.json ({county: {clubName: id}}); the
+        // dashboard merges them over that file.
+        if (body.action === 'getTeamMappingsExtra') {
+          const raw = await kv.get(TEAM_MAPPINGS_EXTRA_KEY);
+          return jsonResp({ ok: true, mappings: raw ? JSON.parse(raw) : {} });
+        }
+        if (body.action === 'addTeamMapping') {
+          const county = String(body.county || '').trim().slice(0, 60);
+          const name = String(body.name || '').replace(/\s+/g, ' ').trim().slice(0, 120);
+          const id = String(body.id || '').trim().toLowerCase();
+          if (!county || !name) return jsonResp({ ok: false, error: 'county and name required' }, 400);
+          if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)) {
+            return jsonResp({ ok: false, error: 'That is not a valid Clubber ID' }, 400);
+          }
+          const raw = await kv.get(TEAM_MAPPINGS_EXTRA_KEY);
+          const all = raw ? JSON.parse(raw) : {};
+          all[county] = all[county] || {};
+          const clubName = typeof body.clubName === 'string' ? body.clubName.trim().slice(0, 120) : '';
+          all[county][name] = clubName ? { id, name: clubName } : id;
+          await kv.put(TEAM_MAPPINGS_EXTRA_KEY, JSON.stringify(all));
+          const log = JSON.parse((await kv.get(TEAM_MAPPINGS_EXTRA_KEY + '_log')) || '[]');
+          log.push({ county, name, id, user: body.user, at: new Date().toISOString() });
+          await kv.put(TEAM_MAPPINGS_EXTRA_KEY + '_log', JSON.stringify(log.slice(-500)));
+          return jsonResp({ ok: true, mappings: all });
+        }
 
         // Read fixtures out of a screenshot / PDF / spreadsheet text with Claude
         if (body.action === 'extractFixtures') {

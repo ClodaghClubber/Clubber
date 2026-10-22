@@ -317,6 +317,11 @@
   #clubberConfirmModal .modal-box .confirm-subtitle{font-size:12px;color:var(--muted);margin:0 0 12px;}
   .confirm-table-wrap{overflow:auto;flex:1;min-height:0;}
   .confirm-table{width:100%;border-collapse:collapse;font-size:12px;}
+  .map-club{margin-top:4px;font-size:11px;color:var(--text);}
+  .map-id{width:250px;font-size:11px;padding:2px 4px;margin:2px 4px 0 0;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);font-family:monospace;}
+  .map-btn{font-size:11px;padding:2px 10px;border:none;border-radius:4px;background:#16a34a;color:#fff;cursor:pointer;}
+  .map-btn:disabled{opacity:.5;cursor:default;}
+  .map-msg{color:var(--reject);}
   .confirm-table th{position:sticky;top:0;background:var(--panel);padding:7px 10px;text-align:left;border-bottom:2px solid var(--border);color:var(--muted);text-transform:uppercase;font-size:11px;letter-spacing:.04em;white-space:nowrap;}
   .confirm-table td{padding:6px 10px;border-bottom:1px solid var(--border);vertical-align:top;}
   .confirm-table tr.has-error td{background:rgba(192,57,43,.04);}
@@ -2785,20 +2790,36 @@ function openClubberConfirm(selFixtures, site) {
   if(!selFixtures.length) return;
   _pendingClubberSite = site;
 
-  const results=selFixtures.map(f=>{
-    if(f.status!=='Approved') return{fixture:f,payload:null,errors:['Not Approved'],warnings:[],ok:false,skipped:true};
-    const{payload,errors,warnings}=buildGamePayload(f);
-    return{fixture:f,payload,errors,warnings,ok:errors.length===0,skipped:false};
-  });
-
-  _pendingClubberResults = results;
+  _pendingClubberResults = buildClubberResults(selFixtures);
 
   const siteLabel = site==='IE' ? 'IE — GAA (Football, Hurling & Camogie)' : 'UK — Rugby';
   document.querySelector('#clubberConfirmModal h2').textContent = `Review Before Export · ${siteLabel}`;
   document.querySelector('#clubberConfirmModal .confirm-subtitle').textContent =
     `Check each fixture below. Edit prices if needed, then click Confirm & Download. Exporting to ${site} Clubber site.`;
 
-  // Populate confirmation table
+  renderClubberConfirmRows();
+
+  // Wire select-all checkbox
+  const selAll = document.getElementById('clubberConfirmSelectAll');
+  selAll.checked = true;
+  selAll.onchange = e => {
+    document.querySelectorAll('#clubberConfirmBody input.confirm-include:not(:disabled)').forEach(c => { c.checked = e.target.checked; });
+  };
+
+  document.getElementById('clubberConfirmModal').classList.add('open');
+}
+
+function buildClubberResults(selFixtures) {
+  return selFixtures.map(f=>{
+    if(f.status!=='Approved') return{fixture:f,payload:null,errors:['Not Approved'],warnings:[],unmapped:[],ok:false,skipped:true};
+    const{payload,errors,warnings,unmapped}=buildGamePayload(f);
+    return{fixture:f,payload,errors,warnings,unmapped,ok:errors.length===0,skipped:false};
+  });
+}
+
+function renderClubberConfirmRows() {
+  const results = _pendingClubberResults;
+  const esc = t => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
   const tbody = document.getElementById('clubberConfirmBody');
   tbody.innerHTML = results.map((r,i) => {
     const f = r.fixture;
@@ -2809,6 +2830,10 @@ function openClubberConfirm(selFixtures, site) {
     const notes = [
       ...(r.errors||[]).map(e=>`<div class="err-badge">✗ ${e}</div>`),
       ...(r.warnings||[]).map(w=>`<div class="warn-badge">⚠ ${w}</div>`),
+      ...(r.unmapped||[]).map((u,j)=>'<div class="map-club">Map "' + esc(u.name) + '" to Clubber ID: '
+        + '<input class="map-id" id="mapid_' + i + '_' + j + '" placeholder="Clubber club ID" spellcheck="false">'
+        + '<button class="map-btn" data-idx="' + i + '" data-j="' + j + '">Map</button>'
+        + '<div class="map-msg" id="mapmsg_' + i + '_' + j + '"></div></div>'),
       r.skipped ? '<div class="err-badge">✗ Not Approved — skipped</div>' : '',
       f.clubberPick ? '<span class="badge-pick">PICK</span>' : '',
       f.hero ? '<span class="badge-hero">HERO</span>' : '',
@@ -2827,24 +2852,77 @@ function openClubberConfirm(selFixtures, site) {
       <td>${notes}</td>
     </tr>`;
   }).join('');
-
-  // Wire select-all checkbox
-  const selAll = document.getElementById('clubberConfirmSelectAll');
-  selAll.checked = true;
-  selAll.onchange = e => {
-    document.querySelectorAll('#clubberConfirmBody input.confirm-include:not(:disabled)').forEach(c => { c.checked = e.target.checked; });
-  };
-
-  document.getElementById('clubberConfirmModal').classList.add('open');
 }
 
-clubberIeBtn.addEventListener('click',()=>{
+// "Map" in the review dialog: save the club -> Clubber ID mapping for everyone,
+// then re-check every row (keeping any price / grade / round edits).
+document.getElementById('clubberConfirmBody').addEventListener('click', async e => {
+  const btn = e.target.closest('.map-btn');
+  if (!btn) return;
+  const i = +btn.dataset.idx, j = +btn.dataset.j;
+  const r = _pendingClubberResults[i], u = r && r.unmapped[j];
+  if (!u) return;
+  const msg = document.getElementById('mapmsg_' + i + '_' + j);
+  const id = document.getElementById('mapid_' + i + '_' + j).value.trim().toLowerCase();
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)) {
+    msg.textContent = 'That doesn\'t look like a Clubber ID (e.g. 5cddbc2e-4b54-4cb0-95af-29e65b40752a)';
+    return;
+  }
+  // File the mapping under the club's own county in Clubber's club list
+  const hits = Object.values(sportsCountiesIndex).flat().filter(c => c.id === id);
+  const club = hits.find(c => c.county === u.county) || hits[0];
+  const f = r.fixture;
+  const regional = ['Munster','Leinster','Munster PPS','Leinster PPS'].includes(f.county);
+  if (!club) {
+    if (regional) { msg.textContent = 'That ID isn\'t in Clubber\'s club list, so its county is unknown - check the ID'; return; }
+    if (!confirm('That ID isn\'t in Clubber\'s club list yet. Map "' + u.name + '" (' + u.county + ') to it anyway?')) return;
+  } else if (!confirm('Map "' + u.name + '" to Clubber club "' + club.name + '" (' + club.county + ')?\n\nThis applies to everyone\'s exports from now on.')) {
+    return;
+  }
+  btn.disabled = true; msg.textContent = 'Saving...';
+  try {
+    const res = await authFetch(WORKER_URL, { method: 'POST', body: JSON.stringify({
+      action: 'addTeamMapping', county: club ? club.county : u.county, name: u.name, id,
+      clubName: club ? '' : u.name,
+    }) });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Save failed');
+    teamMappingsExtra = data.mappings || {};
+    applyTeamMappingsExtra();
+  } catch (err) {
+    btn.disabled = false; msg.textContent = 'Could not save: ' + err.message;
+    return;
+  }
+  // Keep what the user already changed in the dialog
+  const kept = {};
+  document.querySelectorAll('#clubberConfirmBody tr[data-idx]').forEach(tr => {
+    const k = tr.dataset.idx, q = sel => tr.querySelector(sel);
+    kept[k] = { inc: q('.confirm-include')?.checked, price: q('.price-edit')?.value,
+      grade: q('.grade-edit')?.value, round: q('.round-edit')?.value };
+  });
+  _pendingClubberResults = buildClubberResults(_pendingClubberResults.map(x => x.fixture));
+  renderClubberConfirmRows();
+  document.querySelectorAll('#clubberConfirmBody tr[data-idx]').forEach(tr => {
+    const k = kept[tr.dataset.idx]; if (!k) return;
+    const set = (sel, prop, v) => { const el = tr.querySelector(sel); if (el && v !== undefined && !el.disabled) el[prop] = v; };
+    set('.confirm-include', 'checked', k.inc);
+    set('.price-edit', 'value', k.price);
+    // Only keep a grade/round someone picked; a blank one may now be filled in
+    if (k.grade) set('.grade-edit', 'value', k.grade);
+    if (k.round) set('.round-edit', 'value', k.round);
+  });
+  showConflictToast('✓ Mapped "' + u.name + '"' + (club ? ' to ' + club.name : ''), '#16a34a');
+});
+
+clubberIeBtn.addEventListener('click',async()=>{
+  await loadTeamMappingsExtra();
   const visibleIds=new Set(getFiltered().map(f=>f.id));
   const sel=fixtures.filter(f=>selected.has(f.id)&&visibleIds.has(f.id)&&!isRugbyFixture(f));
   openClubberConfirm(sel,'IE');
 });
 
-clubberUkBtn.addEventListener('click',()=>{
+clubberUkBtn.addEventListener('click',async()=>{
+  await loadTeamMappingsExtra();
   const visibleIds=new Set(getFiltered().map(f=>f.id));
   const sel=fixtures.filter(f=>selected.has(f.id)&&visibleIds.has(f.id)&&isRugbyFixture(f));
   openClubberConfirm(sel,'UK');
@@ -3771,6 +3849,21 @@ let teamMappings = {};
 let competitionLookup = {};
 let sportsCountiesIndex = {}; // county name (lowercase) → [{id, name, normName}]
 let VID_DATA = null; // loaded from vidData.json
+// Club mappings added in the Review Before Export dialog. They live in the
+// worker (shared by everyone) and are merged over teamMappings.json.
+let teamMappingsExtra = {};
+function applyTeamMappingsExtra() {
+  for (const [county, teams] of Object.entries(teamMappingsExtra || {})) {
+    teamMappings[county] = Object.assign(teamMappings[county] || {}, teams);
+  }
+}
+async function loadTeamMappingsExtra() {
+  if (!authToken) return;
+  try {
+    const data = await (await authFetch(WORKER_URL, { method: 'POST', body: JSON.stringify({ action: 'getTeamMappingsExtra' }) })).json();
+    if (data.ok) { teamMappingsExtra = data.mappings || {}; applyTeamMappingsExtra(); }
+  } catch (_) { /* the file mappings still work */ }
+}
 
 (async () => {
   try {
@@ -3781,6 +3874,7 @@ let VID_DATA = null; // loaded from vidData.json
       fetch('Clubber/vidData.json?v=' + Date.now()).then(r => r.json()).catch(() => null),
     ]);
     teamMappings = tm;
+    applyTeamMappingsExtra();
     competitionLookup = cl;
     if (vd) { VID_DATA = vd; }
     if (document.getElementById('vidView').style.display !== 'none') renderVidView();
@@ -3793,6 +3887,7 @@ let VID_DATA = null; // loaded from vidData.json
         for (const club of (county.clubsList || [])) {
           sportsCountiesIndex[key].push({
             id: club.id,
+            county: county.name,
             name: club.name,
             normName: normClubName(club.name),
           });
@@ -3954,6 +4049,7 @@ const ALL_GAA_COUNTIES = ['Antrim','Armagh','Carlow','Cavan','Clare','Cork','Der
 function buildGamePayload(f) {
   const errors = [];
   const warnings = [];
+  const unmapped = []; // clubs the review dialog offers to map to a Clubber ID
 
   const normA = (f.teamA || '').replace(/\s+/g, ' ').trim();
   const normB = (f.teamB || '').replace(/\s+/g, ' ').trim();
@@ -4006,10 +4102,14 @@ function buildGamePayload(f) {
     if (unconfirmed(norm)) return null; // already reported above
     const r = findTeam(name, county);
     if (r && r.ambiguous) {
+      unmapped.push({ name: norm, county });
       errors.push(`"${norm}" matches several ${label === 'A' ? 'home' : 'away'} clubs: ${r.ambiguous.join(', ')} — add it to teamMappings.json under the right county`);
       return null;
     }
-    if (!r) errors.push(`Club not found for "${norm}" (${county}) — add to teamMappings.json`);
+    if (!r) {
+      unmapped.push({ name: norm, county });
+      errors.push(`Club not found for "${norm}" (${county})`);
+    }
     else if (r.autoMatched) warnings.push(`"${norm}" auto-matched to "${r.matchedName}" — verify this is correct`);
     return r;
   };
@@ -4113,7 +4213,7 @@ function buildGamePayload(f) {
     ...(f.hero ? { heroSection: true } : {}),
   };
 
-  return { payload, errors, warnings };
+  return { payload, errors, warnings, unmapped };
 }
 
 function downloadJson(data, filename) {
@@ -5592,6 +5692,7 @@ let currentIsAdmin = false;
     if(typeof setUserCookie==='function') setUserCookie(currentUser);
     if(typeof updateUserBtn==='function') updateUserBtn();
     document.getElementById('manageUsersBtn').style.display=currentIsAdmin?'':'none';
+    loadTeamMappingsExtra();
   };
   function showPanel(id){
     ['loginPanel','changePasswordPanel','setupPanel'].forEach(p=>{ const el=document.getElementById(p); if(el) el.style.display=p===id?'':'none'; });
