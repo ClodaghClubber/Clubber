@@ -2882,8 +2882,8 @@ document.getElementById('clubberConfirmBody').addEventListener('click', async e 
   btn.disabled = true; msg.textContent = 'Saving...';
   try {
     const res = await authFetch(WORKER_URL, { method: 'POST', body: JSON.stringify({
-      action: 'addTeamMapping', county: club ? club.county : u.county, name: u.name, id,
-      clubName: club ? '' : u.name,
+      action: 'addTeamMapping', name: u.name, id, clubName: club ? '' : u.name,
+      ...(regional ? { county: f.county, clubCounty: club.county } : { county: club ? club.county : u.county }),
     }) });
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'Save failed');
@@ -3999,6 +3999,8 @@ function lookupTeam(teamName, preferredCounty) {
   if (result) return result;
   // 3. Exact match in teamMappings — all other counties (last resort)
   for (const [county, teams] of Object.entries(teamMappings)) {
+    // Province-wide entries (from the review dialog) only apply to those fixtures
+    if (['Leinster', 'Munster', 'Leinster PPS', 'Munster PPS'].includes(county)) continue;
     const hit = findInCounty(teams, name);
     if (hit) return resolve(county, hit);
   }
@@ -4081,6 +4083,13 @@ function buildGamePayload(f) {
       || ALL_GAA_COUNTIES.some(c => c.toLowerCase() === t.toLowerCase())));
   [normA, normB].forEach(t => { if (unconfirmed(t)) errors.push(`Team not confirmed yet: "${t}"`); });
   const findTeam = (name, county) => {
+    if (isProvincial || isPPS) {
+      const scoped = (teamMappings[f.county] || {})[name.replace(/\s+/g, ' ').trim()];
+      if (scoped && typeof scoped === 'object' && scoped.county) {
+        const official = (sportsCountiesIndex[scoped.county.toLowerCase()] || []).find(c => c.id === scoped.id);
+        return { county: scoped.county, clubId: scoped.id, matchedName: official ? official.name : (scoped.name || name) };
+      }
+    }
     // Schools: only accept a teamMappings entry (filed under the school's own
     // county) - fuzzy matching would pick a club, e.g. "Naas CBS" -> Naas GAA.
     if (isPPS) {

@@ -3349,7 +3349,12 @@ export default {
           const all = raw ? JSON.parse(raw) : {};
           all[county] = all[county] || {};
           const clubName = typeof body.clubName === 'string' ? body.clubName.trim().slice(0, 120) : '';
-          all[county][name] = clubName ? { id, name: clubName } : id;
+          // Provincial / schools fixtures are filed under 'Leinster', 'Munster PPS' etc.
+          // with the club's own county alongside, so they win over same-named
+          // clubs in other counties of the province
+          const clubCounty = typeof body.clubCounty === 'string' ? body.clubCounty.trim().slice(0, 60) : '';
+          all[county][name] = clubCounty ? { id, ...(clubName ? { name: clubName } : {}), county: clubCounty }
+            : clubName ? { id, name: clubName } : id;
           await kv.put(TEAM_MAPPINGS_EXTRA_KEY, JSON.stringify(all));
           const log = JSON.parse((await kv.get(TEAM_MAPPINGS_EXTRA_KEY + '_log')) || '[]');
           log.push({ county, name, id, user: body.user, at: new Date().toISOString() });
