@@ -503,7 +503,8 @@ function cacCompNameFromPath(path) {
 // data-level="club" data-grade="..." value="slug"> elements in a filter dropdown.
 // A single listing page fetch returns ALL competitions for the domain.
 // compNameFn(path, grade) is optional; defaults to cacCompNameFromPath.
-async function fetchCacCountyCompetitions(domain, listingPages, compNameFn) {
+// allowGrades: underage grades to keep anyway (e.g. Tipperary's 'u21')
+async function fetchCacCountyCompetitions(domain, listingPages, compNameFn, allowGrades = []) {
   const nameFn = compNameFn || cacCompNameFromPath;
   const seen = new Set();
   const comps = [];
@@ -536,7 +537,7 @@ async function fetchCacCountyCompetitions(domain, listingPages, compNameFn) {
       const slug = valueM[1];
       // Skip underage competitions (u14, u14b, u-14, under-14, minor, juvenile…)
       const underageRe = /\b(minor|underage|u\d+\w*|under.?\d+|feile|bainne|primary|juvenile|youth)\b/i;
-      if (underageRe.test(slug) || underageRe.test(cGrade) || underageRe.test(optText)) continue;
+      if (!allowGrades.includes(cGrade) && (underageRe.test(slug) || underageRe.test(cGrade) || underageRe.test(optText))) continue;
       seen.add(uuid);
       const path = `/fixtures-results/${cSport}/club/${cGrade}/${slug}/${uuid}/`;
       // Prefer the option display text (includes sport type the slug may omit).
@@ -624,7 +625,9 @@ function fetchTipperaryHurlingCompetitions() {
     { url: 'https://tipperary.gaa.ie/fixtures-results/hurling/club/senior/',       sport: 'hurling', level: 'club', grade: 'senior' },
     { url: 'https://tipperary.gaa.ie/fixtures-results/hurling/club/intermediate/', sport: 'hurling', level: 'club', grade: 'intermediate' },
     { url: 'https://tipperary.gaa.ie/fixtures-results/hurling/club/junior/',        sport: 'hurling', level: 'club', grade: 'junior' },
-  ]);
+  ], undefined, ['u21']) // U21 hurling + football (North/Mid/South/West)
+    // the u21 grade also lists Munster's U20 inter-county competitions - leave those out
+    .then(comps => comps.filter(c => c.grade !== 'u21' || /\bU\s?-?21|under\s?21/i.test(c.name)));
 }
 
 
