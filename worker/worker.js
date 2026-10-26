@@ -421,6 +421,20 @@ async function fetchCacDirectCompetition(county, baseDomain, comp, debug) {
 // so "St Canices Credit Union Senior Hurling League Group A" → "Senior Hurling League Group A".
 // Also includes abbreviated terms (snr, jnr, premier) so we don't accidentally skip
 // qualifier words that precede the sport noun.
+// Underage competitions kept via allowGrades (e.g. Tipperary U21): the normal
+// cleaner cuts everything before "Hurling"/"Football", losing "North U21 A".
+// Here only a sponsor in front of the region / age is dropped:
+// "Revel at the Ragg Mid U21A Hurling Championship" -> "Mid U21A Hurling Championship"
+function underageCompName(text, sport) {
+  let s = decodeEntities(text).replace(/\s+/g, ' ').trim();
+  const start = s.search(/\b(north|south|mid|east|west|u\s?-?\d|under)/i);
+  if (start > 0) s = s.slice(start);
+  if (s === s.toUpperCase()) s = s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+  s = s.replace(/\s+20\d\d$/, '').replace(/\bF(?:B|BALL)\b/i, 'Football');
+  if (!/hurling|football|camogie/i.test(s)) s += ' ' + sport.charAt(0).toUpperCase() + sport.slice(1);
+  return s;
+}
+
 function cacStripSponsor(s) {
   const gaaFirst = s.search(/\b(senior|snr|intermediate|premier|junior|jnr|section|division|div\b|all[\s-]co|championship|league|cup|football|hurling|camogie|ladies[\s-]football|shield|plate|trophy|county|provincial|grade)\b/i);
   return gaaFirst > 0 ? s.slice(gaaFirst) : s;
@@ -541,7 +555,8 @@ async function fetchCacCountyCompetitions(domain, listingPages, compNameFn, allo
       seen.add(uuid);
       const path = `/fixtures-results/${cSport}/club/${cGrade}/${slug}/${uuid}/`;
       // Prefer the option display text (includes sport type the slug may omit).
-      const name = optText ? cacCompNameFromText(optText, cSport) : nameFn(path, cGrade);
+      const name = allowGrades.includes(cGrade) && optText ? underageCompName(optText, cSport)
+        : optText ? cacCompNameFromText(optText, cSport) : nameFn(path, cGrade);
       comps.push({ path, uuid, sport: cSport, level: 'club', grade: cGrade, name });
     }
   } catch (_) {}
