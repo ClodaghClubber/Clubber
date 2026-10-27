@@ -809,6 +809,9 @@
       </table>
     </div>
     <div class="modal-actions" style="margin-top:12px;">
+      <label style="margin-right:auto;display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;color:var(--text);" title="Marks the fixtures in this download as Created in Clubber (green Clubber tick)">
+        <input type="checkbox" id="clubberConfirmMark"> Also mark as Clubber
+      </label>
       <button class="btn-modal-cancel" onclick="document.getElementById('clubberConfirmModal').classList.remove('open')">Cancel</button>
       <button id="clubberConfirmDownloadBtn" class="btn-approve" style="margin-left:8px;">Confirm &amp; Download</button>
     </div>
@@ -2798,6 +2801,7 @@ function openClubberConfirm(selFixtures, site) {
     `Check each fixture below. Edit prices if needed, then click Confirm & Download. Exporting to ${site} Clubber site.`;
 
   renderClubberConfirmRows();
+  try{ document.getElementById('clubberConfirmMark').checked=localStorage.getItem('gaaExportMarkClubber')==='1'; }catch(_){}
 
   // Wire select-all checkbox
   const selAll = document.getElementById('clubberConfirmSelectAll');
@@ -2959,6 +2963,12 @@ document.getElementById('clubberConfirmDownloadBtn').addEventListener('click', (
 
   const BATCH_SIZE=10;
   const eligible=results.filter((r,i)=>!r.skipped && checkedIdxs.has(i));
+  const markBox=document.getElementById('clubberConfirmMark');
+  try{ localStorage.setItem('gaaExportMarkClubber', markBox.checked?'1':'0'); }catch(_){}
+  if(markBox.checked && eligible.length){
+    markClubberCreated(eligible.map(r=>r.fixture.id));
+    showConflictToast('✓ '+eligible.length+' fixture'+(eligible.length!==1?'s':'')+' marked as Clubber','#16a34a');
+  }
   const batches=[];
   for(let i=0;i<eligible.length;i+=BATCH_SIZE) batches.push(eligible.slice(i,i+BATCH_SIZE));
   const stamp=new Date().toISOString().slice(0,10);
@@ -3045,20 +3055,26 @@ rejectBtn.addEventListener('click',()=>{
   render();
   syncStatus(ids,'Rejected');
 });
-markClubberBtn.addEventListener('click',()=>{
-  const ids=[...selected];
+// Marks fixtures as Created in Clubber (header button, and the review dialog's
+// "Also mark as Clubber" tick box)
+function markClubberCreated(ids){
+  const idSet=new Set(ids.map(String));
   const syncUpdates=[];
   fixtures.forEach(f=>{
-    if(!selected.has(f.id)) return;
+    if(!idSet.has(String(f.id))) return;
     f.clubberCreated=true;
     const fk=f._origKey||keyOf(f);
     const ov=fixtureOverrides[fk]||{};
     ov.clubberCreated=true; fixtureOverrides[fk]=ov;
     if(!f.manual) syncUpdates.push({key:fk,fields:{clubberCreated:true}});
   });
-  manualFixtures.forEach(f=>{ if(ids.includes(f.id)) f.clubberCreated=true; });
-  saveOverrides(); saveManualFixtures(); saveCache(); selected.clear(); render();
+  manualFixtures.forEach(f=>{ if(idSet.has(String(f.id))) f.clubberCreated=true; });
+  saveOverrides(); saveManualFixtures(); saveCache();
   if(syncUpdates.length) syncOverrides(syncUpdates);
+}
+markClubberBtn.addEventListener('click',()=>{
+  markClubberCreated([...selected]);
+  selected.clear(); render();
   const warn=document.getElementById('clubberWarning');
   warn.style.display='block';
   setTimeout(()=>{ warn.style.display='none'; }, 8000);
