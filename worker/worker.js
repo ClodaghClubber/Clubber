@@ -1542,8 +1542,9 @@ async function fetchHigherEducationFixtures(kv) {
       const day = (m.matchSortDate || '').slice(0, 10);
       if (m.isResult || !day || day < today) continue;
       const [y, mo, d] = day.split('-').map(Number);
-      // matchStartTime is the local (Irish) clock time
-      const time = m.isTbc ? '' : (m.matchStartTime || '').slice(0, 5);
+      // matchStartTime is the local (Irish) clock time; 00:00 = time not set yet
+      const hhmm = (m.matchStartTime || '').slice(0, 5);
+      const time = m.isTbc || hhmm === '00:00' ? '' : hhmm;
       const round = /^\d+$/.test(m.roundName || '') ? `Round ${m.roundName}` : (m.roundName || '');
       const f = mkStatic('Higher Education',
         (m.homeTeam && m.homeTeam.name || 'TBC').trim(),

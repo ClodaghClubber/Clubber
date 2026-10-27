@@ -178,6 +178,13 @@
   #aiTable input.ai-missing{border-color:#dc2626;background:rgba(220,38,38,.06);}
   #aiTable tr.ai-dup{opacity:.55;}
   .ai-check{font-size:11px;line-height:1.35;}
+  .inline-approve{visibility:hidden;margin-left:4px;padding:0 6px;border:1px solid #16a34a;border-radius:10px;background:none;color:#16a34a;font-size:11px;font-weight:700;line-height:16px;cursor:pointer;vertical-align:middle;}
+  tr:hover .inline-approve{visibility:visible;}
+  .inline-approve:hover{background:#16a34a;color:#fff;}
+  #rowMenu{position:fixed;z-index:3000;display:none;min-width:150px;padding:4px 0;background:var(--panel);border:1px solid var(--border);border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,.25);font-size:13px;}
+  #rowMenu button{display:block;width:100%;padding:6px 14px;border:none;background:none;color:var(--text);text-align:left;cursor:pointer;}
+  #rowMenu button:hover{background:var(--hover-bg,rgba(127,127,127,.18));}
+  #rowMenu .rm-title{padding:4px 14px 6px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border);margin-bottom:2px;white-space:nowrap;max-width:280px;overflow:hidden;text-overflow:ellipsis;}
   .ai-ok{color:#16a34a;} .ai-warn{color:#b45309;} .ai-err{color:#dc2626;}
   #csvImportModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;align-items:flex-start;justify-content:center;padding-top:30px;}
   #csvImportModal.open{display:flex;}
@@ -2521,7 +2528,7 @@ function render(){
       <td>${f.venue}</td>
       <td>${f.competition}</td>
       <td>${f.round}</td>
-      <td><span class="status status-${(f.status||'Proposed').toLowerCase()}">${f.status||'Proposed'}</span>${_chgBadge}<button class="hist-btn" data-hist-sk="${_sk.replace(/"/g,'&quot;')}" data-hist-id="${f.id}" title="View change history" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:0 0 0 4px;vertical-align:middle;opacity:.6;"><svg width="14" height="14" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="14" cy="14" r="11" stroke="currentColor" stroke-width="1.6"/><path d="M14 8v6l4 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></td>
+      <td><span class="status status-${(f.status||'Proposed').toLowerCase()}">${f.status||'Proposed'}</span>${f.status!=='Approved'?'<button class="inline-approve" data-approve-id="'+f.id+'" title="Approve this fixture (right-click the row for more)">✓</button>':''}${_chgBadge}<button class="hist-btn" data-hist-sk="${_sk.replace(/"/g,'&quot;')}" data-hist-id="${f.id}" title="View change history" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:0 0 0 4px;vertical-align:middle;opacity:.6;"><svg width="14" height="14" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="14" cy="14" r="11" stroke="currentColor" stroke-width="1.6"/><path d="M14 8v6l4 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></td>
       <td class="socials-cell" data-socials-id="${f.id}" title="Click to assign socials" style="cursor:pointer;color:${f.socials?'inherit':'var(--muted)'};">${f.socials||'—'}</td>
       <td class="socials-cell" data-support2-id="${f.id}" title="Click to assign 2nd support" style="cursor:pointer;color:${f.support2?'inherit':'var(--muted)'};">${f.support2||'—'}</td>
       <td class="replay-cell" data-replay-id="${f.id}" title="Click to toggle replay">${f.replay?'✔':'—'}</td>
@@ -3044,6 +3051,56 @@ approveBtn.addEventListener('click',()=>{
     : `✓ ${selFixtures.length} fixtures ${label.toLowerCase()}`;
   showConflictToast(msg,allApproved?'#6b7280':'#16a34a');
 });
+// Status change for specific fixtures (inline approve button / right-click
+// menu). Same steps as the toolbar buttons, but leaves the ticked selection alone.
+function setFixturesStatus(ids, newStatus){
+  const idSet=new Set(ids.map(String));
+  const targets=fixtures.filter(f=>idSet.has(String(f.id))&&f.status!==newStatus);
+  if(!targets.length) return;
+  targets.forEach(f=>{ recordStatusChange(f,f.status,newStatus); f.status=newStatus; });
+  const realIds=targets.map(f=>f.id);
+  manualFixtures.forEach(f=>{ if(idSet.has(String(f.id))) f.status=newStatus; });
+  saveManualFixtures();
+  saveCache();
+  render();
+  syncStatus(realIds,newStatus);
+  showConflictToast((newStatus==='Approved'?'✓ Approved: ':newStatus+': ')+(targets.length===1?targets[0].teamA+' v '+targets[0].teamB:targets.length+' fixtures'),
+    newStatus==='Approved'?'#16a34a':newStatus==='Rejected'?'#c0392b':'#6b7280');
+}
+document.addEventListener('click',e=>{
+  const btn=e.target.closest('.inline-approve');
+  if(btn){ e.stopPropagation(); setFixturesStatus([btn.dataset.approveId],'Approved'); return; }
+  const item=e.target.closest('#rowMenu button[data-status]');
+  const menu=document.getElementById('rowMenu');
+  if(item){ setFixturesStatus(JSON.parse(menu.dataset.ids),item.dataset.status); }
+  if(menu) menu.style.display='none';
+},true);
+// Right-click a row: Approve / Proposed / Reject. If the row is ticked, the
+// menu applies to every ticked fixture.
+document.getElementById('tbody').addEventListener('contextmenu',e=>{
+  const tr=e.target.closest('tr'); const cb=tr&&tr.querySelector('input[type=checkbox][data-id]');
+  if(!cb) return;
+  e.preventDefault();
+  const id=cb.dataset.id;
+  const ids=selected.size>1&&[...selected].some(x=>String(x)===id)?[...selected].map(String):[id];
+  const f=fixtures.find(x=>String(x.id)===id);
+  let menu=document.getElementById('rowMenu');
+  if(!menu){ menu=document.createElement('div'); menu.id='rowMenu'; document.body.appendChild(menu); }
+  const title=ids.length>1?ids.length+' ticked fixtures':(f?f.teamA+' v '+f.teamB:'');
+  menu.innerHTML='<div class="rm-title"></div>'
+    +'<button data-status="Approved">✓ Approve</button>'
+    +'<button data-status="Proposed">Set to Proposed</button>'
+    +'<button data-status="Rejected">✗ Reject</button>';
+  menu.querySelector('.rm-title').textContent=title;
+  menu.dataset.ids=JSON.stringify(ids);
+  menu.style.display='block';
+  const r=menu.getBoundingClientRect();
+  menu.style.left=Math.min(e.clientX,innerWidth-r.width-8)+'px';
+  menu.style.top=Math.min(e.clientY,innerHeight-r.height-8)+'px';
+});
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ const m=document.getElementById('rowMenu'); if(m) m.style.display='none'; } });
+window.addEventListener('scroll',()=>{ const m=document.getElementById('rowMenu'); if(m) m.style.display='none'; },true);
+
 rejectBtn.addEventListener('click',()=>{
   const ids=[...selected];
   fixtures.filter(f=>selected.has(f.id)).forEach(f=>recordStatusChange(f,f.status,'Rejected'));
