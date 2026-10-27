@@ -2700,7 +2700,7 @@ const EXPORT_COUNTY_STYLE = {
   'Roscommon':['FFFF00','000000'], 'Munster':['C65911','000000'], 'Carlow':['827A3E','FFFFFF'],
   'Monaghan':['D9AAD4','000000'], 'Offaly':['92D050','000000'], 'Longford':['074F6B','FFFFFF'],
   'London':['DCEDD5','000000'], 'Munster PPS':['C65911','FFFFFF'], 'Leinster PPS':['BB0594','FFFFFF'],
-  'Third Level':['009999','FFFFFF'], 'Galway':['92338B','FFFFFF']
+  'Third Level':['009999','FFFFFF'], 'Higher Education':['009999','FFFFFF'], 'Galway':['92338B','FFFFFF']
 };
 // Camogie competitions filed under a province have their own colour in the sheet
 const EXPORT_COMP_STYLE = [[/^Leinster Camogie/i,['92D050','000000']],[/^Munster Camogie/i,['00B0F0','000000']]];
@@ -4093,7 +4093,9 @@ function buildGamePayload(f) {
   // representatives", "A, B, C or D", or just a county name like "Carlow")
   // - never export those, or the fuzzy matcher would silently pick a club.
   // County feeds use generic placeholders too ("Winner Semi Final 1", "SF Loser").
+  // HE (gaa.ie) uses "Runner-Up Group 1A", "First-Place Group 1B", "Third-Placed ..."
   const unconfirmed = t => /^winner\b|^loser\b|\b(winner|loser)$|semi[\s-]?final|^tb[cd]\b/i.test(t)
+    || /^(runners?-up|(first|second|third|fourth)-plac(e|ed))\b/i.test(t)
     || (isProvincial && (/\s+or\s+|representatives/i.test(t)
       || (t.match(/,/g) || []).length >= 2
       || ALL_GAA_COUNTIES.some(c => c.toLowerCase() === t.toLowerCase())));

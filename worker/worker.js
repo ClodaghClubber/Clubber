@@ -1492,6 +1492,85 @@ async function fetchLeinsterClubFixtures() {
   }
 }
 
+// ---- Higher Education (gaa.ie): HE football + hurling leagues and cups ----
+// gaa.ie's /highereducation pages load matches through a Next.js server
+// action ("fetchSeasonMatches"). Called with cupType 'ThirdLevel' and no
+// competition filter it returns every HE competition in the date range.
+// The action id changes when gaa.ie redeploys, so it is read from their JS
+// bundles when missing or rejected, and kept in KV.
+const HE_PAGE_URL = 'https://www.gaa.ie/highereducation/fixtures-and-results/senior-1-hurling-championship';
+const HE_ACTION_KV_KEY = 'gaaie_fetchSeasonMatches_id';
+
+async function discoverHeActionId() {
+  const page = await (await fetch(HE_PAGE_URL, { headers: { 'User-Agent': UA } })).text();
+  const scripts = [...new Set(page.match(/\/_next\/static\/chunks\/[^"'\s]+\.js/g) || [])];
+  for (const src of scripts) {
+    const js = await (await fetch('https://www.gaa.ie' + src, { headers: { 'User-Agent': UA } })).text();
+    const m = js.match(/createServerReference\)\("([0-9a-f]{40,})",[^"]*"fetchSeasonMatches"/);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+async function callHeSeasonMatches(actionId, startDate, endDate) {
+  const res = await fetch(HE_PAGE_URL, {
+    method: 'POST',
+    headers: { 'User-Agent': UA, 'Next-Action': actionId, 'Accept': 'text/x-component', 'Content-Type': 'text/plain;charset=UTF-8' },
+    body: JSON.stringify([{ teamType: 1, level: 'gaa', cupType: 'ThirdLevel', startDate, endDate, season: startDate.slice(0, 4), sportType: '' }]),
+  });
+  if (!res.ok) return null;
+  // React flight response: one "1:[...]" line holds the match array
+  const line = (await res.text()).split('\n').find(l => l.startsWith('1:['));
+  return line ? JSON.parse(line.slice(2)) : null;
+}
+
+async function fetchHigherEducationFixtures(kv) {
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const end = new Date(Date.now() + 300 * 864e5).toISOString().slice(0, 10);
+    let actionId = kv ? await kv.get(HE_ACTION_KV_KEY) : null;
+    let matches = actionId ? await callHeSeasonMatches(actionId, today, end).catch(() => null) : null;
+    if (!matches) {
+      actionId = await discoverHeActionId();
+      if (!actionId) { console.error('fetchHigherEducationFixtures: action id not found'); return []; }
+      if (kv) await kv.put(HE_ACTION_KV_KEY, actionId);
+      matches = await callHeSeasonMatches(actionId, today, end);
+    }
+    const out = [];
+    for (const m of matches || []) {
+      const day = (m.matchSortDate || '').slice(0, 10);
+      if (m.isResult || !day || day < today) continue;
+      const [y, mo, d] = day.split('-').map(Number);
+      // matchStartTime is the local (Irish) clock time
+      const time = m.isTbc ? '' : (m.matchStartTime || '').slice(0, 5);
+      const round = /^\d+$/.test(m.roundName || '') ? `Round ${m.roundName}` : (m.roundName || '');
+      const f = mkStatic('Higher Education',
+        (m.homeTeam && m.homeTeam.name || 'TBC').trim(),
+        (m.awayTeam && m.awayTeam.name || 'TBC').trim(),
+        `${d} ${MONTHS[mo - 1]} ${y}`, time,
+        ((m.stadium && m.stadium.stadiumName) || '').trim(),
+        ((m.competition && m.competition.cupName) || 'Higher Education').replace(/^20\d\d\s+/, '').trim(),
+        round);
+      f.sport = m.sport && m.sport.name === 'Hurling' ? 'Hurling' : 'Football';
+      f.sourceUrl = 'https://www.gaa.ie' + (m.url || '/highereducation');
+      out.push(f);
+    }
+    // Undrawn games ("Quarter-Final Winner v Quarter-Final Winner", same day)
+    // would be collapsed by dedup - number the repeats
+    const seen = {};
+    for (const f of out) {
+      const k = [f.competition, f.teamA, f.teamB, f.date, f.time].join('|');
+      seen[k] = (seen[k] || 0) + 1;
+      if (seen[k] > 1) f.teamB = `${f.teamB} (${seen[k]})`;
+    }
+    return out;
+  } catch (e) {
+    console.error('fetchHigherEducationFixtures failed:', e);
+    return [];
+  }
+}
+
 // ---- Leinster Camogie: club championships ----
 // leinstercamogie.ie/fixtures-results/ is server-rendered: "lcr-date-header"
 // divs ("Saturday October 24, 2026" or "Date TBC") followed by
@@ -3199,7 +3278,7 @@ async function scrapeGroupD(kv, env) {
 // Group E: Tipperary Camogie, Kilkenny Camogie, London, Munster + Leinster club, county minor finals — then run Teams alert
 async function scrapeGroupE(kv) {
   const cacDebug = [];
-  const [tipperaryCamogieResults, kilkennyCamogieResults, londonResults, munsterResults, leinsterResults, minorFinals, leinsterCamogieResults, ppsResults, munsterMcResults, munsterCamogieResults] = await Promise.all([
+  const [tipperaryCamogieResults, kilkennyCamogieResults, londonResults, munsterResults, leinsterResults, minorFinals, leinsterCamogieResults, ppsResults, munsterMcResults, munsterCamogieResults, heResults] = await Promise.all([
     fetchTipperaryCamogieFixtures().catch(() => []),
     fetchKilkennyAmogieCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Kilkenny', 'kilkennycamogie.ie', c, cacDebug)))).catch(() => []),
     fetchLondonFixtures().catch(() => []),
@@ -3210,6 +3289,7 @@ async function scrapeGroupE(kv) {
     fetchPpsCompetitions(cacDebug).catch(() => []),
     fetchMunsterMatchCentre().catch(() => []),
     fetchMunsterCamogieFixtures(cacDebug).catch(() => []),
+    fetchHigherEducationFixtures(kv).catch(() => []),
   ]);
   const fixtures = [
     ...tipperaryCamogieResults,
@@ -3222,6 +3302,7 @@ async function scrapeGroupE(kv) {
     ...ppsResults,
     ...munsterMcResults,
     ...munsterCamogieResults,
+    ...heResults,
   ];
   await writeGroupCache(kv, CACHE_E_KEY, fixtures);
 }
