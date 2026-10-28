@@ -499,6 +499,7 @@
 <div class="view-tabs" id="viewTabs">
   <button type="button" class="view-tab active" data-tab="main">All fixtures</button>
   <button type="button" class="view-tab" data-tab="approved">Approved fixtures<span class="tab-count" id="apTabCount">0</span></button>
+  <button type="button" class="view-tab" data-tab="resources">Resources</button>
 </div>
 <div id="approvedView" style="display:none;">
   <div class="ap-filters">
@@ -598,7 +599,6 @@
       </svg>
       Import
     </button>
-    <button id="vidViewBtn" onclick="toggleVidView()" style="background:#7c3aed;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;">Resources</button>
     <div class="col-picker-wrap" style="display:none;">
       <button class="btn-remove" id="assignSocialsBtn" style="background:#7c3aed;" disabled>Socials ▾</button>
       <div id="assignSocialsPanel" style="display:none;"></div>
@@ -773,7 +773,6 @@
         <option value="gaa">GAA only</option>
         <option value="rugby">Rugby only</option>
       </select>
-      <button onclick="toggleVidView()" style="background:var(--border);color:var(--text);border:none;border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;">← Back to Fixtures</button>
     </div>
   </div>
   <div id="vidViewContent"></div>
@@ -4593,23 +4592,9 @@ function downloadJson(data, filename) {
 
 let vidViewActive = false;
 
+// Resources is a tab now (see showTab); kept for any old callers
 function toggleVidView() {
-  vidViewActive = !vidViewActive;
-  const vv = document.getElementById('vidView');
-  const container = document.querySelector('.container');
-  const toolbar = document.querySelector('.toolbar');
-  vv.style.display = vidViewActive ? '' : 'none';
-  if (container) container.style.display = vidViewActive ? 'none' : '';
-  if (toolbar) toolbar.style.display = vidViewActive ? 'none' : '';
-  const vidBtn = document.getElementById('vidViewBtn');
-  if (vidBtn) {
-    vidBtn.style.background = vidViewActive ? '#6d28d9' : '#7c3aed';
-    vidBtn.textContent = vidViewActive ? '✕ Close Resources' : 'Resources';
-  }
-  // Hide the row-count/action bar below toolbar too
-  const rowCountBar = document.getElementById('exportBar');
-  if (rowCountBar) rowCountBar.style.display = vidViewActive ? 'none' : 'flex';
-  if (vidViewActive) renderVidView();
+  if (window.showViewTab) window.showViewTab(vidViewActive ? 'main' : 'resources');
 }
 
 // Canonical name aliases — maps short/variant names to the name in VIDEOGRAPHERS[]
@@ -5972,17 +5957,20 @@ let currentIsAdmin = false;
   };
   function showTab(tab){
     activeTab=tab;
-    if(tab==='approved'&&typeof vidViewActive!=='undefined'&&vidViewActive) toggleVidView();
     document.querySelectorAll('#viewTabs .view-tab').forEach(b=>b.classList.toggle('active',b.getAttribute('data-tab')===tab));
-    const main=tab==='main';
-    els('approvedView').style.display=main?'none':'';
+    const main=tab==='main', res=tab==='resources';
+    els('approvedView').style.display=tab==='approved'?'':'none';
+    document.getElementById('vidView').style.display=res?'':'none';
+    vidViewActive=res;
     const container=document.querySelector('.container'), toolbar=document.querySelector('.toolbar');
     if(container) container.style.display=main?'':'none';
     if(toolbar) toolbar.style.display=main?'':'none';
     const rowCountBar=document.getElementById('exportBar');
     if(rowCountBar) rowCountBar.style.display=main?'flex':'none';
-    if(!main) renderApproved();
+    if(tab==='approved') renderApproved();
+    if(res) renderVidView();
   }
+  window.showViewTab=showTab;
   document.getElementById('viewTabs').addEventListener('click',e=>{ const b=e.target.closest('.view-tab'); if(b) showTab(b.getAttribute('data-tab')); });
   ['apSearch','apCounty','apCode','apFrom','apTo','apRugby'].forEach(id=>els(id).addEventListener(id==='apSearch'?'input':'change',renderApproved));
   els('apClear').addEventListener('click',()=>{ ['apSearch','apCounty','apCode','apFrom','apTo'].forEach(id=>els(id).value=''); els('apRugby').checked=false; renderApproved(); });
