@@ -2985,11 +2985,13 @@ document.getElementById('clubberConfirmDownloadBtn').addEventListener('click', (
     setTimeout(()=>downloadJson(batch.map(r=>r.payload),`${sitePrefix}${suffix}-${stamp}.json`),idx*300);
   });
 
-  const okCount=results.filter(r=>r.ok).length;
+  // Report only on the fixtures that went into the download
+  const okCount=eligible.filter(r=>r.ok).length;
+  const left=results.length-eligible.length;
   const summary=document.getElementById('clubberSummary');
-  summary.innerHTML=`<strong>${okCount} of ${results.length} fixture${results.length!==1?'s':''} mapped successfully.</strong> ${batches.length} JSON file${batches.length!==1?'s':''} downloaded.${okCount<results.length?`<br><span style="color:var(--reject)">${results.length-okCount} had mapping errors.</span>`:''}`;
+  summary.innerHTML=`<strong>${okCount} of ${eligible.length} fixture${eligible.length!==1?'s':''} mapped successfully.</strong> ${batches.length} JSON file${batches.length!==1?'s':''} downloaded.${okCount<eligible.length?`<br><span style="color:var(--reject)">${eligible.length-okCount} had mapping errors.</span>`:''}${left?`<br><span style="color:var(--muted)">${left} unticked or not approved, left out.</span>`:''}`;
   const list=document.getElementById('clubberResultList');
-  const sorted=[...results].sort((a,b)=>a.ok-b.ok);
+  const sorted=[...eligible].sort((a,b)=>a.ok-b.ok);
   list.innerHTML=sorted.map(r=>{
     const hasWarn=r.ok&&r.warnings&&r.warnings.length>0;
     const cls=r.ok?(hasWarn?'ok warn':'ok'):'fail';
