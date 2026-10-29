@@ -102,6 +102,7 @@
   .status-proposed{background:rgba(212,160,23,.28);color:#7a4400;font-weight:700;}
   .status-approved{background:rgba(39,174,96,.15);color:var(--approve);}
   .status-rejected{background:rgba(192,57,43,.18);color:#a02020;font-weight:600;}
+  .badge-result-pending{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:#b45309;color:#fff;padding:2px 5px;border-radius:8px;white-space:nowrap;vertical-align:middle;}
   .badge-clubber-created{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:#1a6fa8;color:#fff;padding:2px 5px;border-radius:8px;margin-right:5px;vertical-align:middle;white-space:nowrap;}
   .badge-manual{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:transparent;color:var(--muted);border:1px dashed var(--muted);padding:1px 5px;border-radius:8px;margin-left:5px;vertical-align:middle;white-space:nowrap;}
   .badge-claude{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:#d97706;color:#fff;padding:1px 5px;border-radius:8px;margin-left:5px;vertical-align:middle;white-space:nowrap;}
@@ -2516,7 +2517,7 @@ function render(){
     const _chgBadge=_chg&&_chg.type!=='unchanged'?`<span class="badge-chg badge-chg-${_chg.type}" style="cursor:default;">${_chgLabel}</span>`:'';
     tr.innerHTML=`
       <td style="white-space:nowrap;"><input type="checkbox" data-id="${f.id}" ${selected.has(f.id)?'checked':''}><button class="edit-btn" data-edit-id="${f.id}" title="Edit fixture" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:0 4px;vertical-align:middle;opacity:.6;">✎</button></td>
-      <td style="text-align:center;">${f.clubberCreated?'<span class="badge-clubber-created" data-unmark-clubber="'+f.id+'" title="Click to unmark as Clubber" style="cursor:pointer;">✓ Clubber</span>':''}</td>
+      <td style="text-align:center;">${f.clubberCreated?'<span class="badge-clubber-created" data-unmark-clubber="'+f.id+'" title="Click to unmark as Clubber" style="cursor:pointer;">✓ Clubber</span>':isResultPending(f)?'<span class="badge-result-pending" title="Teams not decided yet - waiting on an earlier result">Result pending</span>':''}</td>
       <td style="white-space:nowrap;">${f.county}</td>
       <td>${f.code||''}</td>
       <td>${f.teamA}</td>
@@ -4132,6 +4133,50 @@ const MUNSTER_COUNTIES = ['Clare','Cork','Kerry','Limerick','Tipperary','Waterfo
 const LEINSTER_COUNTIES = ['Carlow','Dublin','Kildare','Kilkenny','Laois','Longford','Louth','Meath','Offaly','Westmeath','Wexford','Wicklow'];
 const ALL_GAA_COUNTIES = ['Antrim','Armagh','Carlow','Cavan','Clare','Cork','Derry','Donegal','Down','Dublin','Fermanagh','Galway','Kerry','Kildare','Kilkenny','Laois','Leitrim','Limerick','Longford','Louth','Mayo','Meath','Monaghan','Offaly','Roscommon','Sligo','Tipperary','Tyrone','Waterford','Westmeath','Wexford','Wicklow','London'];
 
+// Is this team still to be decided by an earlier game? Draws and feeds use
+// placeholders: "Winner Semi Final 1", "Runner-Up Group 1A", "X or Y",
+// "Clare representatives", a bare county name (provincial), or both teams of
+// an earlier game joined by "/" - e.g. the semi-final team
+// "Boherlahan Dualla/Holycross Ballycahill" after the quarter-final
+// "Boherlahan Dualla v Holycross/Ballycahill". Real amalgamations
+// ("Clonoulty/Rossmore") don't play each other in the same competition.
+let _pendingIdx = null, _pendingIdxFor = null;
+function competitionTeamIndex() {
+  const sig = fixtures.length + '|' + (fixtures[0] && fixtures[0].id);
+  if (_pendingIdx && _pendingIdxFor === sig) return _pendingIdx;
+  const idx = new Map();
+  for (const x of fixtures) {
+    const k = x.county + '|' + x.competition;
+    if (!idx.has(k)) idx.set(k, { teams: new Set(), pairs: new Set() });
+    const e = idx.get(k), a = normClubName(x.teamA), b = normClubName(x.teamB);
+    e.teams.add(a); e.teams.add(b);
+    e.pairs.add(a + ' ' + b); e.pairs.add(b + ' ' + a);
+  }
+  _pendingIdx = idx; _pendingIdxFor = sig;
+  return idx;
+}
+function isTeamPending(t, f) {
+  t = (t || '').replace(/\s+/g, ' ').trim();
+  if (!t) return true;
+  if (/^winner\b|^loser\b|\b(winner|loser)$|semi[\s-]?final|^tb[cd]\b/i.test(t)) return true;
+  if (/^(runners?-up|(first|second|third|fourth)-plac(e|ed))\b/i.test(t)) return true;
+  if (/\s+or\s+|representatives/i.test(t)) return true;
+  if ((f.county === 'Munster' || f.county === 'Leinster')
+    && ((t.match(/,/g) || []).length >= 2 || ALL_GAA_COUNTIES.some(c => c.toLowerCase() === t.toLowerCase()))) return true;
+  if (t.includes('/')) {
+    const e = competitionTeamIndex().get(f.county + '|' + f.competition);
+    if (e) {
+      const parts = t.split('/').map(normClubName);
+      if (e.pairs.has(normClubName(t))) return true;
+      if (parts.length === 2 && parts.every(x => x && e.teams.has(x))) return true;
+    }
+  }
+  return false;
+}
+function isResultPending(f) {
+  return isTeamPending(f.teamA, f) || isTeamPending(f.teamB, f);
+}
+
 function buildGamePayload(f) {
   const errors = [];
   const warnings = [];
@@ -4152,11 +4197,7 @@ function buildGamePayload(f) {
   // - never export those, or the fuzzy matcher would silently pick a club.
   // County feeds use generic placeholders too ("Winner Semi Final 1", "SF Loser").
   // HE (gaa.ie) uses "Runner-Up Group 1A", "First-Place Group 1B", "Third-Placed ..."
-  const unconfirmed = t => /^winner\b|^loser\b|\b(winner|loser)$|semi[\s-]?final|^tb[cd]\b/i.test(t)
-    || /^(runners?-up|(first|second|third|fourth)-plac(e|ed))\b/i.test(t)
-    || (isProvincial && (/\s+or\s+|representatives/i.test(t)
-      || (t.match(/,/g) || []).length >= 2
-      || ALL_GAA_COUNTIES.some(c => c.toLowerCase() === t.toLowerCase())));
+  const unconfirmed = t => isTeamPending(t, f); // see isTeamPending
   [normA, normB].forEach(t => { if (unconfirmed(t)) errors.push(`Team not confirmed yet: "${t}"`); });
   const findTeam = (name, county) => {
     if (isProvincial || isPPS) {
@@ -5955,7 +5996,7 @@ let currentIsAdmin = false;
       if(f.date!==day){ day=f.date; html+='<tr class="ap-day"><td colspan="10">'+esc(f.day||dayName(f.date))+' '+esc(f.date)+'</td></tr>'; }
       html+='<tr><td style="white-space:nowrap;">'+esc(f.time||'TBC')+'</td><td>'+esc(f.county)+'</td><td>'+esc(f.code)+'</td>'+
         '<td>'+esc(f.teamA)+'</td><td>'+esc(f.teamB)+'</td><td>'+esc(f.venue)+'</td><td>'+esc(f.competition)+'</td><td>'+esc(f.round)+'</td>'+
-        '<td>'+(f.clubberCreated?'<span class="ai-ok" title="In Clubber">&#10003;</span>':'<span style="color:var(--reject);font-weight:700;" title="Not in Clubber yet">&#10007;</span>')+'</td><td>'+(f.clubberPick?'&#9733;':'')+'</td></tr>';
+        '<td>'+(f.clubberCreated?'<span class="ai-ok" title="In Clubber">&#10003;</span>':isResultPending(f)?'<span class="badge-result-pending" title="Teams not decided yet - waiting on an earlier result">Result pending</span>':'<span style="color:var(--reject);font-weight:700;" title="Not in Clubber yet">&#10007;</span>')+'</td><td>'+(f.clubberPick?'&#9733;':'')+'</td></tr>';
     });
     els('apBody').innerHTML=html||'<tr><td colspan="10" style="color:var(--muted);padding:16px;">No approved fixtures match these filters.</td></tr>';
   };
