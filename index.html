@@ -4140,7 +4140,7 @@ const ALL_GAA_COUNTIES = ['Antrim','Armagh','Carlow','Cavan','Clare','Cork','Der
 // "Boherlahan Dualla/Holycross Ballycahill" after the quarter-final
 // "Boherlahan Dualla v Holycross/Ballycahill". Real amalgamations
 // ("Clonoulty/Rossmore") don't play each other in the same competition.
-let _pendingIdx = null, _pendingIdxFor = null;
+var _pendingIdx = null, _pendingIdxFor = null; // var: render() can run before this line
 function competitionTeamIndex() {
   const sig = fixtures.length + '|' + (fixtures[0] && fixtures[0].id);
   if (_pendingIdx && _pendingIdxFor === sig) return _pendingIdx;
