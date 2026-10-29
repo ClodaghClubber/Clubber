@@ -4160,7 +4160,11 @@ function buildGamePayload(f) {
   [normA, normB].forEach(t => { if (unconfirmed(t)) errors.push(`Team not confirmed yet: "${t}"`); });
   const findTeam = (name, county) => {
     if (isProvincial || isPPS) {
-      const scoped = (teamMappings[f.county] || {})[name.replace(/\s+/g, ' ').trim()];
+      // Exact name first, then ignoring accents/case/punctuation ("Eire Og" = "Éire Óg")
+      const regional = teamMappings[f.county] || {};
+      const trimmed = name.replace(/\s+/g, ' ').trim();
+      const want = normClubName(trimmed);
+      const scoped = regional[trimmed] || regional[Object.keys(regional).find(k => normClubName(k) === want)];
       if (scoped && typeof scoped === 'object' && scoped.county) {
         const official = (sportsCountiesIndex[scoped.county.toLowerCase()] || []).find(c => c.id === scoped.id);
         return { county: scoped.county, clubId: scoped.id, matchedName: official ? official.name : (scoped.name || name) };
