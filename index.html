@@ -4174,7 +4174,10 @@ function isTeamPending(t, f) {
   return false;
 }
 function isResultPending(f) {
-  return isTeamPending(f.teamA, f) || isTeamPending(f.teamB, f);
+  // render() first runs from cached data before later constants (e.g.
+  // ALL_GAA_COUNTIES) are initialised - never let the marker break the table
+  try { return isTeamPending(f.teamA, f) || isTeamPending(f.teamB, f); }
+  catch (_) { return false; }
 }
 
 function buildGamePayload(f) {
