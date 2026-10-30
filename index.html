@@ -4010,6 +4010,9 @@ function deriveGrade(county, competition) {
   if (!competition) return '';
   const c = competition;
 
+  // Fixed grades for specific competitions (checked first)
+  if (/\bO.?Donoghue Cup\b/i.test(c)) return 'Senior 1';                         // Kerry (Dr.) O'Donoghue Cup
+  if (/Leinster Club Special Hurling Championship/i.test(c)) return 'Junior 1';
   if (/Wheelchair/i.test(c)) return 'Wheelchair Hurling';
   if (/Masters/i.test(c)) return 'Masters';
   if (/\bU\s?-?2[01](?:[A-D])?\b|Under[\s-]?2[01]\b/i.test(c)) return 'Underage 20/21';
