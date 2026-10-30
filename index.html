@@ -4193,7 +4193,10 @@ var _clubberNameCache = new Map();
 function clubberNamesChanged() { _clubberNameCache.clear(); }
 function clubberTeamNames(f) {
   // Club list not loaded yet (first render from cache): don't cache a miss
-  if (!f || !Object.keys(sportsCountiesIndex || {}).length) return null;
+  // The first render (from cached fixtures) runs before sportsCountiesIndex
+  // is even declared - reading it then throws, so guard the read itself
+  try { if (!f || !Object.keys(sportsCountiesIndex || {}).length) return null; }
+  catch (_) { return null; }
   const k = [f.county, f.competition, f.teamA, f.teamB, f.teamACounty || '', f.teamBCounty || ''].join('|');
   if (_clubberNameCache.has(k)) return _clubberNameCache.get(k);
   let out = null;
