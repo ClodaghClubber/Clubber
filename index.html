@@ -2520,8 +2520,8 @@ function render(){
       <td style="text-align:center;">${f.clubberCreated?'<span class="badge-clubber-created" data-unmark-clubber="'+f.id+'" title="Click to unmark as Clubber" style="cursor:pointer;">✓ Clubber</span>':isResultPending(f)?'<span class="badge-result-pending" title="Teams not decided yet - waiting on an earlier result">Result pending</span>':''}</td>
       <td style="white-space:nowrap;">${f.county}</td>
       <td>${f.code||''}</td>
-      <td>${f.teamA}</td>
-      <td>${f.teamB}${f.manual?(f.source==='csv'?'<span class="badge-import" title="Imported from spreadsheet CSV">IMPORT</span>':f.source==='claude'?'<span class="badge-claude" style="margin-left:5px;" title="Created via Claude">CLAUDE</span>':'<span class="badge-manual" style="margin-left:5px;">MAN</span>'):''}${dhIds.has(f.id)?'<span class="badge-dh" style="margin-left:5px;" title="Double header — multiple fixtures at this venue on this day">DH</span>':''}</td>
+      <td>${teamCellHtml(f,'A')}</td>
+      <td>${teamCellHtml(f,'B')}${f.manual?(f.source==='csv'?'<span class="badge-import" title="Imported from spreadsheet CSV">IMPORT</span>':f.source==='claude'?'<span class="badge-claude" style="margin-left:5px;" title="Created via Claude">CLAUDE</span>':'<span class="badge-manual" style="margin-left:5px;">MAN</span>'):''}${dhIds.has(f.id)?'<span class="badge-dh" style="margin-left:5px;" title="Double header — multiple fixtures at this venue on this day">DH</span>':''}</td>
       <td>${f.date}</td>
       <td>${f.day}</td>
       <td>${f.time}</td>
@@ -3931,6 +3931,7 @@ function applyTeamMappingsExtra() {
   for (const [county, teams] of Object.entries(teamMappingsExtra || {})) {
     teamMappings[county] = Object.assign(teamMappings[county] || {}, teams);
   }
+  if (typeof clubberNamesChanged === 'function') clubberNamesChanged();
 }
 async function loadTeamMappingsExtra() {
   if (!authToken) return;
@@ -3969,6 +3970,10 @@ async function loadTeamMappingsExtra() {
         }
       }
     }
+    // Club list is in: redraw with Clubber names (see clubberTeamNames)
+    clubberNamesChanged();
+    render();
+    if (document.getElementById('vidView').style.display !== 'none') renderVidView();
   } catch (e) {
     console.warn('Clubber data files could not be loaded:', e);
   }
@@ -4090,7 +4095,7 @@ function fuzzyLookupClub(teamName, county) {
   const norm = normClubName(teamName);
   const exact = clubs.filter(c => c.normName === norm);
   if (exact.length === 1) {
-    return { county, clubId: exact[0].id, matchedName: exact[0].name, autoMatched: true };
+    return { county, clubId: exact[0].id, matchedName: exact[0].name, autoMatched: true, exact: true };
   }
   // Partial: norm is contained in club name or vice versa (minimum 5 chars)
   if (norm.length >= 5) {
@@ -4178,6 +4183,42 @@ function isResultPending(f) {
   // ALL_GAA_COUNTIES) are initialised - never let the marker break the table
   try { return isTeamPending(f.teamA, f) || isTeamPending(f.teamB, f); }
   catch (_) { return false; }
+}
+
+// Clubber's own club names for display. Fixture keys, history and the
+// export keep the source names; the table shows the Clubber name when the
+// club is certain (teamMappings entry or an exact name match - not a loose
+// fuzzy match), with the source name on hover.
+var _clubberNameCache = new Map();
+function clubberNamesChanged() { _clubberNameCache.clear(); }
+function clubberTeamNames(f) {
+  // Club list not loaded yet (first render from cache): don't cache a miss
+  if (!f || !Object.keys(sportsCountiesIndex || {}).length) return null;
+  const k = [f.county, f.competition, f.teamA, f.teamB, f.teamACounty || '', f.teamBCounty || ''].join('|');
+  if (_clubberNameCache.has(k)) return _clubberNameCache.get(k);
+  let out = null;
+  try {
+    if (!isRugbyFixture(f)) {
+      const { teams } = buildGamePayload(f);
+      const pick = (r, src) => r && r.matchedName && (!r.autoMatched || r.exact) && r.matchedName !== src ? r.matchedName : null;
+      const a = pick(teams && teams.a, f.teamA), b = pick(teams && teams.b, f.teamB);
+      if (a || b) out = { a, b };
+    }
+  } catch (_) { return null; }
+  _clubberNameCache.set(k, out);
+  return out;
+}
+function displayTeam(f, side) {
+  const n = clubberTeamNames(f);
+  return (n && (side === 'A' ? n.a : n.b)) || (side === 'A' ? f.teamA : f.teamB) || '';
+}
+// Table cell HTML: Clubber name, with the source name on hover when different
+function teamCellHtml(f, side) {
+  const src = (side === 'A' ? f.teamA : f.teamB) || '';
+  const shown = displayTeam(f, side);
+  if (shown === src) return src;
+  const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+  return '<span title="Clubber name. Source: ' + esc(src) + '">' + esc(shown) + '</span>';
 }
 
 function buildGamePayload(f) {
@@ -4357,7 +4398,7 @@ function buildGamePayload(f) {
     ...(f.hero ? { heroSection: true } : {}),
   };
 
-  return { payload, errors, warnings, unmapped };
+  return { payload, errors, warnings, unmapped, teams: { a: teamAResult, b: teamBResult } };
 }
 
 function downloadJson(data, filename) {
@@ -4896,7 +4937,7 @@ function renderVidView() {
       const fid = f.id;
       html += `<div class="${rowClass}">
         <div><div style="font-weight:600;font-size:12px;">${f.time||'&mdash;'}</div><div style="font-size:10px;color:var(--muted);">${f.county||''}</div></div>
-        <div class="vid-teams">${f.teamA||'?'} v ${f.teamB||'?'}</div>
+        <div class="vid-teams">${f.teamA?teamCellHtml(f,'A'):'?'} v ${f.teamB?teamCellHtml(f,'B'):'?'}</div>
         <div class="vid-venue" title="${(f.venue||'').replace(/"/g,'&quot;')}">${f.venue||'&mdash;'}</div>
         <div>${roundBadge}</div>
         <div class="vid-suggestion">${suggHtml}</div>
@@ -5979,7 +6020,7 @@ let currentIsAdmin = false;
       if(code&&f.code!==code) return false;
       if(from&&f.date<from) return false;
       if(to&&f.date>to) return false;
-      if(q&&![f.teamA,f.teamB,f.venue,f.competition,f.county,f.round].join(' ').toLowerCase().includes(q)) return false;
+      if(q&&![f.teamA,f.teamB,displayTeam(f,'A'),displayTeam(f,'B'),f.venue,f.competition,f.county,f.round].join(' ').toLowerCase().includes(q)) return false;
       return true;
     }).sort((a,b)=>a.date.localeCompare(b.date)||timeKey(a.time).localeCompare(timeKey(b.time))||a.county.localeCompare(b.county));
   }
@@ -5998,7 +6039,7 @@ let currentIsAdmin = false;
     list.forEach(f=>{
       if(f.date!==day){ day=f.date; html+='<tr class="ap-day"><td colspan="10">'+esc(f.day||dayName(f.date))+' '+esc(f.date)+'</td></tr>'; }
       html+='<tr><td style="white-space:nowrap;">'+esc(f.time||'TBC')+'</td><td>'+esc(f.county)+'</td><td>'+esc(f.code)+'</td>'+
-        '<td>'+esc(f.teamA)+'</td><td>'+esc(f.teamB)+'</td><td>'+esc(f.venue)+'</td><td>'+esc(f.competition)+'</td><td>'+esc(f.round)+'</td>'+
+        '<td>'+teamCellHtml(f,'A')+'</td><td>'+teamCellHtml(f,'B')+'</td><td>'+esc(f.venue)+'</td><td>'+esc(f.competition)+'</td><td>'+esc(f.round)+'</td>'+
         '<td>'+(f.clubberCreated?'<span class="ai-ok" title="In Clubber">&#10003;</span>':isResultPending(f)?'<span class="badge-result-pending" title="Teams not decided yet - waiting on an earlier result">Result pending</span>':'<span style="color:var(--reject);font-weight:700;" title="Not in Clubber yet">&#10007;</span>')+'</td><td>'+(f.clubberPick?'&#9733;':'')+'</td></tr>';
     });
     els('apBody').innerHTML=html||'<tr><td colspan="10" style="color:var(--muted);padding:16px;">No approved fixtures match these filters.</td></tr>';
