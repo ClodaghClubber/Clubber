@@ -102,7 +102,10 @@
   .status-proposed{background:rgba(212,160,23,.28);color:#7a4400;font-weight:700;}
   .status-approved{background:rgba(39,174,96,.15);color:var(--approve);}
   .status-rejected{background:rgba(192,57,43,.18);color:#a02020;font-weight:600;}
-  .badge-result-pending{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:#b45309;color:#fff;padding:2px 5px;border-radius:8px;white-space:nowrap;vertical-align:middle;}
+  .badge-time-missing,.badge-date-missing{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#fff;padding:2px 5px;border-radius:8px;white-space:nowrap;vertical-align:middle;margin:1px 0;}
+  .badge-time-missing{background:#7c3aed;}
+  .badge-date-missing{background:#be123c;}
+  .badge-result-pending{margin:1px 0;display:inline-block;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:#b45309;color:#fff;padding:2px 5px;border-radius:8px;white-space:nowrap;vertical-align:middle;}
   .badge-clubber-created{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:#1a6fa8;color:#fff;padding:2px 5px;border-radius:8px;margin-right:5px;vertical-align:middle;white-space:nowrap;}
   .badge-manual{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:transparent;color:var(--muted);border:1px dashed var(--muted);padding:1px 5px;border-radius:8px;margin-left:5px;vertical-align:middle;white-space:nowrap;}
   .badge-claude{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:#d97706;color:#fff;padding:1px 5px;border-radius:8px;margin-left:5px;vertical-align:middle;white-space:nowrap;}
@@ -2517,7 +2520,7 @@ function render(){
     const _chgBadge=_chg&&_chg.type!=='unchanged'?`<span class="badge-chg badge-chg-${_chg.type}" style="cursor:default;">${_chgLabel}</span>`:'';
     tr.innerHTML=`
       <td style="white-space:nowrap;"><input type="checkbox" data-id="${f.id}" ${selected.has(f.id)?'checked':''}><button class="edit-btn" data-edit-id="${f.id}" title="Edit fixture" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:0 4px;vertical-align:middle;opacity:.6;">✎</button></td>
-      <td style="text-align:center;">${f.clubberCreated?'<span class="badge-clubber-created" data-unmark-clubber="'+f.id+'" title="Click to unmark as Clubber" style="cursor:pointer;">✓ Clubber</span>':isResultPending(f)?'<span class="badge-result-pending" title="Teams not decided yet - waiting on an earlier result">Result pending</span>':''}</td>
+      <td style="text-align:center;">${f.clubberCreated?'<span class="badge-clubber-created" data-unmark-clubber="'+f.id+'" title="Click to unmark as Clubber" style="cursor:pointer;">✓ Clubber</span>':missingInfoBadges(f)}</td>
       <td style="white-space:nowrap;">${f.county}</td>
       <td>${f.code||''}</td>
       <td>${teamCellHtml(f,'A')}</td>
@@ -4192,6 +4195,21 @@ function isTeamPending(t, f) {
     }
   }
   return false;
+}
+// Time not known: blank, TBC/TBA/TBD, or midnight (a placeholder - the
+// export sends 00:01 for these). "Postponed" etc. aren't missing times.
+function isTimeMissing(f) {
+  const t = String(f.time || '').trim();
+  return !t || /^(tbc|tba|tbd|-|—)$/i.test(t) || /^(0?0:00|12:00\s*am)$/i.test(t);
+}
+function isDateMissing(f) {
+  return !/^\d{4}-\d{2}-\d{2}$/.test(String(f.date || ''));
+}
+// Markers for a fixture that can't be created in Clubber as it stands
+function missingInfoBadges(f) {
+  return (isResultPending(f) ? '<span class="badge-result-pending" title="Teams not decided yet - waiting on an earlier result">Result pending</span> ' : '')
+    + (isDateMissing(f) ? '<span class="badge-date-missing" title="No date yet">Date missing</span> ' : '')
+    + (isTimeMissing(f) ? '<span class="badge-time-missing" title="No throw-in time yet">Time missing</span>' : '');
 }
 function isResultPending(f) {
   // render() first runs from cached data before later constants (e.g.
@@ -6073,7 +6091,7 @@ let currentIsAdmin = false;
       if(f.date!==day){ day=f.date; html+='<tr class="ap-day"><td colspan="10">'+esc(f.day||dayName(f.date))+' '+esc(f.date)+'</td></tr>'; }
       html+='<tr><td style="white-space:nowrap;">'+esc(f.time||'TBC')+'</td><td>'+esc(f.county)+'</td><td>'+esc(f.code)+'</td>'+
         '<td>'+teamCellHtml(f,'A')+'</td><td>'+teamCellHtml(f,'B')+'</td><td>'+esc(f.venue)+'</td><td>'+esc(f.competition)+'</td><td>'+esc(f.round)+'</td>'+
-        '<td>'+(f.clubberCreated?'<span class="ai-ok" title="In Clubber">&#10003;</span>':isResultPending(f)?'<span class="badge-result-pending" title="Teams not decided yet - waiting on an earlier result">Result pending</span>':'<span style="color:var(--reject);font-weight:700;" title="Not in Clubber yet">&#10007;</span>')+'</td><td>'+(f.clubberPick?'&#9733;':'')+'</td></tr>';
+        '<td>'+(f.clubberCreated?'<span class="ai-ok" title="In Clubber">&#10003;</span>':missingInfoBadges(f)||'<span style="color:var(--reject);font-weight:700;" title="Not in Clubber yet">&#10007;</span>')+'</td><td>'+(f.clubberPick?'&#9733;':'')+'</td></tr>';
     });
     els('apBody').innerHTML=html||'<tr><td colspan="10" style="color:var(--muted);padding:16px;">No approved fixtures match these filters.</td></tr>';
   };
