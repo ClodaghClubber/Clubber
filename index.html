@@ -3393,7 +3393,7 @@ async function loadFixtures(isRefresh){
       }
       saveOverrides();
     }
-    const incoming=(json.fixtures||[]).map(f=>({...mk(f.county,f.teamA,f.teamB,f.date,f.time,f.venue,f.competition,f.round), code:f.code||deriveCode(f.competition,f.sport), status:f.status||'Proposed', ...(f.clubberCreated!==undefined?{clubberCreated:f.clubberCreated}:{}), ...(f.teamACounty?{teamACounty:f.teamACounty}:{}), ...(f.teamBCounty?{teamBCounty:f.teamBCounty}:{}), ...(f.sourceUrl?{sourceUrl:f.sourceUrl}:{})}));
+    const incoming=(json.fixtures||[]).map(f=>({...mk(f.county,f.teamA,f.teamB,f.date,f.time,f.venue,f.competition,f.round), code:f.code||deriveCode(f.competition,f.sport), status:f.status||'Proposed', ...(f.clubberCreated!==undefined?{clubberCreated:f.clubberCreated}:{}), ...(f.teamACounty?{teamACounty:f.teamACounty}:{}), ...(f.teamBCounty?{teamBCounty:f.teamBCounty}:{}), ...(f.teamACountySource?{teamACountySource:f.teamACountySource}:{}), ...(f.teamBCountySource?{teamBCountySource:f.teamBCountySource}:{}), ...(f.sourceUrl?{sourceUrl:f.sourceUrl}:{})}));
     mergeFixtures(incoming);
     detectChanges(takeSnapshot());
     updateClearChangesBtn();
@@ -3982,6 +3982,13 @@ async function loadTeamMappingsExtra() {
 function stripDiacritics(s) {
   return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '');
 }
+// Club name without generic endings / second-team marks, for exact
+// same-club comparison: "Dicksboro GAA and Camogie Club" = "Dicksboro"
+function clubCoreName(n) {
+  return normClubName(String(n || '').replace(/\(\s*[a-z0-9]{1,3}\s*\)/gi, ' '))
+    .replace(/\b(gaa|gac|gfc|clg|cumann|club|camogie|hurling|football|and)\b|'/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+}
 function normClubName(n) {
   return stripDiacritics(n || '').toLowerCase()
     .replace(/\bst\.?\s*/g, 'saint ')
@@ -4197,7 +4204,7 @@ function clubberTeamNames(f) {
   // is even declared - reading it then throws, so guard the read itself
   try { if (!f || !Object.keys(sportsCountiesIndex || {}).length) return null; }
   catch (_) { return null; }
-  const k = [f.county, f.competition, f.teamA, f.teamB, f.teamACounty || '', f.teamBCounty || ''].join('|');
+  const k = [f.county, f.competition, f.teamA, f.teamB, f.teamACounty || '', f.teamBCounty || '', f.teamACountySource || '', f.teamBCountySource || ''].join('|');
   if (_clubberNameCache.has(k)) return _clubberNameCache.get(k);
   let out = null;
   try {
@@ -4246,7 +4253,7 @@ function buildGamePayload(f) {
   // HE (gaa.ie) uses "Runner-Up Group 1A", "First-Place Group 1B", "Third-Placed ..."
   const unconfirmed = t => isTeamPending(t, f); // see isTeamPending
   [normA, normB].forEach(t => { if (unconfirmed(t)) errors.push(`Team not confirmed yet: "${t}"`); });
-  const findTeam = (name, county) => {
+  const findTeam = (name, county, side) => {
     if (isProvincial || isPPS) {
       // Exact name first, then ignoring accents/case/punctuation ("Eire Og" = "Éire Óg")
       const regional = teamMappings[f.county] || {};
@@ -4257,6 +4264,16 @@ function buildGamePayload(f) {
         const official = (sportsCountiesIndex[scoped.county.toLowerCase()] || []).find(c => c.id === scoped.id);
         return { county: scoped.county, clubId: scoped.id, matchedName: official ? official.name : (scoped.name || name) };
       }
+    }
+    // County proven by the club's crest ID (worker: provenCounty). Only a
+    // mapping in that county, or exactly one Clubber club there with the same
+    // name, is accepted - never a close match. Otherwise the export dialog asks.
+    if (side && f['team' + side + 'CountySource'] === 'crest') {
+      const r = lookupTeam(name, county);
+      if (r && r.clubId && !r.autoMatched && r.county === county) return r;
+      const core = clubCoreName(name);
+      const hits = (sportsCountiesIndex[county.toLowerCase()] || []).filter(c => clubCoreName(c.name) === core);
+      return hits.length === 1 ? { county, clubId: hits[0].id, matchedName: hits[0].name, crest: true } : null;
     }
     // Schools: only accept a teamMappings entry (filed under the school's own
     // county) - fuzzy matching would pick a club, e.g. "Naas CBS" -> Naas GAA.
@@ -4287,7 +4304,7 @@ function buildGamePayload(f) {
   };
   const resolveTeam = (name, norm, county, label) => {
     if (unconfirmed(norm)) return null; // already reported above
-    const r = findTeam(name, county);
+    const r = findTeam(name, county, label);
     if (r && r.ambiguous) {
       unmapped.push({ name: norm, county });
       errors.push(`"${norm}" matches several ${label === 'A' ? 'home' : 'away'} clubs: ${r.ambiguous.join(', ')} — add it to teamMappings.json under the right county`);

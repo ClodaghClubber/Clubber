@@ -1434,13 +1434,152 @@ async function fetchMunsterClubFixtures() {
   }
 }
 
+// ---- Club registry: which county a club's GAA ID belongs to ----
+// leinstergaa.ie and leinstercamogie.ie give each team's GAA organisation ID
+// (it is in the crest URL). Same-named clubs ("Castletown") exist in several
+// counties, so the ID is used to prove the county. County board sites
+// (ClubAndCounty) link every team as /fixtures-results/team/<slug>/<id>/.
+// A county is PROVEN only when the ID appears in exactly one county's feeds
+// AND that county's /clubs/ directory lists the club by name - feeds alone
+// aren't proof (Louth's St Fechin's plays in Meath's hurling).
+// Counties whose sites can't be read (Dublin, Longford, Carlow, Louth) are
+// never proven, so their clubs stay manual. One site is refreshed per run.
+const CLUB_REGISTRY_SOURCES = [
+  { county: 'Laois', domain: 'laoisgaa.ie' },
+  { county: 'Kildare', domain: 'kildaregaa.ie' },
+  { county: 'Kilkenny', domain: 'kilkennygaa.ie' },
+  { county: 'Kilkenny', domain: 'kilkennycamogie.ie' },
+  { county: 'Offaly', domain: 'offaly.gaa.ie' },
+  { county: 'Westmeath', domain: 'westmeathgaa.ie' },
+  { county: 'Meath', domain: 'meath.gaa.ie' },
+  { county: 'Wexford', domain: 'wexford.clubandcounty.com' },
+  { county: 'Wicklow', domain: 'wicklowgaa.ie' },
+];
+const CLUB_REG_PREFIX = 'clubreg:';
+const CLUB_REG_MAX_AGE_MS = 12 * 3600 * 1000;
+const regNorm = s => decodeEntities(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase().replace(/[^a-z0-9]/g, '');
+// Club name without generic endings / second-team marks, for comparing a feed
+// name with the directory: "Dicksboro GAA and Camogie Club" = "Dicksboro",
+// "Naas (C)" = "Naas"
+const clubCore = s => regNorm(decodeEntities(s || '')
+  .replace(/\(\s*[a-z0-9]{1,3}\s*\)/gi, ' ')
+  .replace(/\b(gaa|gac|gfc|clg|cumann|club|camogie|hurling|football|and)\b|&/gi, ' '));
+
+async function buildClubRegistrySource(src) {
+  const ids = {};
+  let pagesRead = 0;
+  for (const [feedType, maxPages] of [['results', 30], ['fixtures', 3]]) {
+    for (let page = 0; page < maxPages; page++) {
+      const url = `https://${src.domain}/fixtures-results/?ajax=1&feed_type=${feedType}&page=${page}&size=100&sport=&level=club&grade=&competition=`;
+      const res = await fetch(url, { headers: { 'User-Agent': UA } });
+      if (!res.ok) break;
+      const t = await res.text();
+      const i = t.indexOf('{');
+      let json; try { json = JSON.parse(t.slice(i)); } catch (_) { break; }
+      pagesRead++;
+      // County feeds also list their clubs' Leinster / All-Ireland games, which
+      // bring in other counties' clubs - only the county's own competitions count
+      const re = /href="[^"]*\/fixtures-results\/team\/[a-z0-9-]+\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/"\s*>\s*([^<]+?)\s*</g;
+      for (const block of (json.html || '').split('<div class="competition">').slice(1)) {
+        const comp = decodeEntities(((block.match(/competition-name[\s\S]*?<a[^>]*>([^<]*)</) || [])[1]) || '');
+        if (/leinster|munster|connacht|ulster|all[\s-]?ireland|inter[\s-]?county|provincial/i.test(comp)) continue;
+        // Underage leagues and Féile invite clubs from other counties (Naas
+        // plays Kilkenny's U14/U16 hurling) - adult competitions only
+        if (/f[eé]ile|\bu\s?-?\d{1,2}\b|under[\s-]?\d|minor|juvenile|underage|blitz|schools?\b|go games/i.test(comp)) continue;
+        let m;
+        while ((m = re.exec(block))) if (!ids[m[1]]) ids[m[1]] = decodeEntities(m[2]).trim();
+        re.lastIndex = 0;
+      }
+      if (!json.hasMore) break;
+    }
+  }
+  // Club directory: every text node on /clubs/, normalised
+  let directory = null;
+  try {
+    const res = await fetch(`https://${src.domain}/clubs/`, { headers: { 'User-Agent': UA } });
+    if (res.ok) {
+      const html = (await res.text()).replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/g, '');
+      const names = new Set();
+      for (const seg of html.split(/<[^>]+>/)) { const t = decodeEntities(seg).replace(/\s+/g, ' ').trim(); const n = regNorm(t); if (n.length >= 3 && n.length <= 60) names.add(t); }
+      directory = [...names];
+    }
+  } catch (_) {}
+  return { county: src.county, domain: src.domain, builtAt: new Date().toISOString(), pagesRead, ids, directory };
+}
+
+// Rebuild the stalest site (one per run keeps each run's requests down)
+async function refreshClubRegistry(kv, force) {
+  let stalest = null, stalestAt = Infinity;
+  for (const src of CLUB_REGISTRY_SOURCES) {
+    const raw = await kv.get(CLUB_REG_PREFIX + src.domain);
+    const at = raw ? Date.parse(JSON.parse(raw).builtAt) : 0;
+    if (at < stalestAt) { stalestAt = at; stalest = src; }
+  }
+  if (!stalest || (!force && Date.now() - stalestAt < CLUB_REG_MAX_AGE_MS)) return null;
+  const built = await buildClubRegistrySource(stalest).catch(() => null);
+  // A site that can't be read (Wicklow refuses connections) still gets a
+  // timestamp, so the rotation moves on; earlier good data is kept
+  const prevRaw = await kv.get(CLUB_REG_PREFIX + stalest.domain);
+  const keep = built && built.pagesRead ? built
+    : { ...(prevRaw ? JSON.parse(prevRaw) : { county: stalest.county, domain: stalest.domain, ids: {}, directory: null }),
+        builtAt: new Date().toISOString(), lastAttemptFailed: true };
+  await kv.put(CLUB_REG_PREFIX + stalest.domain, JSON.stringify(keep));
+  return keep;
+}
+
+async function loadClubRegistry(kv) {
+  const idCounties = new Map(), idNames = new Map(), dirs = new Map();
+  for (const src of CLUB_REGISTRY_SOURCES) {
+    const raw = kv ? await kv.get(CLUB_REG_PREFIX + src.domain) : null;
+    if (!raw) continue;
+    const r = JSON.parse(raw);
+    for (const [id, name] of Object.entries(r.ids || {})) {
+      if (!idCounties.has(id)) idCounties.set(id, new Set());
+      idCounties.get(id).add(r.county);
+      idNames.set(id + '|' + r.county, name);
+    }
+    if (r.directory) {
+      if (!dirs.has(r.county)) dirs.set(r.county, new Set());
+      r.directory.forEach(n => dirs.get(r.county).add(clubCore(n)));
+    }
+  }
+  return { idCounties, idNames, dirs };
+}
+
+// County proven by a team's GAA ID, or null (see CLUB_REGISTRY_SOURCES)
+function provenCounty(reg, orgId) {
+  if (!reg || !orgId) return null;
+  const counties = reg.idCounties.get(orgId);
+  if (!counties || counties.size !== 1) return null;
+  const county = [...counties][0];
+  const dir = reg.dirs.get(county);
+  const name = reg.idNames.get(orgId + '|' + county);
+  if (!dir || !name || !dir.has(clubCore(name))) return null;
+  // Another club ID in the same county with the same name: can't tell which
+  // one the directory entry is, so not proven
+  const n = clubCore(name);
+  for (const [k, other] of reg.idNames) {
+    if (k.endsWith('|' + county) && !k.startsWith(orgId + '|') && clubCore(other) === n) return null;
+  }
+  return county;
+}
+
+// Puts the proven county on a Leinster fixture's teams
+function applyCrestCounty(f, side, orgId, reg) {
+  if (!orgId) return;
+  f[`team${side}OrgId`] = orgId;
+  const county = provenCounty(reg, orgId);
+  if (county) { f[`team${side}County`] = county; f[`team${side}CountySource`] = 'crest'; }
+}
+
 // ---- Leinster: club championships ----
 // leinstergaa.ie is a JS app backed by a public JSON API (Foireann data).
 // All upcoming non-school fixtures are AIB Leinster Club championships.
 // Undecided teams appear as a county name ("Carlow") or are missing (-> TBC);
 // fixtures with no start date yet are skipped. A 00:00Z start means time TBC.
 const LEINSTER_FIXTURES_API = 'https://api.leinstergaa.ie/gaa-api/fixtures';
-async function fetchLeinsterClubFixtures() {
+async function fetchLeinsterClubFixtures(reg) {
   const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const dublinParts = iso => {
     const p = {};
@@ -1475,6 +1614,8 @@ async function fetchLeinsterClubFixtures() {
         competition, (r.round || '').trim());
       f.sport = r.competition.activity === 'hurling' ? 'Hurling' : 'Football';
       f.sourceUrl = 'https://leinstergaa.ie/fixtures';
+      applyCrestCounty(f, 'A', r.homeTeam && r.homeTeam.id, reg);
+      applyCrestCounty(f, 'B', r.awayTeam && r.awayTeam.id, reg);
       out.push(f);
     }
     // Undrawn games in the same round are identical ("TBC v TBC", same day)
@@ -1578,7 +1719,7 @@ async function fetchHigherEducationFixtures(kv) {
 // "camogieResult camogieFixture" cards (results are camogieResult only).
 // Competition and round share one line: "AIB Leinster Junior 'B' Championship
 // (Semi-Final)". Undated fixtures are skipped until a date is published.
-async function fetchLeinsterCamogieFixtures() {
+async function fetchLeinsterCamogieFixtures(reg) {
   const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const text = s => decodeEntities((s || '').replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim();
   try {
@@ -1617,6 +1758,9 @@ async function fetchLeinsterCamogieFixtures() {
         (cm ? cm[2].trim() : '').replace(/^(\d+)(?:st|nd|rd|th)\s+Round$/i, 'Round $1'));
       f.sport = 'Camogie';
       f.sourceUrl = 'https://leinstercamogie.ie/fixtures-results/';
+      const crestId = cls => { const x = card.match(new RegExp(cls + '[^>]*>\\s*<img[^>]+organization\\/([0-9a-f-]{36})\\/')); return x ? x[1] : null; };
+      applyCrestCounty(f, 'A', crestId('lcr-home-crest'), reg);
+      applyCrestCounty(f, 'B', crestId('lcr-away-crest'), reg);
       if (/live on clubber tv/i.test(card)) f.broadcast = 'Clubber TV';
       out.push(f);
     }
@@ -3279,14 +3423,16 @@ async function scrapeGroupD(kv, env) {
 // Group E: Tipperary Camogie, Kilkenny Camogie, London, Munster + Leinster club, county minor finals — then run Teams alert
 async function scrapeGroupE(kv) {
   const cacDebug = [];
+  await refreshClubRegistry(kv).catch(e => console.error('refreshClubRegistry failed:', e));
+  const clubReg = await loadClubRegistry(kv).catch(() => null);
   const [tipperaryCamogieResults, kilkennyCamogieResults, londonResults, munsterResults, leinsterResults, minorFinals, leinsterCamogieResults, ppsResults, munsterMcResults, munsterCamogieResults, heResults] = await Promise.all([
     fetchTipperaryCamogieFixtures().catch(() => []),
     fetchKilkennyAmogieCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Kilkenny', 'kilkennycamogie.ie', c, cacDebug)))).catch(() => []),
     fetchLondonFixtures().catch(() => []),
     fetchMunsterClubFixtures().catch(() => []),
-    fetchLeinsterClubFixtures().catch(() => []),
+    fetchLeinsterClubFixtures(clubReg).catch(() => []),
     fetchAllMinorFinals(cacDebug).catch(() => []),
-    fetchLeinsterCamogieFixtures().catch(() => []),
+    fetchLeinsterCamogieFixtures(clubReg).catch(() => []),
     fetchPpsCompetitions(cacDebug).catch(() => []),
     fetchMunsterMatchCentre().catch(() => []),
     fetchMunsterCamogieFixtures(cacDebug).catch(() => []),
