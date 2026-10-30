@@ -2261,5 +2261,8 @@
       "id": "c3aee129-0fcb-4170-8fe4-9fe24e5f7c38",
       "name": "St Josephs Tulla"
     }
+  },
+  "Dublin": {
+    "Coláiste Eoin Stillorgan": {"id": "30155274-7d11-4472-8eaa-e35f277a5f1f", "name": "Coláiste Eoin"}
   }
 }
