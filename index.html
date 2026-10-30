@@ -3923,6 +3923,7 @@ setupColPicker();
 let teamMappings = {};
 let competitionLookup = {};
 let sportsCountiesIndex = {}; // county name (lowercase) → [{id, name, normName}]
+var sportsSchoolsIndex = {};  // same, from each county's schoolsList (Clubber keeps schools separately)
 let VID_DATA = null; // loaded from vidData.json
 // Club mappings added in the Review Before Export dialog. They live in the
 // worker (shared by everyone) and are merged over teamMappings.json.
@@ -3967,6 +3968,10 @@ async function loadTeamMappingsExtra() {
             name: club.name,
             normName: normClubName(club.name),
           });
+        }
+        if (!sportsSchoolsIndex[key]) sportsSchoolsIndex[key] = [];
+        for (const school of (county.schoolsList || [])) {
+          sportsSchoolsIndex[key].push({ id: school.id, county: county.name, name: school.name, normName: normClubName(school.name) });
         }
       }
     }
@@ -4284,7 +4289,12 @@ function buildGamePayload(f) {
         const r = lookupTeam(name, c);
         if (r && r.clubId && !r.autoMatched && provinceCounties.includes(r.county)) hits.set(r.clubId, r);
       });
-      return hits.size === 1 ? [...hits.values()][0] : null;
+      if (hits.size) return hits.size === 1 ? [...hits.values()][0] : null;
+      // No mapping: accept a school from Clubber's schools list with exactly the
+      // same name, if only one school in the province has it (never a club)
+      const want = normClubName(name);
+      const same = provinceCounties.flatMap(c => (sportsSchoolsIndex[c.toLowerCase()] || []).filter(x => x.normName === want));
+      return same.length === 1 ? { county: same[0].county, clubId: same[0].id, matchedName: same[0].name } : null;
     }
     // Provincial fixtures with no per-team county (Leinster feed, Munster
     // camogie) search every county in the province
