@@ -4379,6 +4379,8 @@ function buildGamePayload(f) {
     ? 'Leinster GAA'
     : isPPS
     ? 'Post Primary'
+    : f.county === 'Higher Education'
+    ? 'GAA'
     : isRugby
     ? 'Champ Rugby'
     : lookupClubberCompetition(
@@ -4420,7 +4422,7 @@ function buildGamePayload(f) {
   const utcTime = utc ? utc.time : '00:01';
 
   const payload = {
-    gameScope: f.county === 'BUCS' ? 'University' : (f.county === 'ACE' || isPPS) ? 'School' : 'Club',
+    gameScope: (f.county === 'BUCS' || f.county === 'Higher Education') ? 'University' : (f.county === 'ACE' || isPPS) ? 'School' : 'Club',
     date: utc ? utc.date : f.date,
     time: utcTime,
     county,
