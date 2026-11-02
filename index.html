@@ -2883,20 +2883,23 @@ document.getElementById('clubberConfirmBody').addEventListener('click', async e 
     return;
   }
   // File the mapping under the club's own county in Clubber's club list
-  const hits = Object.values(sportsCountiesIndex).flat().filter(c => c.id === id);
-  const club = hits.find(c => c.county === u.county) || hits[0];
+  // (Higher Education: Clubber's university list)
   const f = r.fixture;
-  const regional = ['Munster','Leinster','Munster PPS','Leinster PPS'].includes(f.county);
+  const isHEFixture = f.county === 'Higher Education';
+  const hits = Object.values(isHEFixture ? sportsUniversitiesIndex : sportsCountiesIndex).flat().filter(c => c.id === id);
+  const club = hits.find(c => c.county === u.county) || hits[0];
+  const regional = ['Munster','Leinster','Munster PPS','Leinster PPS','Higher Education'].includes(f.county);
   if (!club) {
+    if (isHEFixture) { msg.textContent = 'That ID isn\'t in Clubber\'s university list - check the ID, or add the college to Clubber as a university first'; return; }
     if (regional) { msg.textContent = 'That ID isn\'t in Clubber\'s club list, so its county is unknown - check the ID'; return; }
     if (!confirm('That ID isn\'t in Clubber\'s club list yet. Map "' + u.name + '" (' + u.county + ') to it anyway?')) return;
-  } else if (!confirm('Map "' + u.name + '" to Clubber club "' + club.name + '" (' + club.county + ')?\n\nThis applies to everyone\'s exports from now on.')) {
+  } else if (!confirm('Map "' + u.name + '" to Clubber ' + (isHEFixture ? 'university' : 'club') + ' "' + club.name + '" (' + club.county + ')?\n\nThis applies to everyone\'s exports from now on.')) {
     return;
   }
   btn.disabled = true; msg.textContent = 'Saving...';
   try {
     const res = await authFetch(WORKER_URL, { method: 'POST', body: JSON.stringify({
-      action: 'addTeamMapping', name: u.name, id, clubName: club ? '' : u.name,
+      action: 'addTeamMapping', name: u.name, id, clubName: club ? (isHEFixture ? club.name : '') : u.name,
       ...(regional ? { county: f.county, clubCounty: club.county } : { county: club ? club.county : u.county }),
     }) });
     const data = await res.json();
@@ -3927,6 +3930,7 @@ let teamMappings = {};
 let competitionLookup = {};
 let sportsCountiesIndex = {}; // county name (lowercase) → [{id, name, normName}]
 var sportsSchoolsIndex = {};  // same, from each county's schoolsList (Clubber keeps schools separately)
+var sportsUniversitiesIndex = {}; // same, from universityList (Higher Education colleges)
 let VID_DATA = null; // loaded from vidData.json
 // Club mappings added in the Review Before Export dialog. They live in the
 // worker (shared by everyone) and are merged over teamMappings.json.
@@ -3971,6 +3975,10 @@ async function loadTeamMappingsExtra() {
             name: club.name,
             normName: normClubName(club.name),
           });
+        }
+        if (!sportsUniversitiesIndex[key]) sportsUniversitiesIndex[key] = [];
+        for (const uni of (county.universityList || [])) {
+          sportsUniversitiesIndex[key].push({ id: uni.id, county: county.name, name: uni.name, normName: normClubName(uni.name) });
         }
         if (!sportsSchoolsIndex[key]) sportsSchoolsIndex[key] = [];
         for (const school of (county.schoolsList || [])) {
@@ -4098,7 +4106,7 @@ function lookupTeam(teamName, preferredCounty) {
   // 3. Exact match in teamMappings — all other counties (last resort)
   for (const [county, teams] of Object.entries(teamMappings)) {
     // Province-wide entries (from the review dialog) only apply to those fixtures
-    if (['Leinster', 'Munster', 'Leinster PPS', 'Munster PPS'].includes(county)) continue;
+    if (['Leinster', 'Munster', 'Leinster PPS', 'Munster PPS', 'Higher Education'].includes(county)) continue;
     const hit = findInCounty(teams, name);
     if (hit) return resolve(county, hit);
   }
@@ -4270,6 +4278,7 @@ function buildGamePayload(f) {
   // looked up across all Leinster counties and accepted only if unambiguous.
   const isProvincial = f.county === 'Munster' || f.county === 'Leinster';
   const isPPS = f.county === 'Leinster PPS' || f.county === 'Munster PPS'; // post-primary schools
+  const isHE = f.county === 'Higher Education'; // colleges (Clubber universityList)
   const countyA = f.teamACounty || f.county;
   const countyB = f.teamBCounty || f.county;
   // Draws list unconfirmed teams ("X or Y", "Winner of QF1", "Clare
@@ -4280,6 +4289,17 @@ function buildGamePayload(f) {
   const unconfirmed = t => isTeamPending(t, f); // see isTeamPending
   [normA, normB].forEach(t => { if (unconfirmed(t)) errors.push(`Team not confirmed yet: "${t}"`); });
   const findTeam = (name, county, side) => {
+    // Higher Education: colleges are Clubber universities (never clubs). A
+    // 'Higher Education' teamMappings entry ({id, name, county}) first, else
+    // a university with exactly the same name, if only one has it.
+    if (isHE) {
+      const he = teamMappings['Higher Education'] || {};
+      const trimmed = name.replace(/\s+/g, ' ').trim(), want = normClubName(trimmed);
+      const m = he[trimmed] || he[Object.keys(he).find(k => normClubName(k) === want)];
+      if (m && typeof m === 'object' && m.county) return { county: m.county, clubId: m.id, matchedName: m.name || trimmed };
+      const same = Object.values(sportsUniversitiesIndex).flat().filter(u => u.normName === want);
+      return same.length === 1 ? { county: same[0].county, clubId: same[0].id, matchedName: same[0].name } : null;
+    }
     if (isProvincial || isPPS) {
       // Exact name first, then ignoring accents/case/punctuation ("Eire Og" = "Éire Óg")
       const regional = teamMappings[f.county] || {};
@@ -4413,7 +4433,7 @@ function buildGamePayload(f) {
   }
 
   const county = isRugby ? 'UK'
-    : (isProvincial || isPPS) ? (teamAResult?.county || countyA)
+    : (isProvincial || isPPS || isHE) ? (teamAResult?.county || countyA)
     : (f.county || '').replace(/ LGFA$/i, '');
 
   const rawTime = f.time ? from12h(f.time) : '';

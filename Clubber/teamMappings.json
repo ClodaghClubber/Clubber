@@ -2264,5 +2264,19 @@
   },
   "Dublin": {
     "Coláiste Eoin Stillorgan": {"id": "30155274-7d11-4472-8eaa-e35f277a5f1f", "name": "Coláiste Eoin"}
+  },
+  "Higher Education": {
+    "University College Cork": {"id": "e3755957-0016-4f40-9688-570ae1c230f1", "name": "UCC", "county": "Cork"},
+    "University College Dublin": {"id": "f944bcbe-9be3-4eac-90f2-311c17625d88", "name": "UCD", "county": "Dublin"},
+    "DCU Dóchas Éireann": {"id": "02c1ce4c-bf25-4567-873f-4b78e036a449", "name": "DCU", "county": "Dublin"},
+    "Mary Immaculate College Limerick": {"id": "b3a17e15-947b-4a3f-bfaf-f2b112dea1ad", "name": "MIC Limerick", "county": "Limerick"},
+    "MTU Cork": {"id": "a809ddb0-d010-4dd8-9d5f-79b1bf55bfb0", "name": "MTU Cork", "county": "Cork"},
+    "Maynooth University": {"id": "cc309522-dda7-4731-bbbc-b762721da15a", "name": "Maynooth University", "county": "Kildare"},
+    "SETU Carlow": {"id": "aaa49949-5201-4adc-8f00-cae1bdb1038a", "name": "SETU Carlow", "county": "Carlow"},
+    "SETU Waterford GAA Club": {"id": "a9277196-79f3-4c31-ab92-796a361e5a6b", "name": "SETU Waterford", "county": "Waterford"},
+    "University of Galway": {"id": "080dda39-51ad-4c52-95a9-8c3fb6c69904", "name": "University Galway", "county": "Galway"},
+    "University of Limerick": {"id": "0dc12aa9-a969-43f6-9415-140ef9c1ba0d", "name": "University Limerick", "county": "Limerick"},
+    "ATU Galway City": {"id": "404d10cb-16c0-4301-8d05-ed4ceca0d2c7", "name": "ATU Galway", "county": "Galway"},
+    "TUS Moylish": {"id": "d65c12d5-7658-4dcb-9b05-dbbdc8779b79", "name": "TUS Midwest", "county": "Limerick"}
   }
 }
