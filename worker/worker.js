@@ -1682,6 +1682,8 @@ async function fetchHigherEducationFixtures(kv) {
     for (const m of matches || []) {
       const day = (m.matchSortDate || '').slice(0, 10);
       if (m.isResult || !day || day < today) continue;
+      // Freshers competitions aren't wanted on the dashboard
+      if (/\bfreshers?\b/i.test((m.competition && m.competition.cupName) || '')) continue;
       const [y, mo, d] = day.split('-').map(Number);
       // matchStartTime is the local (Irish) clock time; 00:00 = time not set yet
       const hhmm = (m.matchStartTime || '').slice(0, 5);
