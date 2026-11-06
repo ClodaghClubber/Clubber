@@ -811,6 +811,7 @@
   },
   "Kilkenny": {
     "Kilkenny CBS": {"id": "f05557e8-cd0d-4424-8c04-2334bfac2cf5", "name": "Kilkenny CBC"},
+    "Kilkenny C.B.C.": {"id": "f05557e8-cd0d-4424-8c04-2334bfac2cf5", "name": "Kilkenny CBC"},
     "Blacks and Whites": {
       "id": "450a867e-460d-4aac-86b7-42dc50451bd1",
       "name": "Blacks & Whites"

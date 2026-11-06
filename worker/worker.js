@@ -1903,6 +1903,59 @@ async function fetchPpsCompetitions(debug) {
   });
 }
 
+// ---- Leinster schools: top tier from leinstergaa.ie/school-fixtures ----
+// Same Leinster GAA API as the club championships, with isSchool=true. Only
+// the Senior "A" competitions are kept for now: Corn Ui Dhuill (hurling) and
+// the Br. Bosco Cup (football). Bosco games already read from the county
+// sites (PPS_COMPETITIONS) are dropped in scrapeGroupE so statuses stay put.
+async function fetchLeinsterSchoolsFixtures() {
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const dublinParts = iso => {
+    const p = {};
+    new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Dublin', year: 'numeric', month: 'numeric', day: 'numeric',
+      hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(new Date(iso)).forEach(x => { p[x.type] = x.value; });
+    return p;
+  };
+  const clean = s => (s || '').replace(/[\u0000-\u001f\u007f-\u009f]/g, '').replace(/\s+/g, ' ').trim();
+  try {
+    const records = [];
+    for (let skip = 0; skip < 1000; skip += 100) {
+      const url = `${LEINSTER_FIXTURES_API}?skip=${skip}&limit=100&needCount=true&sortOrder=1&isSchool=true&searchTerm=&needPast=false&isResult=false&sortKey=startDate`;
+      const res = await fetch(url, { headers: { 'User-Agent': UA, 'Accept': 'application/json' } });
+      if (!res.ok) { console.error('fetchLeinsterSchoolsFixtures HTTP', res.status); break; }
+      const page = (await res.json()).records || [];
+      records.push(...page);
+      if (page.length < 100) break;
+    }
+    const out = [];
+    for (const r of records) {
+      const compName = (r.competition && r.competition.name) || '';
+      const name = /Corn U.{1,2}Dh.{1,3}ill/i.test(compName) ? 'Corn Uí Dhúill'
+        : /Bosco/i.test(compName) ? 'Br Bosco Cup' : null;
+      if (!name || !r.startDate) continue;
+      const roinn = ((r.division && r.division.name) || '').match(/\bRoinn\s+(\w+)/i);
+      const p = dublinParts(r.startDate);
+      const tbcTime = /T00:00(:00(\.0+)?)?Z$/.test(r.startDate);
+      const round = String(r.round || '').trim();
+      const f = mkStatic('Leinster PPS',
+        clean(r.homeTeam && r.homeTeam.name) || 'TBC',
+        clean(r.awayTeam && r.awayTeam.name) || 'TBC',
+        `${parseInt(p.day, 10)} ${MONTHS[parseInt(p.month, 10) - 1]} ${p.year}`,
+        tbcTime ? '' : `${p.hour}:${p.minute}`,
+        clean(r.place && r.place.name),
+        roinn ? `${name} Roinn ${roinn[1]}` : name,
+        /^\d+$/.test(round) ? `Round ${round}` : round);
+      f.sport = r.competition.activity === 'hurling' ? 'Hurling' : 'Football';
+      f.sourceUrl = 'https://leinstergaa.ie/school-fixtures';
+      out.push(f);
+    }
+    return out;
+  } catch (e) {
+    console.error('fetchLeinsterSchoolsFixtures failed:', e);
+    return [];
+  }
+}
+
 // ---- Minor finals (all counties) ----
 // The adult scrapers deliberately skip underage grades. This pulls only the
 // FINALS of each county's minor competitions (Laois calls its minor grade U17
@@ -3427,7 +3480,7 @@ async function scrapeGroupE(kv) {
   const cacDebug = [];
   await refreshClubRegistry(kv).catch(e => console.error('refreshClubRegistry failed:', e));
   const clubReg = await loadClubRegistry(kv).catch(() => null);
-  const [tipperaryCamogieResults, kilkennyCamogieResults, londonResults, munsterResults, leinsterResults, minorFinals, leinsterCamogieResults, ppsResults, munsterMcResults, munsterCamogieResults, heResults] = await Promise.all([
+  const [tipperaryCamogieResults, kilkennyCamogieResults, londonResults, munsterResults, leinsterResults, minorFinals, leinsterCamogieResults, ppsResults, munsterMcResults, munsterCamogieResults, heResults, leinsterSchoolsResults] = await Promise.all([
     fetchTipperaryCamogieFixtures().catch(() => []),
     fetchKilkennyAmogieCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Kilkenny', 'kilkennycamogie.ie', c, cacDebug)))).catch(() => []),
     fetchLondonFixtures().catch(() => []),
@@ -3439,6 +3492,7 @@ async function scrapeGroupE(kv) {
     fetchMunsterMatchCentre().catch(() => []),
     fetchMunsterCamogieFixtures(cacDebug).catch(() => []),
     fetchHigherEducationFixtures(kv).catch(() => []),
+    fetchLeinsterSchoolsFixtures().catch(() => []),
   ]);
   const fixtures = [
     ...tipperaryCamogieResults,
@@ -3452,6 +3506,11 @@ async function scrapeGroupE(kv) {
     ...munsterMcResults,
     ...munsterCamogieResults,
     ...heResults,
+    // Skip Leinster-feed games the county sites already gave us (same schools,
+    // same day) - those may already be approved / in Clubber
+    ...leinsterSchoolsResults.filter(f => !ppsResults.some(x => x.county === f.county
+      && toIsoDate(x.date) === toIsoDate(f.date)
+      && [regNorm(x.teamA), regNorm(x.teamB)].sort().join('|') === [regNorm(f.teamA), regNorm(f.teamB)].sort().join('|'))),
   ];
   await writeGroupCache(kv, CACHE_E_KEY, fixtures);
 }
