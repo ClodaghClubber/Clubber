@@ -2886,20 +2886,23 @@ document.getElementById('clubberConfirmBody').addEventListener('click', async e 
   // (Higher Education: Clubber's university list)
   const f = r.fixture;
   const isHEFixture = f.county === 'Higher Education';
-  const hits = Object.values(isHEFixture ? sportsUniversitiesIndex : sportsCountiesIndex).flat().filter(c => c.id === id);
+  // Schools fixtures: Clubber's school list (schools aren't in its club list)
+  const isPPSFixture = f.county === 'Leinster PPS' || f.county === 'Munster PPS';
+  const kind = isHEFixture ? 'university' : isPPSFixture ? 'school' : 'club';
+  const hits = Object.values(isHEFixture ? sportsUniversitiesIndex : isPPSFixture ? sportsSchoolsIndex : sportsCountiesIndex).flat().filter(c => c.id === id);
   const club = hits.find(c => c.county === u.county) || hits[0];
   const regional = ['Munster','Leinster','Munster PPS','Leinster PPS','Higher Education'].includes(f.county);
   if (!club) {
-    if (isHEFixture) { msg.textContent = 'That ID isn\'t in Clubber\'s university list - check the ID, or add the college to Clubber as a university first'; return; }
+    if (isHEFixture || isPPSFixture) { msg.textContent = 'That ID isn\'t in Clubber\'s ' + kind + ' list - check the ID, or add the ' + (isHEFixture ? 'college' : 'school') + ' to Clubber as a ' + kind + ' first'; return; }
     if (regional) { msg.textContent = 'That ID isn\'t in Clubber\'s club list, so its county is unknown - check the ID'; return; }
     if (!confirm('That ID isn\'t in Clubber\'s club list yet. Map "' + u.name + '" (' + u.county + ') to it anyway?')) return;
-  } else if (!confirm('Map "' + u.name + '" to Clubber ' + (isHEFixture ? 'university' : 'club') + ' "' + club.name + '" (' + club.county + ')?\n\nThis applies to everyone\'s exports from now on.')) {
+  } else if (!confirm('Map "' + u.name + '" to Clubber ' + kind + ' "' + club.name + '" (' + club.county + ')?\n\nThis applies to everyone\'s exports from now on.')) {
     return;
   }
   btn.disabled = true; msg.textContent = 'Saving...';
   try {
     const res = await authFetch(WORKER_URL, { method: 'POST', body: JSON.stringify({
-      action: 'addTeamMapping', name: u.name, id, clubName: club ? (isHEFixture ? club.name : '') : u.name,
+      action: 'addTeamMapping', name: u.name, id, clubName: club ? (isHEFixture || isPPSFixture ? club.name : '') : u.name,
       ...(regional ? { county: f.county, clubCounty: club.county } : { county: club ? club.county : u.county }),
     }) });
     const data = await res.json();
