@@ -1905,8 +1905,8 @@ async function fetchPpsCompetitions(debug) {
 
 // ---- Leinster schools: top tier from leinstergaa.ie/school-fixtures ----
 // Same Leinster GAA API as the club championships, with isSchool=true. Only
-// the Senior "A" competitions are kept for now: Corn Ui Dhuill (hurling) and
-// the Br. Bosco Cup (football). Bosco games already read from the county
+// the Senior "A" competitions are kept for now: Corn Ui Dhuill (hurling), the
+// Br. Bosco Cup (football) and Senior Hurling "A" Group Teams (county sides). Bosco games already read from the county
 // sites (PPS_COMPETITIONS) are dropped in scrapeGroupE so statuses stay put.
 async function fetchLeinsterSchoolsFixtures() {
   const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -1930,7 +1930,9 @@ async function fetchLeinsterSchoolsFixtures() {
     const out = [];
     for (const r of records) {
       const compName = (r.competition && r.competition.name) || '';
-      const name = /Corn U.{1,2}Dh.{1,3}ill/i.test(compName) ? 'Corn Uí Dhúill'
+      // Senior Hurling "A" county selection sides ("Wexford Schools v Dublin South")
+      const name = /Senior Hurling.{0,8}Group Teams/i.test(compName) ? 'Senior Hurling A Group Teams'
+        : /Corn U.{1,2}Dh.{1,3}ill/i.test(compName) ? 'Corn Uí Dhúill'
         : /Bosco/i.test(compName) ? 'Br Bosco Cup' : null;
       if (!name || !r.startDate) continue;
       const roinn = ((r.division && r.division.name) || '').match(/\bRoinn\s+(\w+)/i);
