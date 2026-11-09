@@ -1954,6 +1954,10 @@
     "Surrey": "91db5678-4aec-4a5d-8336-af21be7aa64f"
   },
   "ACE": {
+    "Bede": {"id": "0c7856b8-d547-4a42-91e5-1a4545b49544", "name": "Bede"},
+    "Bishop Wand": {"id": "a350bdcf-920d-479c-bd8a-3545ab3d55eb", "name": "Bishop Wand"},
+    "Cardinal Newman": {"id": "fbbd92da-bd87-4c9a-81d4-7ef0665aa8d1", "name": "Cardinal Newman"},
+    "Sigma Sixth": {"id": "fa6967c5-f7f8-41c9-83f5-afed96ecd94a", "name": "Sigma Sixth"},
     "Bishop Burton": {
       "id": "fd5114ac-7a17-448a-9139-53b5695b5390",
       "name": "Bishop Burton College"
