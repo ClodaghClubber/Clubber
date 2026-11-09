@@ -3047,6 +3047,46 @@ const RUGBY_FIXTURES = [];
   add('Round 15','Caldy','Nottingham','23 January 2027','13:00');
 })();
 
+// BUCS kick-off times from Playwaze, the system behind the fixture tables on
+// bucs.org.uk (league-tables pages embed public-bucs.playwaze.com). The list
+// below has the dates; Playwaze has the latest times. Only the TIME is taken,
+// and only when Playwaze has the same date (a fixture's key includes its date,
+// so changing dates would detach saved statuses). Playwaze's "-" = no time
+// yet, which leaves our time alone.
+const BUCS_PLAYWAZE_URL = 'https://public-bucs.playwaze.com/bucs-rugby-union-26-27/9h7tl6ka1l7i/fixture-fixturelist';
+const BUCS_PLAYWAZE_COMPS = {
+  "Men's BUCS Super Rugby": 'LeagueDivisions/LeagueSeasons/196788-B_1',
+  "Women's BUCS Super Rugby": 'LeagueDivisions/LeagueSeasons/196767-B_1',
+};
+async function fetchBucsPlaywazeTimes() {
+  const times = new Map();   // "competition|home|away" -> { date: ISO, time: "HH:MM" }
+  const club = n => decodeEntities(n).replace(/\s+(Men|Women)'s\s+\d+$/i, '').trim();
+  await Promise.all(Object.entries(BUCS_PLAYWAZE_COMPS).map(async ([comp, id]) => {
+    const body = new URLSearchParams({ page: '1', pageSize: '1024', 'request[BaseCommunityId]': '9h7tl6ka1l7i',
+      'request[CompetitionIds]': id, isDashboard: 'false' });
+    const res = await fetch(BUCS_PLAYWAZE_URL, { method: 'POST', body,
+      headers: { 'User-Agent': UA, 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' } });
+    if (!res.ok) { console.error('fetchBucsPlaywazeTimes HTTP', res.status, comp); return; }
+    const html = await res.text();
+    for (const grp of html.split('class="fixture-list-group"').slice(1)) {
+      const dm = grp.match(/fixture-list-header-date">([^<]+)</);
+      if (!dm) continue;                                   // "Unscheduled" group
+      const date = toIsoDate(dm[1].trim());
+      for (const item of grp.split('class="fixtureListItemMobile"').slice(1)) {
+        const t = (item.match(/fixture-list-time">([^<]*)</) || [])[1] || '';
+        const names = [...item.matchAll(/fixtureListItemMobile-teamName">\s*<span>([^<]*)</g)].map(m => club(m[1]));
+        if (names.length === 2 && /^\d{1,2}:\d{2}$/.test(t.trim())) times.set(`${comp}|${names[0]}|${names[1]}`, { date, time: t.trim() });
+      }
+    }
+  }));
+  return times;
+}
+function applyBucsTime(f, times) {
+  if (f.county !== 'BUCS' || !times) return f;
+  const p = times.get(`${f.competition}|${f.teamA}|${f.teamB}`);
+  return p && p.date === toIsoDate(f.date) ? { ...f, time: p.time } : f;
+}
+
 // BUCS Super Rugby 2026-27
 (function() {
   const bucsAdd = (competition, round, teamA, teamB, date, time = 'TBC') => {
@@ -3456,13 +3496,14 @@ async function scrapeGroupC(kv) {
 // Group D: Kilkenny GAA, Meath, Monaghan, Roscommon, Longford + Rugby static
 async function scrapeGroupD(kv, env) {
   const cacDebug = [];
-  const [kilkennyResults, monaghanResults, meathResults, roscommonFootballResults, roscommonHurlingResults, longfordResults] = await Promise.all([
+  const [kilkennyResults, monaghanResults, meathResults, roscommonFootballResults, roscommonHurlingResults, longfordResults, bucsTimes] = await Promise.all([
     fetchKilkennyCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Kilkenny', 'kilkennygaa.ie', c, cacDebug)))).catch(() => []),
     fetchMonaghanCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Monaghan', 'www.monaghangaa.ie', c, cacDebug)))).catch(() => []),
     fetchMeathCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Meath', 'meath.gaa.ie', c, cacDebug)))).catch(() => []),
     fetchRoscommonFootball().catch(() => []),
     fetchRoscommonSport('hurling').catch(() => []),
     fetchLongford(env.FOIREANN_API_KEY).catch(() => []),
+    fetchBucsPlaywazeTimes().catch(() => null),
   ]);
   const fixtures = [
     ...kilkennyResults.flat().map(fixNames),
@@ -3471,7 +3512,7 @@ async function scrapeGroupD(kv, env) {
     ...roscommonFootballResults.map(fixNames),
     ...roscommonHurlingResults.map(fixNames),
     ...(longfordResults.length > 0 ? longfordResults : LONGFORD_FIXTURES),
-    ...RUGBY_FIXTURES,
+    ...RUGBY_FIXTURES.map(f => applyBucsTime(f, bucsTimes)),
     ...ACE_FIXTURES,
   ];
   await writeGroupCache(kv, CACHE_D_KEY, fixtures);
