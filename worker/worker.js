@@ -2916,7 +2916,7 @@ async function handleAuth(action, body, kv, request, adminKey) {
   return null; // not an auth action
 }
 
-// ---- Championship Rugby: static fixtures (all 15 rounds) ----
+// ---- Championship Rugby: static fixtures (Rounds 1-26 + play-offs, champrugby.com) ----
 // Venue = home team (first listed). Sport = 'Rugby' so dashboard Code column shows 'Rugby'.
 const RUGBY_FIXTURES = [];
 (function() {
@@ -3045,6 +3045,102 @@ const RUGBY_FIXTURES = [];
   add('Round 15','Blackheath','Richmond','22 January 2027','19:45');
   add('Round 15','Hartpury','Cornish Pirates','23 January 2027','15:00');
   add('Round 15','Caldy','Nottingham','23 January 2027','13:00');
+  // Rounds 16-26 + play-offs, from champrugby.com/fixtures-results (9 Nov 2026)
+  // Round 16
+  add('Round 16','Worcester Warriors','Doncaster Knights','29 January 2027','19:45');
+  add('Round 16','Chinnor','Hartpury','29 January 2027','19:45');
+  add('Round 16','Coventry','Caldy','30 January 2027','15:00');
+  add('Round 16','Richmond','Cornish Pirates','30 January 2027','15:00');
+  add('Round 16','Rotherham Titans','Nottingham','30 January 2027','15:00');
+  add('Round 16','Ealing Trailfinders','Ampthill','30 January 2027','17:00');
+  add('Round 16','Bedford Blues','Blackheath','31 January 2027','16:00');
+  // Round 17
+  add('Round 17','Ampthill','Coventry','6 February 2027','13:00');
+  add('Round 17','Caldy','Richmond','6 February 2027','13:00');
+  add('Round 17','Cornish Pirates','Rotherham Titans','6 February 2027','13:00');
+  add('Round 17','Blackheath','Worcester Warriors','6 February 2027','15:00');
+  add('Round 17','Doncaster Knights','Ealing Trailfinders','6 February 2027','15:00');
+  add('Round 17','Hartpury','Bedford Blues','6 February 2027','15:00');
+  add('Round 17','Nottingham','Chinnor','7 February 2027','16:00');
+  // Round 18
+  add('Round 18','Bedford Blues','Nottingham','12 February 2027','19:45');
+  add('Round 18','Rotherham Titans','Richmond','12 February 2027','19:45');
+  add('Round 18','Coventry','Doncaster Knights','13 February 2027','15:00');
+  add('Round 18','Ealing Trailfinders','Blackheath','13 February 2027','15:00');
+  add('Round 18','Worcester Warriors','Hartpury','13 February 2027','15:00');
+  add('Round 18','Chinnor','Cornish Pirates','13 February 2027','17:00');
+  add('Round 18','Ampthill','Caldy','14 February 2027','13:00');
+  // Round 19
+  add('Round 19','Hartpury','Ealing Trailfinders','19 February 2027','19:45');
+  add('Round 19','Nottingham','Worcester Warriors','19 February 2027','19:45');
+  add('Round 19','Richmond','Chinnor','19 February 2027','19:45');
+  add('Round 19','Cornish Pirates','Bedford Blues','20 February 2027','15:00');
+  add('Round 19','Doncaster Knights','Ampthill','20 February 2027','15:00');
+  add('Round 19','Blackheath','Coventry','20 February 2027','15:00');
+  add('Round 19','Caldy','Rotherham Titans','21 February 2027','16:00');
+  // Round 20
+  add('Round 20','Ampthill','Hartpury','27 February 2027','13:00');
+  add('Round 20','Chinnor','Caldy','27 February 2027','15:00');
+  add('Round 20','Doncaster Knights','Blackheath','27 February 2027','15:00');
+  add('Round 20','Ealing Trailfinders','Cornish Pirates','27 February 2027','15:00');
+  add('Round 20','Coventry','Nottingham','27 February 2027','17:00');
+  add('Round 20','Bedford Blues','Rotherham Titans','27 February 2027','17:00');
+  add('Round 20','Worcester Warriors','Richmond','28 February 2027','16:00');
+  // Round 21
+  add('Round 21','Cornish Pirates','Nottingham','19 March 2027','19:45');
+  add('Round 21','Ealing Trailfinders','Caldy','20 March 2027','13:00');
+  add('Round 21','Richmond','Hartpury','20 March 2027','15:00');
+  add('Round 21','Worcester Warriors','Coventry','20 March 2027','15:00');
+  add('Round 21','Bedford Blues','Ampthill','20 March 2027','15:00');
+  add('Round 21','Chinnor','Doncaster Knights','20 March 2027','17:00');
+  add('Round 21','Rotherham Titans','Blackheath','21 March 2027','16:00');
+  // Round 22
+  add('Round 22','Nottingham','Richmond','26 March 2027','15:00');
+  add('Round 22','Hartpury','Rotherham Titans','27 March 2027','13:00');
+  add('Round 22','Ampthill','Worcester Warriors','27 March 2027','13:00');
+  add('Round 22','Caldy','Cornish Pirates','27 March 2027','15:00');
+  add('Round 22','Doncaster Knights','Bedford Blues','27 March 2027','17:00');
+  add('Round 22','Blackheath','Chinnor','27 March 2027','17:00');
+  add('Round 22','Coventry','Ealing Trailfinders','28 March 2027','16:00');
+  // Round 23
+  add('Round 23','Rotherham Titans','Ampthill','2 April 2027','19:45');
+  add('Round 23','Nottingham','Hartpury','2 April 2027','19:45');
+  add('Round 23','Bedford Blues','Ealing Trailfinders','3 April 2027','15:00');
+  add('Round 23','Chinnor','Coventry','3 April 2027','15:00');
+  add('Round 23','Cornish Pirates','Blackheath','3 April 2027','15:00');
+  add('Round 23','Worcester Warriors','Caldy','3 April 2027','17:00');
+  add('Round 23','Richmond','Doncaster Knights','4 April 2027','16:00');
+  // Round 24
+  add('Round 24','Coventry','Richmond','9 April 2027','19:45');
+  add('Round 24','Ampthill','Cornish Pirates','10 April 2027','13:00');
+  add('Round 24','Worcester Warriors','Chinnor','10 April 2027','15:00');
+  add('Round 24','Caldy','Bedford Blues','10 April 2027','15:00');
+  add('Round 24','Ealing Trailfinders','Rotherham Titans','10 April 2027','15:00');
+  add('Round 24','Blackheath','Hartpury','10 April 2027','17:00');
+  add('Round 24','Doncaster Knights','Nottingham','11 April 2027','16:00');
+  // Round 25
+  add('Round 25','Nottingham','Ampthill','16 April 2027','19:45');
+  add('Round 25','Richmond','Ealing Trailfinders','16 April 2027','19:45');
+  add('Round 25','Caldy','Blackheath','17 April 2027','15:00');
+  add('Round 25','Chinnor','Bedford Blues','17 April 2027','15:00');
+  add('Round 25','Hartpury','Doncaster Knights','17 April 2027','15:00');
+  add('Round 25','Rotherham Titans','Worcester Warriors','17 April 2027','17:00');
+  add('Round 25','Cornish Pirates','Coventry','18 April 2027','16:00');
+  // Round 26
+  add('Round 26','Ampthill','Richmond','24 April 2027','15:00');
+  add('Round 26','Bedford Blues','Worcester Warriors','24 April 2027','15:00');
+  add('Round 26','Blackheath','Nottingham','24 April 2027','15:00');
+  add('Round 26','Coventry','Rotherham Titans','24 April 2027','15:00');
+  add('Round 26','Doncaster Knights','Cornish Pirates','24 April 2027','15:00');
+  add('Round 26','Ealing Trailfinders','Chinnor','24 April 2027','15:00');
+  add('Round 26','Hartpury','Caldy','24 April 2027','15:00');
+  // Play-offs (teams not known yet; repeats numbered so dedup keeps them)
+  add('Quarter Final','TBC','TBC','8 May 2027','15:00');
+  add('Quarter Final','TBC (2)','TBC (2)','8 May 2027','15:00');
+  add('Quarter Final','TBC (3)','TBC (3)','8 May 2027','15:00');
+  add('Semi Final','TBC','TBC','15 May 2027','15:00');
+  add('Semi Final','TBC (2)','TBC (2)','15 May 2027','15:00');
+  add('Final','TBC','TBC','29 May 2027','15:00');
 })();
 
 // BUCS kick-off times from Playwaze, the system behind the fixture tables on
