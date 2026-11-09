@@ -189,6 +189,10 @@
   #rowMenu button{display:block;width:100%;padding:6px 14px;border:none;background:none;color:var(--text);text-align:left;cursor:pointer;}
   #rowMenu button:hover{background:var(--hover-bg,rgba(127,127,127,.18));}
   #rowMenu .rm-title{padding:4px 14px 6px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border);margin-bottom:2px;white-space:nowrap;max-width:280px;overflow:hidden;text-overflow:ellipsis;}
+  .sport-switch{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+  .sport-switch button{border:none;background:none;color:var(--muted);font:inherit;font-size:13px;font-weight:600;padding:6px 14px;cursor:pointer;}
+  .sport-switch button+button{border-left:1px solid var(--border);}
+  .sport-switch button.active{background:var(--accent);color:#fff;}
   .ai-ok{color:#16a34a;} .ai-warn{color:#b45309;} .ai-err{color:#dc2626;}
   #csvImportModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;align-items:flex-start;justify-content:center;padding-top:30px;}
   #csvImportModal.open{display:flex;}
@@ -512,7 +516,7 @@
     <div><label>Code</label><select id="apCode"><option value="">All</option></select></div>
     <div><label>From</label><input type="date" id="apFrom"></div>
     <div><label>To</label><input type="date" id="apTo"></div>
-    <div><label style="display:flex;align-items:center;gap:6px;margin:0 0 8px;"><input type="checkbox" id="apRugby" style="width:auto;"> Include rugby</label></div>
+    <div><label>Sport</label><select id="apSport"><option value="gaa">GAA only</option><option value="rugby">Rugby only</option><option value="both">GAA + Rugby</option></select></div>
     <div><button type="button" class="btn-remove" id="apClear" style="margin-bottom:2px;">Clear filters</button></div>
   </div>
   <div id="apSummary" style="font-size:13px;color:var(--muted);margin-bottom:8px;"></div>
@@ -565,10 +569,10 @@
     </select>
   </div>
   <div style="display:flex;align-items:center;gap:8px;">
-    <span style="font-size:12px;color:var(--muted);user-select:none;">Include Rugby</span>
-    <button id="rugbyToggle" role="switch" aria-checked="false" style="position:relative;display:inline-flex;align-items:center;width:44px;height:24px;border-radius:12px;border:none;cursor:pointer;background:#ccc;transition:background .2s;padding:0;flex-shrink:0;" title="Include Rugby fixtures">
-      <span style="position:absolute;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:left .2s;pointer-events:none;"></span>
-    </button>
+    <div class="sport-switch" id="sportSwitch" role="radiogroup" aria-label="Sport">
+      <button type="button" data-sport="gaa" role="radio">GAA</button>
+      <button type="button" data-sport="rugby" role="radio">Rugby</button>
+    </div>
   </div>
   <div style="display:flex;align-items:flex-end;">
     <button id="clearFiltersBtn" title="Clear all filters" style="display:none;background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:6px 10px;font-size:13px;cursor:pointer;display:none;align-items:center;gap:5px;font-family:inherit;" aria-label="Clear all filters">
@@ -2398,6 +2402,9 @@ const markClubberBtn=document.getElementById('markClubberBtn');
 const clubberIeBtn=document.getElementById('clubberIeBtn');
 const clubberUkBtn=document.getElementById('clubberUkBtn');
 function isRugbyFixture(f){ return f.sport==='Rugby' || f.county==='BUCS' || f.county==='Champ' || f.county==='ACE'; }
+// All fixtures shows one sport at a time: 'gaa' or 'rugby'
+var mainSport = (function(){ try { return localStorage.getItem('gaaMainSport') === 'rugby' ? 'rugby' : 'gaa'; } catch (_) { return 'gaa'; } })();
+function sportMatches(f){ return mainSport === 'rugby' ? isRugbyFixture(f) : !isRugbyFixture(f); }
 const loadStatusText=document.getElementById('loadStatusText');
 const loadSpinner=document.getElementById('loadSpinner');
 const loadStatus={
@@ -2410,7 +2417,7 @@ let sortKey='date', sortDir=1;
 
 function populateFilterOptions(){
   const RUGBY_COUNTIES=['ACE','BUCS','Champ'];
-  const counties=[...new Set(fixtures.map(f=>f.county))].sort((a,b)=>a.localeCompare(b));
+  const counties=[...new Set(fixtures.filter(sportMatches).map(f=>f.county))].sort((a,b)=>a.localeCompare(b));
   msCounty.setOptions(counties);
   if(window._pendingRestore_countyFilter){
     const saved=new Set(window._pendingRestore_countyFilter);
@@ -2429,12 +2436,6 @@ function populateFilterOptions(){
     if(added.length&&cur.length){ msCounty.setValues([...cur,...added]); _msSave('countyFilter'); }
   }
   window._knownCountyOptions=new Set(counties);
-  // If rugby toggle is off, ensure rugby counties are deselected (setOptions resets to All)
-  if(document.getElementById('rugbyToggle')&&document.getElementById('rugbyToggle').getAttribute('aria-checked')!=='true'){
-    const cur=msCounty.getValues();
-    const base=cur.length===0?counties:cur;
-    msCounty.setValues(base.filter(v=>!RUGBY_COUNTIES.includes(v)));
-  }
   populateCompOptions();
   if(window._pendingRestore_compFilter){ msComp.setValues(window._pendingRestore_compFilter); delete window._pendingRestore_compFilter; }
 }
@@ -2459,9 +2460,8 @@ function getFiltered(){
   const selCodes=msGetValues('codeFilter');
   const selComps=msGetValues('compFilter');
   const selStatuses=msGetValues('statusFilter');
-  const includeRugby=document.getElementById('rugbyToggle').getAttribute('aria-checked')==='true';
   let list=fixtures.filter(f=>{
-    if(!includeRugby && isRugbyFixture(f)) return false;
+    if(!sportMatches(f)) return false;
     if(selCounties.length && !selCounties.includes(f.county)) return false;
     if(selCodes.length && !selCodes.includes(f.code)) return false;
     if(selComps.length && !selComps.includes(extractGrade(f.competition))) return false;
@@ -3229,27 +3229,23 @@ dateTo.addEventListener('change',()=>{
   const savedBf=localStorage.getItem('gaaFilter_clubberFilter');
   if(savedCf){ cf.value=savedCf; changesOnlyFilter=savedCf==='changes'; }
   if(savedBf){ bf.value=savedBf; clubberFilterVal=savedBf; }
+  // GAA | Rugby switch: switching resets the county filter to that sport's counties
   (function(){
-    const RUGBY_COUNTIES = ['ACE','BUCS','Champ'];
-    const btn = document.getElementById('rugbyToggle');
-    const thumb = btn.querySelector('span');
-    function setToggle(on){
-      btn.setAttribute('aria-checked', on ? 'true' : 'false');
-      btn.style.background = on ? '#4caf50' : '#ccc';
-      thumb.style.left = on ? '23px' : '3px';
-      if(!on){
-        // Deselect rugby counties from the county filter
-        // cur empty = "All selected" — expand to full list before filtering
-        const allCounties = msCounty.getValues().length > 0
-          ? msCounty.getValues()
-          : [...document.querySelectorAll('#countyFilter input[type=checkbox]:not([data-all])')].map(cb=>cb.value);
-        msCounty.setValues(allCounties.filter(v => !RUGBY_COUNTIES.includes(v)));
-      }
+    const sw = document.getElementById('sportSwitch');
+    const paint = () => sw.querySelectorAll('button').forEach(b => {
+      const on = b.dataset.sport === mainSport;
+      b.classList.toggle('active', on); b.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+    paint();
+    sw.addEventListener('click', e => {
+      const b = e.target.closest('button[data-sport]');
+      if (!b || b.dataset.sport === mainSport) return;
+      mainSport = b.dataset.sport;
+      try { localStorage.setItem('gaaMainSport', mainSport); } catch (_) {}
+      paint();
+      populateFilterOptions();
+      msCounty.setValues([]);
       render();
-    }
-    btn.addEventListener('click', () => {
-      const isOn = btn.getAttribute('aria-checked') === 'true';
-      setToggle(!isOn);
     });
   })();
   cf.addEventListener('change',e=>{
@@ -6086,12 +6082,16 @@ let currentIsAdmin = false;
     const sel=els(id), cur=sel.value;
     sel.innerHTML='<option value="">All</option>'+values.map(v=>'<option'+(v===cur?' selected':'')+'>'+esc(v)+'</option>').join('');
   }
+  // Sport choice for this tab (remembered per browser)
+  function apSportMatches(f){
+    const sp=els('apSport').value;
+    return sp==='both' || (sp==='rugby') === isRugbyFixture(f);
+  }
   function filtered(){
     const q=els('apSearch').value.trim().toLowerCase();
     const county=els('apCounty').value, code=els('apCode').value, from=els('apFrom').value, to=els('apTo').value;
-    const rugby=els('apRugby').checked;
     return approved().filter(f=>{
-      if(!rugby&&isRugbyFixture(f)) return false;
+      if(!apSportMatches(f)) return false;
       if(county&&f.county!==county) return false;
       if(code&&f.code!==code) return false;
       if(from&&f.date<from) return false;
@@ -6102,15 +6102,14 @@ let currentIsAdmin = false;
   }
   window.renderApproved=function(){
     const all=approved();
-    const base=els('apRugby').checked?all:all.filter(f=>!isRugbyFixture(f));
+    const base=all.filter(apSportMatches);
     els('apTabCount').textContent=base.length;
     if(activeTab!=='approved') return;
     fillSelect('apCounty',[...new Set(base.map(f=>f.county).filter(Boolean))].sort());
     fillSelect('apCode',[...new Set(base.map(f=>f.code).filter(Boolean))].sort());
     const list=filtered();
-    const hiddenRugby=els('apRugby').checked?0:all.filter(f=>isRugbyFixture(f)).length;
-    els('apSummary').textContent=list.length+' upcoming approved fixture'+(list.length===1?'':'s')+
-      (hiddenRugby?' \u00b7 '+hiddenRugby+' rugby fixture'+(hiddenRugby===1?'':'s')+' hidden':'');
+    const sp=els('apSport').value;
+    els('apSummary').textContent=list.length+' upcoming approved '+(sp==='gaa'?'GAA ':sp==='rugby'?'rugby ':'')+'fixture'+(list.length===1?'':'s');
     let html='', day='';
     list.forEach(f=>{
       if(f.date!==day){ day=f.date; html+='<tr class="ap-day"><td colspan="10">'+esc(f.day||dayName(f.date))+' '+esc(f.date)+'</td></tr>'; }
@@ -6137,8 +6136,10 @@ let currentIsAdmin = false;
   }
   window.showViewTab=showTab;
   document.getElementById('viewTabs').addEventListener('click',e=>{ const b=e.target.closest('.view-tab'); if(b) showTab(b.getAttribute('data-tab')); });
-  ['apSearch','apCounty','apCode','apFrom','apTo','apRugby'].forEach(id=>els(id).addEventListener(id==='apSearch'?'input':'change',renderApproved));
-  els('apClear').addEventListener('click',()=>{ ['apSearch','apCounty','apCode','apFrom','apTo'].forEach(id=>els(id).value=''); els('apRugby').checked=false; renderApproved(); });
+  try{ const v=localStorage.getItem('gaaApprovedSport'); if(['gaa','rugby','both'].includes(v)) els('apSport').value=v; }catch(_){}
+  els('apSport').addEventListener('change',()=>{ try{ localStorage.setItem('gaaApprovedSport',els('apSport').value); }catch(_){} els('apCounty').value=''; renderApproved(); });
+  ['apSearch','apCounty','apCode','apFrom','apTo'].forEach(id=>els(id).addEventListener(id==='apSearch'?'input':'change',renderApproved));
+  els('apClear').addEventListener('click',()=>{ ['apSearch','apCounty','apCode','apFrom','apTo'].forEach(id=>els(id).value=''); renderApproved(); });
   // Keep the tab up to date whenever the dashboard re-renders (new data, status changes)
   const baseRender=render;
   render=function(){ const r=baseRender.apply(this,arguments); try{ renderApproved(); }catch(_){} return r; };
