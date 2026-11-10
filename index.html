@@ -3354,13 +3354,30 @@ function saveKnownKvKeys(keys){
   try{ localStorage.setItem(MANUAL_KV_KEYS, JSON.stringify([...keys])); }catch(e){}
 }
 
+// Last manual-fixture list this browser got from / sent to KV (id -> JSON).
+// Saves send only fixtures that differ from it plus ids removed here, so a
+// tab with an out-of-date list can't wipe fixtures others added since.
+// var: may be touched before later declarations run.
+var _kvManualSnap = null;
+function snapKvManual(list){ _kvManualSnap = new Map((list||[]).map(f=>[String(f.id), JSON.stringify(f)])); }
 function syncManualFixtures(){
   const sentKeys=new Set(manualFixtures.map(f=>stableKeyOf(f)));
+  const snap=_kvManualSnap;
+  const upserts=snap ? manualFixtures.filter(f=>snap.get(String(f.id))!==JSON.stringify(f)) : manualFixtures.slice();
+  const cur=new Set(manualFixtures.map(f=>String(f.id)));
+  const deletedIds=snap ? [...snap.keys()].filter(id=>!cur.has(id)) : [];
+  if(!upserts.length && !deletedIds.length) return;
   authFetch(WORKER_URL,{
     method:'POST',
-    body:JSON.stringify({action:'setManualFixtures',fixtures:manualFixtures})
-  }).then(r=>{ if(r&&r.ok) saveKnownKvKeys(sentKeys); })
-    .catch(e=>console.warn('Manual fixture sync failed:',e));
+    body:JSON.stringify({action:'updateManualFixtures',upserts,deletedIds})
+  }).then(r=>{
+    if(!r||!r.ok) return;
+    saveKnownKvKeys(sentKeys);
+    if(_kvManualSnap){
+      upserts.forEach(f=>_kvManualSnap.set(String(f.id), JSON.stringify(f)));
+      deletedIds.forEach(id=>_kvManualSnap.delete(id));
+    }
+  }).catch(e=>console.warn('Manual fixture sync failed:',e));
 }
 
 async function loadFixtures(isRefresh){
@@ -3393,6 +3410,7 @@ async function loadFixtures(isRefresh){
           : f;
       });
       manualFixtures=[...merged,...localOnly];
+      snapKvManual(json.manualFixtures);
       // If there are local-only fixtures that weren't in KV, push them up now
       saveManualFixtures(localOnly.length===0);
     }

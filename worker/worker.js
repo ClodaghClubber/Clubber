@@ -3877,17 +3877,35 @@ export default {
           }
         }
 
-        // Manual fixture sync
-        if (body.action === 'setManualFixtures') {
+        // Manual fixture sync. Merged by fixture id - never a whole-list
+        // replace, which let a browser tab with an older list wipe fixtures
+        // other people had added since. updateManualFixtures sends only what
+        // changed plus explicit deletions; setManualFixtures (pages loaded
+        // before this change) is treated as add/update only.
+        if (body.action === 'updateManualFixtures' || body.action === 'setManualFixtures') {
           if (!kv) {
             return new Response(
               JSON.stringify({ ok: false, error: 'No FIXTURE_STATUS KV namespace bound' }),
               { status: 500, headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } }
             );
           }
-          const mf = Array.isArray(body.fixtures) ? body.fixtures : [];
-          await kv.put(MANUAL_KV_KEY, JSON.stringify(mf));
-          return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } });
+          const upserts = (Array.isArray(body.action === 'setManualFixtures' ? body.fixtures : body.upserts)
+            ? (body.action === 'setManualFixtures' ? body.fixtures : body.upserts) : [])
+            .filter(f => f && typeof f === 'object');
+          const deleted = new Set(body.action === 'updateManualFixtures' && Array.isArray(body.deletedIds)
+            ? body.deletedIds.map(String) : []);
+          const byId = new Map();
+          for (const f of await getManualFixtures(kv)) {
+            // Two stored fixtures sharing an id would collapse here - keep both
+            let id = String(f.id);
+            if (byId.has(id)) { id = id + '-' + Math.random().toString(36).slice(2, 6); f.id = id; }
+            byId.set(id, f);
+          }
+          for (const f of upserts) byId.set(String(f.id ?? ('m' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6))), f);
+          for (const id of deleted) byId.delete(id);
+          const merged = [...byId.values()];
+          await kv.put(MANUAL_KV_KEY, JSON.stringify(merged));
+          return new Response(JSON.stringify({ ok: true, count: merged.length }), { headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } });
         }
 
         // Shared-override sync (socials, replay, videographer, clubberCreated, etc.)
