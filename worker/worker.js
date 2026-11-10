@@ -3443,8 +3443,13 @@ async function getClubberSnapshot(kv) {
 }
 
 // Sends a change-alert card to a Microsoft Teams incoming webhook.
-// webhookUrl comes from the TEAMS_WEBHOOK_URL secret.
-async function sendTeamsNotification(webhookUrl, changes) {
+// IE (GAA) changes go to the TEAMS_WEBHOOK_URL secret, UK (rugby) changes
+// to TEAMS_WEBHOOK_URL_UK; without the UK secret everything goes to the first.
+// Same rule as the dashboard's isRugbyFixture (UK site = rugby).
+function isRugbyChange(c) {
+  return c.sport === 'Rugby' || c.county === 'BUCS' || c.county === 'Champ' || c.county === 'ACE';
+}
+async function sendTeamsNotification(webhookUrl, changes, site) {
   if (!webhookUrl || !changes.length) return;
 
   const rows = changes.map(c => {
@@ -3463,7 +3468,7 @@ async function sendTeamsNotification(webhookUrl, changes) {
         body: [
           {
             type: 'TextBlock',
-            text: `⚠️ ${changes.length} Approved fixture${changes.length > 1 ? 's' : ''} changed`,
+            text: `⚠️ ${site ? site + ': ' : ''}${changes.length} Approved fixture${changes.length > 1 ? 's' : ''} changed`,
             weight: 'Bolder',
             size: 'Medium',
           },
@@ -3686,7 +3691,7 @@ async function runTeamsAlert(kv, env) {
         .filter(field => prevNorm[field] !== norm[field])
         .map(field => ({ field: field.charAt(0).toUpperCase() + field.slice(1), from: prevRaw[field], to: raw[field] }));
       if (diffs.length) {
-        changes.push({ teamA: f.teamA, teamB: f.teamB, county: f.county, competition: f.competition, date: norm.date, diffs });
+        changes.push({ teamA: f.teamA, teamB: f.teamB, county: f.county, competition: f.competition, sport: f.sport, date: norm.date, diffs });
       }
     }
     newSnapshot[key] = { norm, raw };
@@ -3694,11 +3699,17 @@ async function runTeamsAlert(kv, env) {
 
   await kv.put(CLUBBER_SNAPSHOT_KV_KEY, JSON.stringify(newSnapshot));
 
-  if (changes.length && env.TEAMS_WEBHOOK_URL) {
-    try {
-      await sendTeamsNotification(env.TEAMS_WEBHOOK_URL, changes);
-    } catch (e) {
-      console.error('Cron: Teams notification failed', e);
+  if (changes.length) {
+    const sends = env.TEAMS_WEBHOOK_URL_UK
+      ? [[env.TEAMS_WEBHOOK_URL, changes.filter(c => !isRugbyChange(c)), 'IE'],
+         [env.TEAMS_WEBHOOK_URL_UK, changes.filter(isRugbyChange), 'UK']]
+      : [[env.TEAMS_WEBHOOK_URL, changes, '']];
+    for (const [url, list, site] of sends) {
+      try {
+        await sendTeamsNotification(url, list, site);
+      } catch (e) {
+        console.error(`Cron: Teams notification failed (${site || 'all'})`, e);
+      }
     }
   }
 }
