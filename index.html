@@ -2010,7 +2010,7 @@ let editingId=null;
 function _buildLookups(){
   const teams={}, venues={}, compsByCounty={};
   for(const f of fixtures){
-    if(f.manual) continue;
+    if(!f.county) continue;
     if(!teams[f.county]) teams[f.county]=new Set();
     teams[f.county].add(f.teamA); teams[f.county].add(f.teamB);
     if(!venues[f.county]) venues[f.county]=new Set();
@@ -2097,6 +2097,11 @@ function openEditModal(id){
   editingId=id;
   openAddModal();
   const g=id=>document.getElementById(id);
+  if(f.county) ['f_countyA','f_countyB','f_venueCounty'].forEach(sid=>{
+    const sel=g(sid);
+    if(![...sel.options].some(o=>o.value===f.county)) sel.add(new Option(f.county,f.county),sel.options[sel.options.length-1]);
+  });
+  if(f.code&&![...g('f_code').options].some(o=>o.value===f.code)) g('f_code').add(new Option(f.code,f.code));
   // Pre-fill county A and cascade teams
   if([...(g('f_countyA').options)].some(o=>o.value===f.county)) g('f_countyA').value=f.county;
   g('f_countyA').dispatchEvent(new Event('change'));
