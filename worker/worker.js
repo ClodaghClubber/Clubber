@@ -3685,6 +3685,8 @@ async function runTeamsAlert(kv, env) {
   ]);
   const changes = [];
   const newSnapshot = { ...snapshot };
+  // Only fixtures still to be played alert (date today or later, Irish time)
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Dublin' });
   const record = (f, diffs) => changes.push({ teamA: f.teamA, teamB: f.teamB, county: f.county,
     competition: f.competition, sport: f.sport, date: isoDateAny(f.date), diffs });
 
@@ -3717,7 +3719,7 @@ async function runTeamsAlert(kv, env) {
           diffs.push({ field: fieldLabel(field) + ' (edited in dashboard)', from: prev.effRaw[field], to: effRaw[field] });
         }
       }
-      if (diffs.length) record(shown, diffs);
+      if (diffs.length && eff.date >= today) record(shown, diffs);
     }
     // First run with edit tracking just records a baseline (no alert for old edits)
     newSnapshot[key] = { norm, raw, eff, effRaw };
@@ -3737,7 +3739,7 @@ async function runTeamsAlert(kv, env) {
       const diffs = TRACKED_FIELDS
         .filter(field => prev.norm[field] !== norm[field])
         .map(field => ({ field: fieldLabel(field) + ' (manual fixture)', from: prev.raw[field], to: raw[field] }));
-      if (diffs.length) record(f, diffs);
+      if (diffs.length && norm.date >= today) record(f, diffs);
     }
     newSnapshot[key] = { norm, raw };
   }
