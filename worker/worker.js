@@ -3659,27 +3659,45 @@ async function scrapeGroupE(kv) {
   await writeGroupCache(kv, CACHE_E_KEY, fixtures);
 }
 
+// Hourly check of approved fixtures for date / time / venue changes.
+// Covers scraped fixtures, dashboard edits to them (overrides) and manually
+// added fixtures (manualFixtures). Each snapshot entry keeps the source
+// values (norm/raw) and what the dashboard shows after edits (eff/effRaw),
+// so a source change and a dashboard edit are both reported, and labelled.
+function isoDateAny(d) {
+  if (!d) return '';
+  return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : toIsoDate(d);
+}
+function alertValues(f) {
+  const norm = { date: isoDateAny(f.date), time: normaliseTime(f.time), venue: normaliseVenue(f.venue), round: (f.round || '').trim() };
+  const raw = { date: norm.date, time: norm.time, venue: f.venue || '', round: f.round || '' };
+  return { norm, raw };
+}
+function fieldLabel(field) { return field.charAt(0).toUpperCase() + field.slice(1); }
+
 async function runTeamsAlert(kv, env) {
-  const baseFixtures = await getAllCachedFixtures(kv);
-  const [snapshot, statusMap] = await Promise.all([
+  const [baseFixtures, manualFixtures, overrides, snapshot, statusMap] = await Promise.all([
+    getAllCachedFixtures(kv),
+    getManualFixtures(kv),
+    getOverridesMap(kv),
     getClubberSnapshot(kv),
     getStatusMap(kv),
   ]);
   const changes = [];
   const newSnapshot = { ...snapshot };
+  const record = (f, diffs) => changes.push({ teamA: f.teamA, teamB: f.teamB, county: f.county,
+    competition: f.competition, sport: f.sport, date: isoDateAny(f.date), diffs });
 
+  // Scraped fixtures: source values, plus any dashboard edit on top
   for (const f of baseFixtures) {
     const key = fixtureKey(f);
     const status = statusMap[key] || f.status || 'Proposed';
     if (status !== 'Approved') continue;
 
-    const norm = {
-      date: toIsoDate(f.date),
-      time: normaliseTime(f.time),
-      venue: normaliseVenue(f.venue),
-      round: (f.round || '').trim(),
-    };
-    const raw = { date: toIsoDate(f.date), time: norm.time, venue: f.venue || '', round: f.round || '' };
+    const { norm, raw } = alertValues(f);
+    const ov = overrides[key] || {};
+    const shown = { ...f, ...['date', 'time', 'venue'].reduce((o, k) => (ov[k] ? { ...o, [k]: ov[k] } : o), {}) };
+    const { norm: eff, raw: effRaw } = alertValues(shown);
     const prev = snapshot[key];
 
     if (prev) {
@@ -3687,12 +3705,39 @@ async function runTeamsAlert(kv, env) {
         ? prev.norm
         : { date: prev.date, time: normaliseTime(prev.time), venue: normaliseVenue(prev.venue), round: (prev.round||'').trim() };
       const prevRaw = prev.raw || prev;
-      const diffs = TRACKED_FIELDS
-        .filter(field => prevNorm[field] !== norm[field])
-        .map(field => ({ field: field.charAt(0).toUpperCase() + field.slice(1), from: prevRaw[field], to: raw[field] }));
-      if (diffs.length) {
-        changes.push({ teamA: f.teamA, teamB: f.teamB, county: f.county, competition: f.competition, sport: f.sport, date: norm.date, diffs });
+      const diffs = [];
+      for (const field of TRACKED_FIELDS) {
+        if (prevNorm[field] !== norm[field]) {
+          // Source changed. Note it if a dashboard edit is overriding it.
+          const edited = ov[field] && eff[field] !== norm[field];
+          diffs.push({ field: fieldLabel(field) + (edited ? ' (source; dashboard shows ' + effRaw[field] + ')' : ''),
+            from: prevRaw[field], to: raw[field] });
+        } else if (prev.eff && prev.eff[field] !== eff[field]) {
+          // Source unchanged, so the change was made in the dashboard
+          diffs.push({ field: fieldLabel(field) + ' (edited in dashboard)', from: prev.effRaw[field], to: effRaw[field] });
+        }
       }
+      if (diffs.length) record(shown, diffs);
+    }
+    // First run with edit tracking just records a baseline (no alert for old edits)
+    newSnapshot[key] = { norm, raw, eff, effRaw };
+  }
+
+  // Manually added fixtures (e.g. ACE): tracked by their id, which survives edits
+  for (const f of manualFixtures) {
+    if (!f || !f.id || !f.date) continue;
+    const statusKey = `${f.county}|${f.competition}|${f.teamA}|${f.teamB}|${isoDateAny(f.date)}`;
+    const status = statusMap[statusKey] || f.status || 'Proposed';
+    if (status !== 'Approved') continue;
+
+    const key = 'manual:' + f.id;
+    const { norm, raw } = alertValues(f);
+    const prev = snapshot[key];
+    if (prev) {
+      const diffs = TRACKED_FIELDS
+        .filter(field => prev.norm[field] !== norm[field])
+        .map(field => ({ field: fieldLabel(field) + ' (manual fixture)', from: prev.raw[field], to: raw[field] }));
+      if (diffs.length) record(f, diffs);
     }
     newSnapshot[key] = { norm, raw };
   }
