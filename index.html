@@ -1606,7 +1606,17 @@ function loadChangelog(){
   try{const r=localStorage.getItem(CHANGELOG_KEY);if(r)fixtureChangelog=JSON.parse(r)||{};}catch(e){}
 }
 function saveChangelog(){
-  try{localStorage.setItem(CHANGELOG_KEY,JSON.stringify(fixtureChangelog));}catch(e){}
+  try{localStorage.setItem(CHANGELOG_KEY,JSON.stringify(fixtureChangelog));return;}catch(e){
+    console.warn('Change history could not be saved (browser storage full?) - trimming old entries',e);
+  }
+  // Storage full: drop fixtures no longer listed and keep each one's latest
+  // 15 entries, so new changes still get recorded
+  const live=new Set((typeof fixtures!=='undefined'?fixtures:[]).map(stableKeyOf));
+  for(const [sk,c] of Object.entries(fixtureChangelog)){
+    if(live.size&&!live.has(sk)&&c.type!=='removed') delete fixtureChangelog[sk];
+    else if(c.history&&c.history.length>15) c.history=c.history.slice(-15);
+  }
+  try{localStorage.setItem(CHANGELOG_KEY,JSON.stringify(fixtureChangelog));}catch(e){console.warn('Change history still could not be saved',e);}
 }
 function loadBaseline(){
   try{const r=localStorage.getItem(BASELINE_KEY);if(r)fixtureBaseline=JSON.parse(r)||{};}catch(e){}
@@ -1801,7 +1811,21 @@ async function openChangeHistoryModal(sk,fid){
           :entry.diffs.map(renderDiff).join('')}
       </div>${i<arr.length-1?'<hr style="border:none;border-top:1px solid var(--border);margin:12px 0;">':''}`
     ).join('');
-  document.getElementById('changeHistoryContent').innerHTML=html;
+  // CHANGED badge = date/time/venue/round now differ from when this browser
+  // first loaded the fixture. Show exactly what differs, so the badge is
+  // explained even if the step-by-step entry isn't in the history above.
+  let summary='';
+  const bl=fixtureBaseline[sk];
+  if(chg.type==='changed'&&bl&&bl.original&&f2){
+    const cur={date:f2.date,time:f2.time,venue:f2.venue||'',round:f2.round||''};
+    const L={date:'Date',time:'Time',venue:'Venue',round:'Round'};
+    const d=Object.keys(L).filter(k=>(bl.original[k]??'')!==(cur[k]??'')).map(k=>({field:L[k],from:bl.original[k],to:cur[k]}));
+    summary=`<div class="chg-timeline-entry" style="background:rgba(245,158,11,.08);border-radius:6px;padding:8px 10px;margin-bottom:12px;">
+      <div style="font-size:12px;font-weight:600;margin-bottom:4px;">Why it shows CHANGED — different from when first loaded:</div>
+      ${d.length?d.map(renderDiff).join(''):'<div style="font-size:13px;color:var(--muted);">Nothing differs now (it changed and changed back).</div>'}
+    </div>`;
+  }
+  document.getElementById('changeHistoryContent').innerHTML=summary+html;
 }
 function closeChangeHistoryModal(){
   document.getElementById('changeHistoryModal').classList.remove('open');
