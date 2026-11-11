@@ -3340,6 +3340,10 @@ const STATUS_KV_KEY = 'statuses';
 const OVERRIDES_KV_KEY = 'overrides';
 const MANUAL_KV_KEY = 'manualFixtures';
 const TEAM_MAPPINGS_EXTRA_KEY = 'teamMappingsExtra';
+// Venue choices made in the Review Before Export dialog:
+// {scope: {venue text as in our fixtures: {name, county}}} - name exactly as
+// in Clubber's sportsCountiesLookup.json venuesList
+const VENUE_MAPPINGS_KEY = 'venueMappings';
 const STATUS_HISTORY_KV_KEY = 'statusHistory';
 const STATUS_HISTORY_MAX = 500;
 const CLUBBER_SNAPSHOT_KV_KEY = 'clubberSnapshot';
@@ -3863,6 +3867,29 @@ export default {
           const log = JSON.parse((await kv.get(TEAM_MAPPINGS_EXTRA_KEY + '_log')) || '[]');
           log.push({ county, name, id, user: body.user, at: new Date().toISOString() });
           await kv.put(TEAM_MAPPINGS_EXTRA_KEY + '_log', JSON.stringify(log.slice(-500)));
+          return jsonResp({ ok: true, mappings: all });
+        }
+
+        if (body.action === 'getVenueMappings') {
+          const raw = await kv.get(VENUE_MAPPINGS_KEY);
+          return jsonResp({ ok: true, mappings: raw ? JSON.parse(raw) : {} });
+        }
+        if (body.action === 'addVenueMapping') {
+          const scope = String(body.scope || '').trim().slice(0, 60);
+          const text = String(body.text || '').replace(/\s+/g, ' ').trim().slice(0, 160);
+          const name = String(body.name || '').trim().slice(0, 160);
+          const county = String(body.county || '').trim().slice(0, 60);
+          if (!scope || !text) return jsonResp({ ok: false, error: 'scope and text required' }, 400);
+          if (name && !county) return jsonResp({ ok: false, error: 'county required' }, 400);
+          const raw = await kv.get(VENUE_MAPPINGS_KEY);
+          const all = raw ? JSON.parse(raw) : {};
+          all[scope] = all[scope] || {};
+          if (name) all[scope][text] = { name, county };
+          else delete all[scope][text]; // blank name: forget the choice
+          await kv.put(VENUE_MAPPINGS_KEY, JSON.stringify(all));
+          const log = JSON.parse((await kv.get(VENUE_MAPPINGS_KEY + '_log')) || '[]');
+          log.push({ scope, text, name, county, user: body.user, at: new Date().toISOString() });
+          await kv.put(VENUE_MAPPINGS_KEY + '_log', JSON.stringify(log.slice(-500)));
           return jsonResp({ ok: true, mappings: all });
         }
 

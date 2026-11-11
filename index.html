@@ -337,6 +337,12 @@
   .map-btn{font-size:11px;padding:2px 10px;border:none;border-radius:4px;background:#16a34a;color:#fff;cursor:pointer;}
   .map-btn:disabled{opacity:.5;cursor:default;}
   .map-msg{color:var(--reject);}
+  .venue-cell{min-width:170px;max-width:240px;font-size:12px;}
+  .venue-ok{color:var(--text);}
+  .venue-from{font-size:10px;color:var(--muted);margin-top:2px;word-break:break-word;}
+  .venue-pick{width:100%;max-width:230px;font-size:11px;padding:2px;margin-top:3px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);}
+  .venue-btns{margin-top:3px;display:flex;gap:4px;flex-wrap:wrap;}
+  .venue-change{font-size:10px;padding:1px 6px;border:1px solid var(--border);border-radius:4px;background:transparent;color:var(--muted);cursor:pointer;}
   .confirm-table th{position:sticky;top:0;background:var(--panel);padding:7px 10px;text-align:left;border-bottom:2px solid var(--border);color:var(--muted);text-transform:uppercase;font-size:11px;letter-spacing:.04em;white-space:nowrap;}
   .confirm-table td{padding:6px 10px;border-bottom:1px solid var(--border);vertical-align:top;}
   .confirm-table tr.has-error td{background:rgba(192,57,43,.04);}
@@ -816,6 +822,7 @@
             <th>Round</th>
             <th>Season</th>
             <th>Price (€)</th>
+            <th>Venue</th>
             <th>Notes</th>
           </tr>
         </thead>
@@ -2831,8 +2838,8 @@ function openClubberConfirm(selFixtures, site) {
 function buildClubberResults(selFixtures) {
   return selFixtures.map(f=>{
     if(f.status!=='Approved') return{fixture:f,payload:null,errors:['Not Approved'],warnings:[],unmapped:[],ok:false,skipped:true};
-    const{payload,errors,warnings,unmapped}=buildGamePayload(f);
-    return{fixture:f,payload,errors,warnings,unmapped,ok:errors.length===0,skipped:false};
+    const{payload,errors,warnings,unmapped,venue}=buildGamePayload(f);
+    return{fixture:f,payload,errors,warnings,unmapped,venue,ok:errors.length===0,skipped:false};
   });
 }
 
@@ -2868,10 +2875,103 @@ function renderClubberConfirmRows() {
       <td>${p ? `<select class="round-edit" data-idx="${i}"><option value="">—</option><option value="quarter-finals"${p.round==='quarter-finals'?' selected':''}>quarter-finals</option><option value="semi-finals"${p.round==='semi-finals'?' selected':''}>semi-finals</option><option value="final"${p.round==='final'?' selected':''}>final</option><option value="Round 1"${p.round==='Round 1'?' selected':''}>Round 1</option><option value="Round 2"${p.round==='Round 2'?' selected':''}>Round 2</option><option value="Round 3"${p.round==='Round 3'?' selected':''}>Round 3</option><option value="Round 4"${p.round==='Round 4'?' selected':''}>Round 4</option><option value="Round 5"${p.round==='Round 5'?' selected':''}>Round 5</option>${/^Round ([6-9]|\d{2,})$/.test(p.round||'')?'<option selected>'+p.round+'</option>':''}</select>` : '—'}</td>
       <td>${p ? p.season : ''}</td>
       <td>${p ? `<input class="price-edit" type="number" min="0" step="0.01" value="${price}" data-idx="${i}">` : '—'}</td>
+      <td class="venue-cell">${venueCellHtml(r, i)}</td>
       <td>${notes}</td>
     </tr>`;
   }).join('');
 }
+
+// Venue column of the review dialog: the Clubber venue going into the file, or
+// a picker (suggestion / candidates first, then every Clubber venue by county)
+function venueCellHtml(r, i, forceOpen) {
+  const esc = t => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+  const vr = r.venue;
+  if (!r.payload || !vr) return '<span class="sub-detail">—</span>';
+  const from = vr.text ? '<div class="venue-from">Fixture: ' + esc(vr.text) + '</div>' : '';
+  if (vr.status === 'ok' && !forceOpen) {
+    return '<div class="venue-ok">✓ ' + esc(vr.venue.name) + ' <span class="sub-detail">(' + esc(vr.venue.county) + ')</span></div>' + from
+      + '<div class="venue-btns"><button class="venue-change" data-idx="' + i + '">Change</button></div>';
+  }
+  if (vr.status === 'none' && !forceOpen) return '<span class="sub-detail">No venue</span>';
+  const val = v => esc(v.county + '|' + v.name);
+  const first = (vr.options || []).slice();
+  if (vr.status === 'ok' && vr.venue && !first.some(o => o.name === vr.venue.name && o.county === vr.venue.county)) first.unshift(vr.venue);
+  const firstKeys = new Set(first.map(v => v.county + '|' + v.name));
+  const preselect = (vr.status === 'suggest' || vr.status === 'ok') && vr.venue ? vr.venue.county + '|' + vr.venue.name : '';
+  const opt = v => '<option value="' + val(v) + '"' + (v.county + '|' + v.name === preselect ? ' selected' : '') + '>' + esc(v.name) + '</option>';
+  const scope = vr.counties || [];
+  const counties = Object.values(clubberVenuesIndex).filter(l => l.length).map(l => l[0].county)
+    .sort((a, b) => (scope.includes(b) - scope.includes(a)) || a.localeCompare(b));
+  let html = '<select class="venue-pick" data-idx="' + i + '"><option value="">' + (preselect ? '— no venue —' : '— choose Clubber venue —') + '</option>';
+  if (first.length) html += '<optgroup label="Best matches">' + first.map(v => '<option value="' + val(v) + '"' + (v.county + '|' + v.name === preselect ? ' selected' : '') + '>' + esc(v.name) + ' (' + esc(v.county) + ')</option>').join('') + '</optgroup>';
+  for (const c of counties) {
+    const list = (clubberVenuesIndex[c.toLowerCase()] || []).filter(v => !firstKeys.has(v.county + '|' + v.name) && !/^(tbc|tba|tbd)$/i.test(v.name))
+      .slice().sort((a, b) => a.name.localeCompare(b.name));
+    if (list.length) html += '<optgroup label="' + esc(c) + '">' + list.map(opt).join('') + '</optgroup>';
+  }
+  html += '</select>';
+  const label = vr.status === 'suggest' ? 'Confirm' : 'Use';
+  return from + html + '<div class="venue-btns"><button class="map-btn venue-save" data-idx="' + i + '">' + label + '</button>'
+    + (vr.mapped || vr.status === 'stale' ? '<button class="venue-change venue-forget" data-idx="' + i + '" title="Forget the venue chosen for this text">Clear choice</button>' : '')
+    + '</div><div class="map-msg" id="venuemsg_' + i + '"></div>';
+}
+
+// Re-check every row (e.g. after a club or venue mapping) keeping any
+// include / price / grade / round changes already made in the dialog
+function rebuildClubberConfirmRows() {
+  const kept = {};
+  document.querySelectorAll('#clubberConfirmBody tr[data-idx]').forEach(tr => {
+    const k = tr.dataset.idx, q = sel => tr.querySelector(sel);
+    kept[k] = { inc: q('.confirm-include')?.checked, price: q('.price-edit')?.value,
+      grade: q('.grade-edit')?.value, round: q('.round-edit')?.value };
+  });
+  _pendingClubberResults = buildClubberResults(_pendingClubberResults.map(x => x.fixture));
+  renderClubberConfirmRows();
+  document.querySelectorAll('#clubberConfirmBody tr[data-idx]').forEach(tr => {
+    const k = kept[tr.dataset.idx]; if (!k) return;
+    const set = (sel, prop, v) => { const el = tr.querySelector(sel); if (el && v !== undefined && !el.disabled) el[prop] = v; };
+    set('.confirm-include', 'checked', k.inc);
+    set('.price-edit', 'value', k.price);
+    // Only keep a grade/round someone picked; a blank one may now be filled in
+    if (k.grade) set('.grade-edit', 'value', k.grade);
+    if (k.round) set('.round-edit', 'value', k.round);
+  });
+}
+
+// Venue column buttons: Change (open the picker), Use/Confirm (save the choice
+// for everyone - every fixture with the same venue text uses it), Clear choice
+document.getElementById('clubberConfirmBody').addEventListener('click', async e => {
+  const change = e.target.closest('.venue-change:not(.venue-forget)');
+  const save = e.target.closest('.venue-save');
+  const forget = e.target.closest('.venue-forget');
+  if (!change && !save && !forget) return;
+  const i = +(change || save || forget).dataset.idx;
+  const r = _pendingClubberResults[i];
+  if (!r || !r.venue) return;
+  const cell = (change || save || forget).closest('td');
+  if (change) { cell.innerHTML = venueCellHtml(r, i, true); return; }
+  const msg = document.getElementById('venuemsg_' + i);
+  let name = '', county = '';
+  if (save) {
+    const v = cell.querySelector('.venue-pick').value;
+    if (!v) { msg.textContent = 'Choose a venue first'; return; }
+    county = v.slice(0, v.indexOf('|')); name = v.slice(v.indexOf('|') + 1);
+  }
+  const btn = save || forget;
+  btn.disabled = true; msg.textContent = 'Saving...';
+  try {
+    const res = await authFetch(WORKER_URL, { method: 'POST', body: JSON.stringify({
+      action: 'addVenueMapping', scope: r.venue.scopeKey, text: r.venue.text, name, county }) });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Save failed');
+    venueMappings = data.mappings || {};
+  } catch (err) {
+    btn.disabled = false; msg.textContent = 'Could not save: ' + err.message;
+    return;
+  }
+  rebuildClubberConfirmRows();
+  showConflictToast(name ? '✓ "' + r.venue.text + '" → ' + name : '✓ Venue choice cleared for "' + r.venue.text + '"', '#16a34a');
+});
 
 // "Map" in the review dialog: save the club -> Clubber ID mapping for everyone,
 // then re-check every row (keeping any price / grade / round edits).
@@ -2918,29 +3018,12 @@ document.getElementById('clubberConfirmBody').addEventListener('click', async e 
     btn.disabled = false; msg.textContent = 'Could not save: ' + err.message;
     return;
   }
-  // Keep what the user already changed in the dialog
-  const kept = {};
-  document.querySelectorAll('#clubberConfirmBody tr[data-idx]').forEach(tr => {
-    const k = tr.dataset.idx, q = sel => tr.querySelector(sel);
-    kept[k] = { inc: q('.confirm-include')?.checked, price: q('.price-edit')?.value,
-      grade: q('.grade-edit')?.value, round: q('.round-edit')?.value };
-  });
-  _pendingClubberResults = buildClubberResults(_pendingClubberResults.map(x => x.fixture));
-  renderClubberConfirmRows();
-  document.querySelectorAll('#clubberConfirmBody tr[data-idx]').forEach(tr => {
-    const k = kept[tr.dataset.idx]; if (!k) return;
-    const set = (sel, prop, v) => { const el = tr.querySelector(sel); if (el && v !== undefined && !el.disabled) el[prop] = v; };
-    set('.confirm-include', 'checked', k.inc);
-    set('.price-edit', 'value', k.price);
-    // Only keep a grade/round someone picked; a blank one may now be filled in
-    if (k.grade) set('.grade-edit', 'value', k.grade);
-    if (k.round) set('.round-edit', 'value', k.round);
-  });
+  rebuildClubberConfirmRows(); // keeps what the user already changed in the dialog
   showConflictToast('✓ Mapped "' + u.name + '"' + (club ? ' to ' + club.name : ''), '#16a34a');
 });
 
 clubberIeBtn.addEventListener('click',async()=>{
-  await loadTeamMappingsExtra();
+  await Promise.all([loadTeamMappingsExtra(), loadVenueMappings()]);
   const visibleIds=new Set(getFiltered().map(f=>f.id));
   const sel=fixtures.filter(f=>selected.has(f.id)&&visibleIds.has(f.id)&&!isRugbyFixture(f));
   openClubberConfirm(sel,'IE');
@@ -3957,6 +4040,19 @@ let VID_DATA = null; // loaded from vidData.json
 // Club mappings added in the Review Before Export dialog. They live in the
 // worker (shared by everyone) and are merged over teamMappings.json.
 let teamMappingsExtra = {};
+// Clubber's venues: county name (lowercase) -> [{county, name}] (names exact,
+// as the import needs them)
+var clubberVenuesIndex = {};
+// Venue choices made in the review dialog, shared via the worker:
+// {scope: {our venue text: {name, county}}} (see resolveVenue)
+var venueMappings = {};
+async function loadVenueMappings() {
+  if (!authToken) return;
+  try {
+    const data = await (await authFetch(WORKER_URL, { method: 'POST', body: JSON.stringify({ action: 'getVenueMappings' }) })).json();
+    if (data.ok) venueMappings = data.mappings || {};
+  } catch (_) { /* matching by name still works */ }
+}
 function applyTeamMappingsExtra() {
   for (const [county, teams] of Object.entries(teamMappingsExtra || {})) {
     teamMappings[county] = Object.assign(teamMappings[county] || {}, teams);
@@ -4001,6 +4097,10 @@ async function loadTeamMappingsExtra() {
         if (!sportsUniversitiesIndex[key]) sportsUniversitiesIndex[key] = [];
         for (const uni of (county.universityList || [])) {
           sportsUniversitiesIndex[key].push({ id: uni.id, county: county.name, name: uni.name, normName: normClubName(uni.name) });
+        }
+        if (!clubberVenuesIndex[key]) clubberVenuesIndex[key] = [];
+        for (const v of (county.venuesList || [])) {
+          if (v && v.name) clubberVenuesIndex[key].push({ county: county.name, name: v.name });
         }
         if (!sportsSchoolsIndex[key]) sportsSchoolsIndex[key] = [];
         for (const school of (county.schoolsList || [])) {
@@ -4295,6 +4395,104 @@ function teamCellHtml(f, side) {
   return '<span title="Clubber name. Source: ' + esc(src) + '">' + esc(shown) + '</span>';
 }
 
+// ---- Venues (Clubber matches them by exact name) ----
+function venueKey(s) {
+  return stripDiacritics(String(s || '')).toLowerCase()
+    .replace(/\b[acdefhknprtvwxy]\d{2}\s?[a-z0-9]{4}\b/g, ' ')   // eircodes
+    .replace(/['’`]/g, '')                                   // Patrick's = Patricks
+    .replace(/\bst\b\.?\s*/g, 'saint ')
+    .replace(/\bmc\s+/g, 'mc')
+    .replace(/[^a-z0-9]+/g, ' ').trim();
+}
+// For comparing: also ignores spacing ("O Connor" = "O'Connor", "Mc Cauley" = "McCauley")
+function venueKey0(s) { return venueKey(s).replace(/ /g, ''); }
+// Other ways a fixture's venue text may name a Clubber venue: without the town
+// after a comma ("Netwatch Cullen Park, Carlow") or a note in brackets ("(Grass)")
+function venueVariants(t) {
+  const out = [t, t.replace(/\s*\([^)]*\)\s*/g, ' ').trim(), t.split(',')[0].trim()];
+  return [...new Set(out.filter(Boolean))];
+}
+// Same venue under a different name, from local knowledge: offered for
+// confirming in the review dialog, never exported without that
+const VENUE_HINTS = {
+  'darver': ['Louth', 'Cullen Auto Parts Louth GAA Training Centre'],
+  'darver pitch 3': ['Louth', 'Cullen Auto Parts Louth GAA Training Centre'],
+  'manguard park pitch 1': ['Kildare', 'Manguard Park, Hawkfield'],
+  'manguard park pitch1': ['Kildare', 'Manguard Park, Hawkfield'],
+  'manguard park pitch 2': ['Kildare', 'Manguard Park, Hawkfield'],
+  'thurles outside pitch': ['Tipperary', 'Outside Field Thurles'],
+  'limerick it moylish': ['Limerick', 'TUS Moylish Campus'],
+  'limerick it': ['Limerick', 'TUS Moylish Campus'],
+  'tus': ['Limerick', 'TUS Moylish Campus'],
+  'tipperary camogie grounds': ['Tipperary', 'Tipp Camogie Grounds, The Ragg'],
+};
+const VENUE_FILLER = /\b(gaa|gac|gfc|clg|cumann|club|grounds?|pitch|centre|center|park|pairc|the|co|county|field|sports?|complex|venue|supervalu|super valu)\b/g;
+function venueCore(s) { return venueKey(s).replace(VENUE_FILLER, ' ').replace(/\s+/g, ' ').trim(); }
+// Counties a fixture's venue is looked for in (Clubber lists venues by county)
+function venueScope(f) {
+  const base = String(f.county || '').replace(/\s+(LGFA|Ladies|Camogie|Schools)$/i, '').replace(/^(North|South|East|West|Mid)\s+/i, '');
+  if (/^Munster/.test(f.county)) return { key: f.county, counties: MUNSTER_COUNTIES, home: [f.teamACounty, f.teamBCounty].filter(Boolean) };
+  if (/^Leinster/.test(f.county)) return { key: f.county, counties: LEINSTER_COUNTIES, home: [f.teamACounty, f.teamBCounty].filter(Boolean) };
+  if (clubberVenuesIndex[base.toLowerCase()] || ['London', 'Britain'].includes(base)) return { key: base, counties: [base], home: [base] };
+  return { key: f.county || '', counties: null, home: [] }; // Higher Education etc.: anywhere
+}
+// Which Clubber venue a fixture is at. status:
+//  ok        - exported (mapping chosen in the review dialog, or same name)
+//  suggest   - probably this one: needs confirming in the review dialog
+//  ambiguous - several possible: pick one
+//  missing   - nothing like it in Clubber
+//  none      - fixture has no venue
+//  stale     - a saved choice is no longer in Clubber's list
+function resolveVenue(f) {
+  const text = String(f.venue || '').replace(/\s+/g, ' ').trim();
+  const sc = venueScope(f);
+  const res = (status, extra) => ({ status, text, scopeKey: sc.key, counties: sc.counties, ...extra });
+  if (!text || /^(venue\s+)?(tbc|tba|tbd|n\/?a|-|neutral( venue)?|\w+ venue|neutral \(.*\))$/i.test(text)) return res('none');
+  const real = v => !/^(tbc|tba|tbd)$/i.test(v.name);
+  const everywhere = Object.values(clubberVenuesIndex).flat().filter(real);
+  const pool = sc.counties ? everywhere.filter(v => sc.counties.includes(v.county)) : everywhere;
+  // 1. A choice made in the review dialog
+  const m = (venueMappings[sc.key] || {})[text];
+  if (m) {
+    const hit = everywhere.find(v => v.name === m.name && v.county === m.county);
+    return hit ? res('ok', { venue: hit, mapped: true }) : res('stale', { venue: m });
+  }
+  // Prefer the home team's county when a provincial name exists in several
+  const narrow = hits => {
+    if (hits.length < 2 || !sc.home.length) return hits;
+    const h = hits.filter(v => sc.home.includes(v.county));
+    return h.length ? h : hits;
+  };
+  const uniq = hits => [...new Map(hits.map(v => [v.county + '|' + v.name, v])).values()];
+  // 2. Same name (ignoring case, accents, punctuation, spacing, "St"/"St."),
+  // possibly followed by the town or a note
+  const variants = venueVariants(text), keys = variants.map(venueKey0);
+  let hits = narrow(uniq(pool.filter(v => v.name === text)));
+  for (const k of keys) { if (!hits.length) hits = narrow(uniq(pool.filter(v => venueKey0(v.name) === k))); }
+  if (hits.length === 1) return res('ok', { venue: hits[0] });
+  if (hits.length > 1) return res('ambiguous', { options: hits });
+  const hint = VENUE_HINTS[venueKey(text)];
+  const hinted = hint && everywhere.find(v => v.county === hint[0] && v.name === hint[1]);
+  if (hinted) return res('suggest', { venue: hinted, options: [hinted] });
+  // 3. Same apart from words like GAA / Park / Grounds / Pairc
+  const core = venueCore(text);
+  const cands = [];
+  if (core.length >= 3) {
+    cands.push(...pool.filter(v => venueCore(v.name) === core));
+    // one name contains the other as whole words ("Clara" ~ "Clara GAA, Kilkenny")
+    if (!cands.length && core.length >= 4) {
+      const re = s => new RegExp('\\b' + s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b');
+      cands.push(...pool.filter(v => { const c = venueCore(v.name); return c.length >= 4 && (re(c).test(core) || re(core).test(c)); }));
+    }
+  }
+  // 4. Same name in a county outside the fixture's own (neutral venues)
+  if (!cands.length && sc.counties) cands.push(...everywhere.filter(v => keys.includes(venueKey0(v.name))));
+  const opts = narrow(uniq(cands));
+  if (opts.length === 1) return res('suggest', { venue: opts[0], options: opts });
+  if (opts.length > 1) return res('ambiguous', { options: opts });
+  return res('missing');
+}
+
 function buildGamePayload(f) {
   const errors = [];
   const warnings = [];
@@ -4477,6 +4675,20 @@ function buildGamePayload(f) {
   const utc = rawTime && rawTime.includes(':') ? dublinToUtc(f.date, rawTime) : null;
   const utcTime = utc ? utc.time : '00:01';
 
+  // Venue: only an exact Clubber venue name goes in the file. Anything
+  // uncertain is left out and flagged, with a picker in the review dialog.
+  const venueRes = isRugby ? null : resolveVenue(f);
+  if (venueRes) {
+    const t = venueRes.text, v = venueRes.venue;
+    const where = venueRes.counties ? venueRes.counties.length > 3 ? f.county : venueRes.counties.join('/') : 'any county';
+    if (venueRes.status === 'none') warnings.push(t ? `Venue is "${t}" — exported without one` : 'No venue on this fixture — exported without one');
+    else if (venueRes.status === 'suggest') warnings.push(`Venue "${t}" is probably Clubber's "${v.name}" (${v.county}) — confirm it in the Venue column, or it's left out`);
+    else if (venueRes.status === 'ambiguous') warnings.push(`Venue "${t}" could be ${venueRes.options.map(o => '"' + o.name + '" (' + o.county + ')').join(' or ')} — choose one in the Venue column, or it's left out`);
+    else if (venueRes.status === 'missing') warnings.push(`Venue "${t}" isn't in Clubber (${where}) — left out. Add it to Clubber, or pick it in the Venue column if Clubber has it under another name`);
+    else if (venueRes.status === 'stale') warnings.push(`Venue "${v.name}" (${v.county}), chosen earlier for "${t}", is no longer in Clubber — choose again; left out`);
+  }
+  const venueName = venueRes && venueRes.status === 'ok' ? venueRes.venue.name : '';
+
   const payload = {
     gameScope: (f.county === 'BUCS' || f.county === 'Higher Education') ? 'University' : (f.county === 'ACE' || isPPS) ? 'School' : 'Club',
     date: utc ? utc.date : f.date,
@@ -4496,6 +4708,7 @@ function buildGamePayload(f) {
     season: 'Season 26',
     round: toClubberRound(f.round),
     title: '',
+    ...(venueName ? { venue: venueName } : {}),
     competitorClubName: teamBResult?.matchedName || normB,
     competitorClubId: teamBResult?.clubId || '',
     competitorClubCounty: isRugby ? 'UK' : (teamBResult?.county || ''),
@@ -4507,7 +4720,7 @@ function buildGamePayload(f) {
     ...(f.hero ? { heroSection: true } : {}),
   };
 
-  return { payload, errors, warnings, unmapped, teams: { a: teamAResult, b: teamBResult } };
+  return { payload, errors, warnings, unmapped, venue: venueRes, teams: { a: teamAResult, b: teamBResult } };
 }
 
 function downloadJson(data, filename) {
