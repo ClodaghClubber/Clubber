@@ -2938,6 +2938,17 @@ function rebuildClubberConfirmRows() {
   });
 }
 
+// Munster / Leinster: changing the grade in the dialog re-prices the row
+document.getElementById('clubberConfirmBody').addEventListener('change', e => {
+  const sel = e.target.closest('select.grade-edit');
+  if (!sel) return;
+  const r = _pendingClubberResults[+sel.dataset.idx];
+  if (!r || !['Munster', 'Leinster'].includes(r.fixture.county)) return;
+  const price = provincialGradePrice(sel.value);
+  const inp = sel.closest('tr').querySelector('.price-edit');
+  if (price != null && inp) inp.value = price;
+});
+
 // Venue column buttons: Change (open the picker), Use/Confirm (save the choice
 // for everyone - every fixture with the same venue text uses it), Clear choice
 document.getElementById('clubberConfirmBody').addEventListener('click', async e => {
@@ -4139,6 +4150,14 @@ function normClubName(n) {
 const CLUBBER_GRADES = ['Senior 1', 'Senior 2', 'Intermediate 1', 'Intermediate 2', 'Junior 1', 'Junior 2',
   'Junior other', 'Underage 20/21', 'Minor', 'Underage other', 'Masters', 'Wheelchair Hurling'];
 
+// Munster / Leinster price by grade: Senior 16.99, Intermediate / Junior 14.99
+// (null for other grades - the usual round-based price applies)
+function provincialGradePrice(grade) {
+  if (/^Senior\b/i.test(grade || '')) return 16.99;
+  if (/^(Intermediate|Junior)\b/i.test(grade || '')) return 14.99;
+  return null;
+}
+
 function deriveGrade(county, competition) {
   if (!competition) return '';
   const c = competition;
@@ -4665,6 +4684,9 @@ function buildGamePayload(f) {
     if (/\bfinal\b/.test(roundNorm) && !/semi/.test(roundNorm) && !/quarter/.test(roundNorm)) price = 19.99;
     else if (/semi.?final|^\bsf\b/.test(roundNorm)) price = 16.99;
   }
+  // Munster & Leinster club fixtures: priced by grade, whatever the round
+  const provincialPrice = isProvincial ? provincialGradePrice(grade) : null;
+  if (provincialPrice != null) price = provincialPrice;
 
   const county = isRugby ? 'UK'
     : (isProvincial || isPPS || isHE) ? (teamAResult?.county || countyA)
