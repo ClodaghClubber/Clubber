@@ -3365,6 +3365,9 @@ dateTo.addEventListener('change',()=>{
     const paint = () => sw.querySelectorAll('button').forEach(b => {
       const on = b.dataset.sport === mainSport;
       b.classList.toggle('active', on); b.setAttribute('aria-checked', on ? 'true' : 'false');
+      // Only the Clubber JSON export for the chosen sport
+      clubberIeBtn.style.display = mainSport === 'gaa' ? 'flex' : 'none';
+      clubberUkBtn.style.display = mainSport === 'rugby' ? 'flex' : 'none';
     });
     paint();
     sw.addEventListener('click', e => {
