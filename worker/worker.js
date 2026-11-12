@@ -3663,6 +3663,19 @@ async function scrapeGroupD(kv, env) {
     ...RUGBY_FIXTURES.map(f => applyBucsTime(f, bucsTimes)),
     ...ACE_FIXTURES,
   ];
+  // BUCS fixtures on Playwaze (with a date) that aren't in our list yet, e.g.
+  // second-half fixtures once BUCS schedules them: add them. No round
+  // (Playwaze doesn't give one); venue = home team, as for the rest.
+  if (bucsTimes) {
+    const have = new Set(fixtures.filter(f => f.county === 'BUCS').map(f => `${f.competition}|${f.teamA}|${f.teamB}`));
+    for (const [k, p] of bucsTimes) {
+      if (have.has(k)) continue;
+      const [y, m, d] = p.date.split('-');
+      const f = mkStatic('BUCS', p.home, p.away, `${+d} ${NUM_TO_MONTH[+m]} ${y}`, p.time || 'TBC', p.home, p.comp, '');
+      f.sport = 'Rugby';
+      fixtures.push(f);
+    }
+  }
   // BUCS fixtures Playwaze has moved to another date: keep their saved state
   const moved = fixtures.filter(f => f.movedFrom).map(f => [f.movedFrom, fixtureKey(f)]);
   if (moved.length) await moveFixtureKeys(kv, moved).catch(e => console.error('moveFixtureKeys failed:', e));
