@@ -158,8 +158,12 @@
   #apTable{width:100%;border-collapse:collapse;font-size:13px;}
   #apTable th{position:sticky;top:0;background:var(--panel);text-align:left;font-size:11px;text-transform:uppercase;color:var(--muted);padding:8px;border-bottom:1px solid var(--border);white-space:nowrap;}
   #apTable td{padding:8px;border-bottom:1px solid var(--border);vertical-align:top;}
-  /* Dark line under the last fixture of each day */
+  /* Dark box around each day's fixtures, with a gap between days */
+  #apTable tr.ap-day-start td{border-top:3px solid var(--text);}
   #apTable tr.ap-day-end td{border-bottom:3px solid var(--text);}
+  #apTable tr.ap-day-row td:first-child{border-left:3px solid var(--text);}
+  #apTable tr.ap-day-row td:last-child{border-right:3px solid var(--text);}
+  #apTable tr.ap-gap td{height:10px;padding:0;border:none;background:transparent;}
   /* Clubber / Pick cells: no county colour, so the ticks stand out */
   #apTable td.ap-plain{background:var(--panel);color:var(--text);text-align:center;}
   /* ---- Add from screenshot (AI import) ---- */
@@ -6412,8 +6416,10 @@ let currentIsAdmin = false;
     let html='';
     list.forEach((f,i)=>{
       // Same county colours as the All fixtures tab; dark line after each day
+      const dayStart=!list[i-1]||list[i-1].date!==f.date;
       const dayEnd=!list[i+1]||list[i+1].date!==f.date;
-      html+='<tr class="cr-'+esc(String(f.county||'').toLowerCase().replace(/\s+/g,'-'))+(dayEnd?' ap-day-end':'')+'">'+
+      if(dayStart&&i) html+='<tr class="ap-gap"><td colspan="12"></td></tr>';
+      html+='<tr class="ap-day-row cr-'+esc(String(f.county||'').toLowerCase().replace(/\s+/g,'-'))+(dayStart?' ap-day-start':'')+(dayEnd?' ap-day-end':'')+'">'+
         '<td style="white-space:nowrap;">'+esc(f.date)+'</td><td>'+esc(f.day||dayName(f.date))+'</td>'+
         '<td style="white-space:nowrap;">'+esc(f.time||'TBC')+'</td><td>'+esc(f.county)+'</td><td>'+esc(f.code)+'</td>'+
         '<td>'+teamCellHtml(f,'A')+'</td><td>'+teamCellHtml(f,'B')+'</td><td>'+esc(f.venue)+'</td><td>'+esc(f.competition)+'</td><td>'+esc(f.round)+'</td>'+
