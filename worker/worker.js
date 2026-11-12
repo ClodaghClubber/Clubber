@@ -2975,10 +2975,10 @@ const RUGBY_FIXTURES = [];
   add('Round 6','Richmond','Caldy','31 October 2026','15:00');
   // Round 7
   add('Round 7','Caldy','Coventry','7 November 2026','13:00');
-  add('Round 7','Ampthill','Ealing Trailfinders','7 November 2026','18:00');
+  add('Round 7','Ampthill','Ealing Trailfinders','7 November 2026','12:00');
   add('Round 7','Doncaster Knights','Worcester Warriors','7 November 2026','15:00');
   add('Round 7','Blackheath','Bedford Blues','7 November 2026','15:00');
-  add('Round 7','Hartpury','Chinnor','8 November 2026','16:00');
+  add('Round 7','Hartpury','Chinnor','8 November 2026','13:00');
   add('Round 7','Nottingham','Rotherham Titans','6 November 2026','19:45');
   add('Round 7','Cornish Pirates','Richmond','7 November 2026','15:00');
   // Round 8
