@@ -3174,7 +3174,7 @@ async function fetchBucsPlaywazeTimes() {
         const t = (item.match(/fixture-list-time">([^<]*)</) || [])[1] || '';
         const names = [...item.matchAll(/fixtureListItemMobile-teamName">\s*<span>([^<]*)</g)].map(m => club(m[1]));
         if (names.length === 2 && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
-          times.set(`${comp}|${names[0]}|${names[1]}`, { date, time: /^\d{1,2}:\d{2}$/.test(t.trim()) ? t.trim() : '' });
+          times.set(`${comp}|${names[0]}|${names[1]}`, { comp, home: names[0], away: names[1], date, time: /^\d{1,2}:\d{2}$/.test(t.trim()) ? t.trim() : '' });
         }
       }
     }
