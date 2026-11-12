@@ -2430,6 +2430,13 @@ function msInit(id,opts,onChange,autoApply=false){
 function msGetValues(id){return [...(_msSelected[id]||new Set())];}
 const msCounty=msInit('countyFilter',[],()=>{populateCompOptions();render();});
 const msCode=msInit('codeFilter',['Football','Hurling','Camogie','Rugby'],render,true);
+// Code filter lists only the codes of the sport chosen with the GAA | Rugby switch
+// (keeps any chosen codes that still apply)
+function sportCodeOptions(){
+  const opts=mainSport==='rugby'?['Rugby']:['Football','Hurling','Camogie'];
+  const keep=msCode.getValues().filter(v=>opts.includes(v));
+  msCode.setOptions(opts); msCode.setValues(keep);
+}
 const msComp=msInit('compFilter',[],render);
 const msStatus=msInit('statusFilter',['Proposed','Approved','Rejected'],render);
 const dateFrom=document.getElementById('dateFrom');
@@ -3373,6 +3380,7 @@ dateTo.addEventListener('change',()=>{
       clubberUkBtn.style.display = mainSport === 'rugby' ? 'flex' : 'none';
     });
     paint();
+    sportCodeOptions();
     sw.addEventListener('click', e => {
       const b = e.target.closest('button[data-sport]');
       if (!b || b.dataset.sport === mainSport) return;
@@ -3382,6 +3390,7 @@ dateTo.addEventListener('change',()=>{
       populateFilterOptions();
       msCounty.setValues([]);
       msComp.setValues([]); _msSave('compFilter'); // the other sport's competitions
+      sportCodeOptions(); _msSave('codeFilter');
       populateCompOptions(); // now that the county choice is cleared
       render();
     });
@@ -3406,6 +3415,7 @@ const msHighlight=msInit('highlightFilter',['Clubber Pick','Hero Section'],rende
     const saved=localStorage.getItem('gaaFilter_'+id);
     if(saved){ try{ const v=JSON.parse(saved); if(v.length) ms.setValues(v); }catch(_){} }
   });
+  sportCodeOptions(); // drop a saved code from the other sport
   // countyFilter and compFilter options aren't available yet — restore after populateFilterOptions
   ['countyFilter','compFilter'].forEach(id=>{
     const saved=localStorage.getItem('gaaFilter_'+id);
