@@ -3247,7 +3247,7 @@ function applyBucsTime(f, times) {
   bucsAdd(M,'Round 4','Cardiff Met','Loughborough','14 October 2026');
   bucsAdd(M,'Round 4','Durham','Hartpury','14 October 2026');
   bucsAdd(M,'Round 4','Nottingham','Leeds Beckett','14 October 2026');
-  bucsAdd(M,'Round 5','Bath','Cardiff Met','21 October 2026');
+  bucsAdd(M,'Round 5','Bath','Cardiff Met','28 October 2026'); // moved from 21 Oct (BUCS Playwaze)
   bucsAdd(M,'Round 5','Brunel','Exeter','28 October 2026');
   bucsAdd(M,'Round 5','Cardiff','Nottingham','28 October 2026');
   bucsAdd(M,'Round 5','Loughborough','Durham','28 October 2026');
@@ -3281,7 +3281,7 @@ function applyBucsTime(f, times) {
   bucsAdd(M,'Round 11','Brunel','Leeds Beckett','16 December 2026');
   bucsAdd(M,'Round 11','Cardiff','Loughborough','16 December 2026');
   bucsAdd(M,'Round 11','Exeter','Cardiff Met','16 December 2026');
-  bucsAdd(M,'Round 11','Durham','Nottingham','16 December 2026');
+  bucsAdd(M,'Round 11','Durham','Nottingham','18 December 2026'); // moved from 16 Dec (BUCS Playwaze)
   bucsAdd(M,'Round 12','Bath','Brunel','20 January 2027');
   bucsAdd(M,'Round 12','Leeds Beckett','Cardiff','20 January 2027');
   bucsAdd(M,'Round 12','Loughborough','Cardiff Met','20 January 2027');
