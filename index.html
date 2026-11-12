@@ -158,7 +158,8 @@
   #apTable{width:100%;border-collapse:collapse;font-size:13px;}
   #apTable th{position:sticky;top:0;background:var(--panel);text-align:left;font-size:11px;text-transform:uppercase;color:var(--muted);padding:8px;border-bottom:1px solid var(--border);white-space:nowrap;}
   #apTable td{padding:8px;border-bottom:1px solid var(--border);vertical-align:top;}
-  #apTable tr.ap-day td{background:var(--bg);font-weight:700;font-size:12px;color:var(--muted);padding:6px 8px;}
+  /* Dark line under the last fixture of each day */
+  #apTable tr.ap-day-end td{border-bottom:3px solid var(--text);}
   /* ---- Add from screenshot (AI import) ---- */
   #aiImportBtn{background:none;border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:6px 12px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;font-weight:600;}
   #aiImportBtn:hover{background:rgba(90,79,207,.08);}
@@ -527,7 +528,7 @@
   </div>
   <div id="apSummary" style="font-size:13px;color:var(--muted);margin-bottom:8px;"></div>
   <div style="overflow:auto;"><table id="apTable"><thead><tr>
-    <th>Time</th><th>County</th><th>Code</th><th>Team A</th><th>Team B</th><th>Venue</th><th>Competition</th><th>Round</th><th>Clubber</th><th>Pick</th>
+    <th>Date</th><th>Day</th><th>Time</th><th>County</th><th>Code</th><th>Team A</th><th>Team B</th><th>Venue</th><th>Competition</th><th>Round</th><th>Clubber</th><th>Pick</th>
   </tr></thead><tbody id="apBody"></tbody></table></div>
 </div>
 <div class="toolbar">
@@ -6406,15 +6407,17 @@ let currentIsAdmin = false;
     const list=filtered();
     const sp=els('apSport').value;
     els('apSummary').textContent=list.length+' upcoming approved '+(sp==='gaa'?'GAA ':sp==='rugby'?'rugby ':'')+'fixture'+(list.length===1?'':'s');
-    let html='', day='';
-    list.forEach(f=>{
-      if(f.date!==day){ day=f.date; html+='<tr class="ap-day"><td colspan="10">'+esc(f.day||dayName(f.date))+' '+esc(f.date)+'</td></tr>'; }
-      // Same county colours as the All fixtures tab
-      html+='<tr class="cr-'+esc(String(f.county||'').toLowerCase().replace(/\s+/g,'-'))+'"><td style="white-space:nowrap;">'+esc(f.time||'TBC')+'</td><td>'+esc(f.county)+'</td><td>'+esc(f.code)+'</td>'+
+    let html='';
+    list.forEach((f,i)=>{
+      // Same county colours as the All fixtures tab; dark line after each day
+      const dayEnd=!list[i+1]||list[i+1].date!==f.date;
+      html+='<tr class="cr-'+esc(String(f.county||'').toLowerCase().replace(/\s+/g,'-'))+(dayEnd?' ap-day-end':'')+'">'+
+        '<td style="white-space:nowrap;">'+esc(f.date)+'</td><td>'+esc(f.day||dayName(f.date))+'</td>'+
+        '<td style="white-space:nowrap;">'+esc(f.time||'TBC')+'</td><td>'+esc(f.county)+'</td><td>'+esc(f.code)+'</td>'+
         '<td>'+teamCellHtml(f,'A')+'</td><td>'+teamCellHtml(f,'B')+'</td><td>'+esc(f.venue)+'</td><td>'+esc(f.competition)+'</td><td>'+esc(f.round)+'</td>'+
         '<td>'+(f.clubberCreated?'<span class="ai-ok" title="In Clubber">&#10003;</span>':missingInfoBadges(f)||'<span style="color:var(--reject);font-weight:700;" title="Not in Clubber yet">&#10007;</span>')+'</td><td>'+(f.clubberPick?'&#9733;':'')+'</td></tr>';
     });
-    els('apBody').innerHTML=html||'<tr><td colspan="10" style="color:var(--muted);padding:16px;">No approved fixtures match these filters.</td></tr>';
+    els('apBody').innerHTML=html||'<tr><td colspan="12" style="color:var(--muted);padding:16px;">No approved fixtures match these filters.</td></tr>';
   };
   function showTab(tab){
     activeTab=tab;
