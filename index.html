@@ -6409,7 +6409,8 @@ let currentIsAdmin = false;
     let html='', day='';
     list.forEach(f=>{
       if(f.date!==day){ day=f.date; html+='<tr class="ap-day"><td colspan="10">'+esc(f.day||dayName(f.date))+' '+esc(f.date)+'</td></tr>'; }
-      html+='<tr><td style="white-space:nowrap;">'+esc(f.time||'TBC')+'</td><td>'+esc(f.county)+'</td><td>'+esc(f.code)+'</td>'+
+      // Same county colours as the All fixtures tab
+      html+='<tr class="cr-'+esc(String(f.county||'').toLowerCase().replace(/\s+/g,'-'))+'"><td style="white-space:nowrap;">'+esc(f.time||'TBC')+'</td><td>'+esc(f.county)+'</td><td>'+esc(f.code)+'</td>'+
         '<td>'+teamCellHtml(f,'A')+'</td><td>'+teamCellHtml(f,'B')+'</td><td>'+esc(f.venue)+'</td><td>'+esc(f.competition)+'</td><td>'+esc(f.round)+'</td>'+
         '<td>'+(f.clubberCreated?'<span class="ai-ok" title="In Clubber">&#10003;</span>':missingInfoBadges(f)||'<span style="color:var(--reject);font-weight:700;" title="Not in Clubber yet">&#10007;</span>')+'</td><td>'+(f.clubberPick?'&#9733;':'')+'</td></tr>';
     });
