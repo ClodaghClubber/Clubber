@@ -3143,12 +3143,14 @@ const RUGBY_FIXTURES = [];
   add('Final','TBC','TBC','29 May 2027','15:00');
 })();
 
-// BUCS kick-off times from Playwaze, the system behind the fixture tables on
-// bucs.org.uk (league-tables pages embed public-bucs.playwaze.com). The list
-// below has the dates; Playwaze has the latest times. Only the TIME is taken,
-// and only when Playwaze has the same date (a fixture's key includes its date,
-// so changing dates would detach saved statuses). Playwaze's "-" = no time
-// yet, which leaves our time alone.
+// BUCS dates and kick-off times from Playwaze, the system behind the fixture
+// tables on bucs.org.uk (league-tables pages embed public-bucs.playwaze.com).
+// The list below has the fixtures; Playwaze has the latest date and time for
+// each home v away pairing. A fixture's key includes its date, so when
+// Playwaze moves one, moveFixtureKeys carries its status, dashboard edits and
+// change-alert snapshot over to the new date (the alert then reports the
+// move). Playwaze's "-" = no time yet, which leaves our time alone;
+// "Unscheduled" fixtures keep our date.
 const BUCS_PLAYWAZE_URL = 'https://public-bucs.playwaze.com/bucs-rugby-union-26-27/9h7tl6ka1l7i/fixture-fixturelist';
 const BUCS_PLAYWAZE_COMPS = {
   "Men's BUCS Super Rugby": 'LeagueDivisions/LeagueSeasons/196788-B_1',
@@ -3171,16 +3173,57 @@ async function fetchBucsPlaywazeTimes() {
       for (const item of grp.split('class="fixtureListItemMobile"').slice(1)) {
         const t = (item.match(/fixture-list-time">([^<]*)</) || [])[1] || '';
         const names = [...item.matchAll(/fixtureListItemMobile-teamName">\s*<span>([^<]*)</g)].map(m => club(m[1]));
-        if (names.length === 2 && /^\d{1,2}:\d{2}$/.test(t.trim())) times.set(`${comp}|${names[0]}|${names[1]}`, { date, time: t.trim() });
+        if (names.length === 2 && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+          times.set(`${comp}|${names[0]}|${names[1]}`, { date, time: /^\d{1,2}:\d{2}$/.test(t.trim()) ? t.trim() : '' });
+        }
       }
     }
   }));
   return times;
 }
+const NUM_TO_MONTH = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 function applyBucsTime(f, times) {
   if (f.county !== 'BUCS' || !times) return f;
   const p = times.get(`${f.competition}|${f.teamA}|${f.teamB}`);
-  return p && p.date === toIsoDate(f.date) ? { ...f, time: p.time } : f;
+  if (!p) return f;
+  const out = { ...f };
+  if (p.time) out.time = p.time;
+  if (p.date !== toIsoDate(f.date)) {
+    const [y, m, d] = p.date.split('-');
+    out.date = `${+d} ${NUM_TO_MONTH[+m]} ${y}`;
+    out.movedFrom = fixtureKey(f);   // see moveFixtureKeys
+  }
+  return out;
+}
+
+// A source moved a fixture to another date, so its key changed: carry the
+// saved status, dashboard edits and alert snapshot over to the new key
+// (never over something already saved there). Old status history stays
+// matched by teams + competition. Returns how many entries moved.
+async function moveFixtureKeys(kv, pairs) {
+  if (!kv || !pairs.length) return 0;
+  const [st, ov, snap] = await Promise.all([getStatusMap(kv), getOverridesMap(kv), getClubberSnapshot(kv)]);
+  const changed = new Set();
+  const move = (map, name, from, to, tidy) => {
+    if (map[from] === undefined || map[to] !== undefined) return;
+    map[to] = tidy ? tidy(map[from]) : map[from];
+    delete map[from];
+    changed.add(name);
+  };
+  for (const [from, to] of pairs) {
+    if (from === to) continue;
+    const newDate = to.split('|').pop();
+    move(st, 'st', from, to);
+    // A dashboard date edit that matches the new date isn't needed any more
+    move(ov, 'ov', from, to, o => { const c = { ...o }; if (c.date === newDate) delete c.date; return c; });
+    move(snap, 'snap', from, to);
+  }
+  await Promise.all([
+    changed.has('st') && kv.put(STATUS_KV_KEY, JSON.stringify(st)),
+    changed.has('ov') && kv.put(OVERRIDES_KV_KEY, JSON.stringify(ov)),
+    changed.has('snap') && kv.put(CLUBBER_SNAPSHOT_KV_KEY, JSON.stringify(snap)),
+  ].filter(Boolean));
+  return changed.size;
 }
 
 // BUCS Super Rugby 2026-27
@@ -3620,6 +3663,10 @@ async function scrapeGroupD(kv, env) {
     ...RUGBY_FIXTURES.map(f => applyBucsTime(f, bucsTimes)),
     ...ACE_FIXTURES,
   ];
+  // BUCS fixtures Playwaze has moved to another date: keep their saved state
+  const moved = fixtures.filter(f => f.movedFrom).map(f => [f.movedFrom, fixtureKey(f)]);
+  if (moved.length) await moveFixtureKeys(kv, moved).catch(e => console.error('moveFixtureKeys failed:', e));
+  fixtures.forEach(f => { delete f.movedFrom; });
   await writeGroupCache(kv, CACHE_D_KEY, fixtures);
 }
 
@@ -4067,7 +4114,7 @@ export default {
         .map((f) => {
           const key = fixtureKey(f);
           const ov = overridesMap[key];
-          return { ...f, ...(ov || {}), status: statusMap[key] || 'Proposed' };
+          return { ...f, ...(ov || {}), status: statusMap[key] || 'Proposed', statusKey: key };
         })
         .filter((f) => f.status !== 'Removed');
 

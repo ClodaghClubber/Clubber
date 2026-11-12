@@ -1394,7 +1394,8 @@ function deriveCode(competition, sport) {
 }
 
 // ---- Date/time helpers shared with the Worker's output format ----
-function iso(d){ // d = 'D Month YYYY'
+function iso(d){ // d = 'D Month YYYY' (an ISO date, e.g. from a dashboard date edit, passes through)
+  if(/^\d{4}-\d{2}-\d{2}$/.test(d||'')) return d;
   const months={January:'01',February:'02',March:'03',April:'04',May:'05',June:'06',July:'07',August:'08',September:'09',October:'10',November:'11',December:'12'};
   const [day,month,year]=d.split(' ');
   return `${year}-${months[month]}-${day.padStart(2,'0')}`;
@@ -3454,7 +3455,9 @@ function mergeFixtures(incoming){
   const existingByKey=new Map(fixtures.map(f=>[f._origKey||keyOf(f),f]));
   fixtures = incoming.map(inc=>{
     inc.county = normaliseCounty(inc.county);
-    const origKey=keyOf(inc);
+    // The worker's key for this fixture (source date even if the date was
+    // edited on the dashboard), so statuses and edits save under the key it reads
+    const origKey=inc.statusKey||keyOf(inc);
     const ex=existingByKey.get(origKey);
     // Spread ex first so local state (clubberCreated, socials, etc.) survives
     // the refresh; inc fields (including status from KV) take precedence.
@@ -3564,7 +3567,7 @@ async function loadFixtures(isRefresh){
       }
       saveOverrides();
     }
-    const incoming=(json.fixtures||[]).map(f=>({...mk(f.county,f.teamA,f.teamB,f.date,f.time,f.venue,f.competition,f.round), code:f.code||deriveCode(f.competition,f.sport), status:f.status||'Proposed', ...(f.clubberCreated!==undefined?{clubberCreated:f.clubberCreated}:{}), ...(f.teamACounty?{teamACounty:f.teamACounty}:{}), ...(f.teamBCounty?{teamBCounty:f.teamBCounty}:{}), ...(f.teamACountySource?{teamACountySource:f.teamACountySource}:{}), ...(f.teamBCountySource?{teamBCountySource:f.teamBCountySource}:{}), ...(f.sourceUrl?{sourceUrl:f.sourceUrl}:{})}));
+    const incoming=(json.fixtures||[]).map(f=>({...mk(f.county,f.teamA,f.teamB,f.date,f.time,f.venue,f.competition,f.round), code:f.code||deriveCode(f.competition,f.sport), status:f.status||'Proposed', ...(f.clubberCreated!==undefined?{clubberCreated:f.clubberCreated}:{}), ...(f.teamACounty?{teamACounty:f.teamACounty}:{}), ...(f.teamBCounty?{teamBCounty:f.teamBCounty}:{}), ...(f.teamACountySource?{teamACountySource:f.teamACountySource}:{}), ...(f.teamBCountySource?{teamBCountySource:f.teamBCountySource}:{}), ...(f.sourceUrl?{sourceUrl:f.sourceUrl}:{}), ...(f.statusKey?{statusKey:f.statusKey}:{})}));
     mergeFixtures(incoming);
     detectChanges(takeSnapshot());
     updateClearChangesBtn();
