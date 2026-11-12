@@ -2493,7 +2493,9 @@ function extractGrade(competition){
 }
 function populateCompOptions(){
   const selCounties=msGetValues('countyFilter');
-  const scoped=selCounties.length?fixtures.filter(f=>selCounties.includes(f.county)):fixtures;
+  // Only the sport chosen with the GAA | Rugby switch
+  const sportFx=fixtures.filter(sportMatches);
+  const scoped=selCounties.length?sportFx.filter(f=>selCounties.includes(f.county)):sportFx;
   const grades=[...new Set(scoped.map(f=>extractGrade(f.competition)).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
   msComp.setOptions(grades);
 }
@@ -3378,6 +3380,8 @@ dateTo.addEventListener('change',()=>{
       paint();
       populateFilterOptions();
       msCounty.setValues([]);
+      msComp.setValues([]); _msSave('compFilter'); // the other sport's competitions
+      populateCompOptions(); // now that the county choice is cleared
       render();
     });
   })();
