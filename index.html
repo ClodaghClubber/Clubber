@@ -2508,7 +2508,8 @@ function getFiltered(){
   let list=fixtures.filter(f=>{
     if(!sportMatches(f)) return false;
     if(selCounties.length && !selCounties.includes(f.county)) return false;
-    if(selCodes.length && !selCodes.includes(f.code)) return false;
+    // Rugby fixtures count as "Rugby" whatever their code says (ACE uses "Rugby Union")
+    if(selCodes.length && !selCodes.includes(isRugbyFixture(f)?'Rugby':f.code)) return false;
     if(selComps.length && !selComps.includes(extractGrade(f.competition))) return false;
     if(selStatuses.length && !selStatuses.includes(f.status)) return false;
     if(dateFrom.value && f.date<dateFrom.value) return false;
