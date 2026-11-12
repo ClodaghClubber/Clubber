@@ -511,8 +511,8 @@
 </header>
 
 <div class="view-tabs" id="viewTabs">
-  <button type="button" class="view-tab active" data-tab="main">All fixtures</button>
-  <button type="button" class="view-tab" data-tab="approved">Approved fixtures<span class="tab-count" id="apTabCount">0</span></button>
+  <button type="button" class="view-tab active" data-tab="approved">Approved fixtures<span class="tab-count" id="apTabCount">0</span></button>
+  <button type="button" class="view-tab" data-tab="main">All fixtures</button>
   <button type="button" class="view-tab" data-tab="resources">Resources</button>
 </div>
 <div id="approvedView" style="display:none;">
@@ -6439,7 +6439,8 @@ let currentIsAdmin = false;
   // Keep the tab up to date whenever the dashboard re-renders (new data, status changes)
   const baseRender=render;
   render=function(){ const r=baseRender.apply(this,arguments); try{ renderApproved(); }catch(_){} return r; };
-  renderApproved();
+  // Open on the Approved fixtures tab
+  showTab('approved');
 })();
 </script>
 </body>
