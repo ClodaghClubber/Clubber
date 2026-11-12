@@ -160,6 +160,8 @@
   #apTable td{padding:8px;border-bottom:1px solid var(--border);vertical-align:top;}
   /* Dark line under the last fixture of each day */
   #apTable tr.ap-day-end td{border-bottom:3px solid var(--text);}
+  /* Clubber / Pick cells: no county colour, so the ticks stand out */
+  #apTable td.ap-plain{background:var(--panel);color:var(--text);text-align:center;}
   /* ---- Add from screenshot (AI import) ---- */
   #aiImportBtn{background:none;border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:6px 12px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;font-weight:600;}
   #aiImportBtn:hover{background:rgba(90,79,207,.08);}
@@ -6415,7 +6417,7 @@ let currentIsAdmin = false;
         '<td style="white-space:nowrap;">'+esc(f.date)+'</td><td>'+esc(f.day||dayName(f.date))+'</td>'+
         '<td style="white-space:nowrap;">'+esc(f.time||'TBC')+'</td><td>'+esc(f.county)+'</td><td>'+esc(f.code)+'</td>'+
         '<td>'+teamCellHtml(f,'A')+'</td><td>'+teamCellHtml(f,'B')+'</td><td>'+esc(f.venue)+'</td><td>'+esc(f.competition)+'</td><td>'+esc(f.round)+'</td>'+
-        '<td>'+(f.clubberCreated?'<span class="ai-ok" title="In Clubber">&#10003;</span>':missingInfoBadges(f)||'<span style="color:var(--reject);font-weight:700;" title="Not in Clubber yet">&#10007;</span>')+'</td><td>'+(f.clubberPick?'&#9733;':'')+'</td></tr>';
+        '<td class="ap-plain">'+(f.clubberCreated?'<span class="ai-ok" title="In Clubber">&#10003;</span>':missingInfoBadges(f)||'<span style="color:var(--reject);font-weight:700;" title="Not in Clubber yet">&#10007;</span>')+'</td><td class="ap-plain">'+(f.clubberPick?'&#9733;':'')+'</td></tr>';
     });
     els('apBody').innerHTML=html||'<tr><td colspan="12" style="color:var(--muted);padding:16px;">No approved fixtures match these filters.</td></tr>';
   };
