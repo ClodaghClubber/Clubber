@@ -106,6 +106,8 @@
   .badge-time-missing{background:#7c3aed;}
   .badge-date-missing{background:#be123c;}
   .badge-result-pending{margin:1px 0;display:inline-block;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:#b45309;color:#fff;padding:2px 5px;border-radius:8px;white-space:nowrap;vertical-align:middle;}
+  .badge-clubber-differs{display:inline-flex;align-items:center;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:#d97706;color:#fff;padding:2px 5px;border-radius:8px;margin-top:3px;white-space:nowrap;cursor:help;}
+  .clubber-diff-list{font-size:10px;line-height:1.3;margin-top:2px;text-align:left;white-space:normal;max-width:190px;}
   .badge-clubber-created{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:#1a6fa8;color:#fff;padding:2px 5px;border-radius:8px;margin-right:5px;vertical-align:middle;white-space:nowrap;}
   .badge-manual{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:transparent;color:var(--muted);border:1px dashed var(--muted);padding:1px 5px;border-radius:8px;margin-left:5px;vertical-align:middle;white-space:nowrap;}
   .badge-claude{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:#d97706;color:#fff;padding:1px 5px;border-radius:8px;margin-left:5px;vertical-align:middle;white-space:nowrap;}
@@ -560,6 +562,8 @@
       <option value="">All</option>
       <option value="yes">Clubber</option>
       <option value="no">Not in Clubber</option>
+      <option value="differs">In Clubber – needs updating</option>
+      <option value="missing">Approved – not in Clubber</option>
     </select>
   </div>
   <div>
@@ -2559,6 +2563,10 @@ function getFiltered(){
     if(changesOnlyFilter){const _c=fixtureChangelog[stableKeyOf(f)];if(!_c||(_c.type!=='changed'&&_c.type!=='removed'&&_c.type!=='new')) return false;}
     if(clubberFilterVal==='yes' && !f.clubberCreated) return false;
     if(clubberFilterVal==='no' && f.clubberCreated) return false;
+    const _cc=clubberCheck&&clubberCheck[f.id]; // clubberCheck: see runClubberCheck (undefined on first render)
+    if(clubberFilterVal==='differs' && !(_cc&&_cc.diffs.length)) return false;
+    // (today's games drop off Clubber's feed once they start, so not those)
+    if(clubberFilterVal==='missing' && (f.clubberCreated || f.status!=='Approved' || _cc || f.date<=new Date().toLocaleDateString('en-CA',{timeZone:'Europe/Dublin'}))) return false;
     const selHighlights=msGetValues('highlightFilter');
     if(selHighlights.length){
       const match=selHighlights.some(v=>(v==='Clubber Pick'&&f.clubberPick)||(v==='Hero Section'&&f.hero));
@@ -2608,7 +2616,7 @@ function render(){
     const _chgBadge=_chg&&_chg.type!=='unchanged'?`<span class="badge-chg badge-chg-${_chg.type}" style="cursor:default;">${_chgLabel}</span>`:'';
     tr.innerHTML=`
       <td style="white-space:nowrap;"><input type="checkbox" data-id="${f.id}" ${selected.has(f.id)?'checked':''}><button class="edit-btn" data-edit-id="${f.id}" title="Edit fixture" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:0 4px;vertical-align:middle;opacity:.6;">✎</button></td>
-      <td style="text-align:center;">${f.clubberCreated?'<span class="badge-clubber-created" data-unmark-clubber="'+f.id+'" title="Click to unmark as Clubber" style="cursor:pointer;">✓ Clubber</span>':missingInfoBadges(f)}</td>
+      <td style="text-align:center;">${f.clubberCreated?'<span class="badge-clubber-created" data-unmark-clubber="'+f.id+'" title="Click to unmark as Clubber" style="cursor:pointer;">✓ Clubber</span>':missingInfoBadges(f)}${clubberDiffHtml(f)}</td>
       <td style="white-space:nowrap;">${f.county}</td>
       <td>${f.code||''}</td>
       <td>${teamCellHtml(f,'A')}</td>
@@ -3615,6 +3623,7 @@ async function loadFixtures(isRefresh){
   populateFilterOptions();
   render();
   loadSpinner.classList.remove('active');
+  _clubberCheckReady.fixtures=true; runClubberCheck();
 }
 
 // Show cached data immediately (instant render), then fetch fresh data
@@ -4207,6 +4216,7 @@ async function loadTeamMappingsExtra() {
     }
     // Club list is in: redraw with Clubber names (see clubberTeamNames)
     clubberNamesChanged();
+    _clubberCheckReady.lookup=true; runClubberCheck();
     render();
     if (document.getElementById('vidView').style.display !== 'none') renderVidView();
   } catch (e) {
@@ -4829,6 +4839,93 @@ function buildGamePayload(f) {
   };
 
   return { payload, errors, warnings, unmapped, venue: venueRes, teams: { a: teamAResult, b: teamBResult } };
+}
+
+// ---- Check against what's actually in Clubber ----
+// Clubber's upcoming-games feed (via the worker) is matched to each upcoming
+// fixture by the two Clubber club IDs the export would send, plus the date.
+// A match ticks the fixture In Clubber; date / time / round / home-away that
+// differ from what the export would send show as "Clubber differs".
+var clubberCheck = {};          // fixture id -> { game, diffs: [text] }
+var _clubberCheckReady = { fixtures: false, lookup: false };
+var _clubberGamesAt = '';
+function utcToDublinLabel(date, time) {
+  if (!time || time === '00:01') return 'no time';
+  const hm = new Date(date + 'T' + time + ':00Z').toLocaleTimeString('en-GB', { timeZone: 'Europe/Dublin', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+  return to12h(hm);
+}
+function utcToDublinDate(date, time) {
+  const d = new Date(date + 'T' + (time || '12:00') + ':00Z');
+  return d.toLocaleDateString('en-CA', { timeZone: 'Europe/Dublin' });
+}
+async function runClubberCheck() {
+  if (!_clubberCheckReady.fixtures || !_clubberCheckReady.lookup) return;
+  let games;
+  try {
+    const data = await (await fetch(WORKER_URL + '?action=clubberGames', { cache: 'no-store' })).json();
+    if (!data.ok) throw new Error(data.error || 'feed unavailable');
+    games = data.games || []; _clubberGamesAt = data.fetchedAt || '';
+  } catch (e) { console.warn('Clubber check skipped:', e.message); return; }
+  const byPair = new Map();
+  const pairKey = (a, b) => [a, b].sort().join('|');
+  games.forEach(g => { if (g.clubId && g.competitorClubId) { const k = pairKey(g.clubId, g.competitorClubId); if (!byPair.has(k)) byPair.set(k, []); byPair.get(k).push(g); } });
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Dublin' });
+  const dayDiff = (a, b) => Math.round((new Date(a) - new Date(b)) / 864e5);
+  const result = {}, toMark = [];
+  for (const f of fixtures) {
+    if (!f.date || f.date < today) continue;
+    let p;
+    try { p = buildGamePayload(f).payload; } catch (_) { continue; }
+    if (!p || (!p.clubId && !p.competitorClubId)) continue;
+    // Same competition for rugby (men's and women's teams share club IDs);
+    // same code for GAA (hurling v camogie between the same clubs)
+    const sameComp = c => p.sportType === 'Rugby' ? (!c.championsType || c.championsType === p.championsType)
+      : (!p.code || !c.code || c.code.toLowerCase() === p.code.toLowerCase());
+    const cands = (p.clubId && p.competitorClubId ? (byPair.get(pairKey(p.clubId, p.competitorClubId)) || []) : []).filter(sameComp);
+    // Both clubs: same date; else the only game within 6 weeks with the same
+    // club at home (a moved fixture - never the reverse leg)
+    let g = cands.find(c => c.date === p.date && c.clubId === p.clubId) || cands.find(c => c.date === p.date);
+    if (!g) {
+      const sameHome = cands.filter(c => c.clubId === p.clubId && Math.abs(dayDiff(c.date, p.date)) <= 42);
+      if (sameHome.length === 1) g = sameHome[0];
+    }
+    // One club known (or Clubber used another club ID for the other side):
+    // the only game that day for that club, same code for GAA
+    let otherClub = null;
+    if (!g) {
+      const ids = [p.clubId, p.competitorClubId].filter(Boolean);
+      const day = games.filter(c => c.date === p.date && (ids.includes(c.clubId) || ids.includes(c.competitorClubId)) && sameComp(c));
+      if (day.length === 1) {
+        g = day[0];
+        // Our ID for the other club, where Clubber has a different one
+        const ourOther = ids.includes(g.clubId) ? (g.clubId === p.clubId ? p.competitorClubId : p.clubId) : '';
+        const theirOther = g.clubId === p.clubId || g.clubId === p.competitorClubId ? g.competitorClubId : g.clubId;
+        if (ourOther && theirOther && ourOther !== theirOther) otherClub = theirOther === g.clubId ? g.club : g.competitorClubName;
+      }
+    }
+    if (!g) continue;
+    const diffs = [];
+    if (otherClub) diffs.push('Club: Clubber has ' + otherClub.trim() + ' (a different Clubber club from ours)');
+    if (g.date !== p.date) diffs.push('Date: Clubber ' + utcToDublinDate(g.date, g.time) + ', dashboard ' + f.date);
+    if ((g.time || '00:01') !== (p.time || '00:01')) diffs.push('Time: Clubber ' + utcToDublinLabel(g.date, g.time) + ', dashboard ' + (f.time ? to12h(from12h(f.time)) || f.time : 'no time'));
+    if (p.clubId && p.competitorClubId && g.clubId === p.competitorClubId && g.competitorClubId === p.clubId) diffs.push('Home/away swapped: Clubber has ' + g.club.trim() + ' at home');
+    // Round only when Clubber has a different one (it's optional there)
+    if (p.round && g.round && g.round.toLowerCase() !== p.round.toLowerCase()) diffs.push('Round: Clubber ' + g.round + ', dashboard ' + p.round);
+    result[f.id] = { game: g, diffs };
+    if (!f.clubberCreated) toMark.push(f.id);
+  }
+  clubberCheck = result;
+  // Found in Clubber = In Clubber (saved for everyone when signed in)
+  if (toMark.length) markClubberCreated(toMark);
+  render();
+}
+function clubberDiffHtml(f) {
+  const c = clubberCheck && clubberCheck[f.id]; // undefined during the first render
+  if (!c || !c.diffs.length) return '';
+  const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+  const when = _clubberGamesAt ? ' (Clubber checked ' + new Date(_clubberGamesAt).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' }) + ')' : '';
+  return '<div><span class="badge-clubber-differs" title="' + esc(c.diffs.join('\n') + when) + '">⚠ Clubber differs</span></div>'
+    + '<div class="clubber-diff-list">' + c.diffs.map(esc).join('<br>') + '</div>';
 }
 
 function downloadJson(data, filename) {

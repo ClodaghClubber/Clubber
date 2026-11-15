@@ -4109,6 +4109,41 @@ export default {
       return new Response(JSON.stringify(data), { headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } });
     }
 
+    // Clubber's upcoming games (public feed its apps use; the IE feed includes
+    // the UK games). The dashboard checks fixtures marked In Clubber against it.
+    // Cached 15 minutes; the browser can't read the feed itself (no CORS).
+    if (url.searchParams.get('action') === 'clubberGames') {
+      const KEY = 'clubberGames', TTL_MS = 15 * 60 * 1000;
+      const FEEDS = [
+        ['IE', 'https://prodgameservicecontainer.azurewebsites.net/api/Game/GetUpcomingGames?getAll=true'],
+        ['UK', 'https://ukgameservice-evdqecczd6guhtft.westeurope-01.azurewebsites.net/api/Game/GetUpcomingGames?getAll=true'],
+      ];
+      const reply = body => new Response(body, { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...CORS_HEADERS } });
+      const cached = kv ? await kv.get(KEY) : null;
+      if (cached && Date.now() - new Date(JSON.parse(cached).fetchedAt).getTime() < TTL_MS) return reply(cached);
+      const byId = new Map();
+      let ok = 0;
+      await Promise.all(FEEDS.map(async ([site, feedUrl]) => {
+        try {
+          const res = await fetch(feedUrl, { headers: { Accept: 'application/json' } });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const j = await res.json();
+          for (const g of (j && j.result) || []) {
+            const t = g.teams || {};
+            byId.set(g.id, { id: g.id, site: g.source || site, sportType: g.sportType, clubId: g.clubId, club: t.clubName || g.club,
+              county: t.county || '', competitorClubId: t.competitorClubId || '', competitorClubName: t.competitorClubName || '',
+              competitorClubCounty: t.competitorClubCounty || '', date: g.date, time: g.time, round: g.round || '',
+              grade: g.grade || '', code: g.code || '', championsType: g.championsType || '', price: g.price });
+          }
+          ok++;
+        } catch (e) { console.error('clubberGames feed failed', site, e && e.message); }
+      }));
+      if (!ok) return cached ? reply(cached) : reply(JSON.stringify({ ok: false, error: 'Clubber feed unavailable', games: [] }));
+      const body = JSON.stringify({ ok: true, fetchedAt: new Date().toISOString(), games: [...byId.values()] });
+      if (kv) await kv.put(KEY, body, { expirationTtl: 60 * 60 * 24 });
+      return reply(body);
+    }
+
     // GET reads exclusively from the 5 group KV keys written by the cron scrapers.
     // No live fetching here — all scraping is done by the scheduled handler.
     if (!kv) {
