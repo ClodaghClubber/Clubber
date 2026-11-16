@@ -4164,6 +4164,8 @@ function applyTeamMappingsExtra() {
     teamMappings[county] = Object.assign(teamMappings[county] || {}, teams);
   }
   if (typeof clubberNamesChanged === 'function') clubberNamesChanged();
+  // Re-check against Clubber with the same club mappings the export uses
+  if (typeof runClubberCheck === 'function' && typeof _clubberCheckReady !== 'undefined' && _clubberCheckReady.fixtures) runClubberCheck();
 }
 async function loadTeamMappingsExtra() {
   if (!authToken) return;
@@ -4649,7 +4651,11 @@ function buildGamePayload(f) {
       const trimmed = name.replace(/\s+/g, ' ').trim();
       const want = normClubName(trimmed);
       const scoped = regional[trimmed] || regional[Object.keys(regional).find(k => normClubName(k) === want)];
-      if (scoped && typeof scoped === 'object' && scoped.county) {
+      // The team's GAA club ID (crest) proves its county: a province-wide
+      // mapping to a club in another county is for a different club with the
+      // same name (e.g. Leinster "Castletown" - Laois v Wexford), so skip it
+      const crestCounty = side && f['team' + side + 'CountySource'] === 'crest' ? f['team' + side + 'County'] : '';
+      if (scoped && typeof scoped === 'object' && scoped.county && !(crestCounty && scoped.county !== crestCounty)) {
         const official = (sportsCountiesIndex[scoped.county.toLowerCase()] || []).find(c => c.id === scoped.id);
         return { county: scoped.county, clubId: scoped.id, matchedName: official ? official.name : (scoped.name || name) };
       }
