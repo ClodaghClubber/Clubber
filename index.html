@@ -5033,7 +5033,7 @@ async function runClubberCheck() {
     // match to Clubber's list but haven't sent = needs an update.
     if (p.venue && (f.clubberVenue || '') !== p.venue) diffs.push(f.clubberVenue
       ? 'Venue: Clubber ' + f.clubberVenue + ', dashboard ' + p.venue
-      : 'Venue: not in Clubber yet, dashboard ' + p.venue);
+      : 'Venue: check Clubber has ' + p.venue + ' (not sent from here)');
     result[f.id] = { game: g, diffs, venue: p.venue || '' };
     if (!f.clubberCreated || f.clubberGameId !== g.id) toSave.push([f, g.id]);
   }
@@ -5101,7 +5101,7 @@ function clubberDiffHtml(f) {
   // Clubber's feed has no venues: after checking Clubber, "Clubber has this
   // venue" records it as sent and clears the venue line
   const venueOk = c.venue && c.diffs.some(d => /^Venue:/.test(d))
-    ? '<br><button class="clubber-venue-ok" data-clubber-venue-ok="' + esc(f.id) + '" title="Clubber already shows this venue - stop flagging it">✓ Clubber has this venue</button>' : '';
+    ? '<br><button class="clubber-venue-ok" data-clubber-venue-ok="' + esc(f.id) + '" title="Clubber already shows this venue on the game - stop flagging it">✓ Yes, it\'s in Clubber</button>' : '';
   return '<div><span class="badge-clubber-differs" title="' + esc(c.diffs.join('\n') + when) + '">⚠ Clubber differs</span></div>'
     + '<div class="clubber-diff-list">' + c.diffs.map(esc).join('<br>') + venueOk + '</div>';
 }
