@@ -781,8 +781,14 @@ function roscommonParsePanel(panelHtml, compNameFn, sport) {
   return out;
 }
 
-async function fetchRoscommonSport(sport) {
-  const url = `https://www.gaaroscommon.ie/matches/${sport}/senior/`;
+// Underage (Minor / U20) competition names: top division only, else null (skipped)
+function roscommonUnderageName(raw, sport) {
+  return isTopUnderage(raw) ? underageCompAndRound(raw, sport, true).competition : null;
+}
+
+// grade 'minor' also holds U20 on this site; compNameFn returning null skips a competition
+async function fetchRoscommonSport(sport, grade = 'senior', compNameFn = null) {
+  const url = `https://www.gaaroscommon.ie/matches/${sport}/${grade}/`;
   const res = await fetch(url, { headers: { 'User-Agent': UA } });
   if (!res.ok) throw new Error(`Roscommon ${sport} fetch failed: ${res.status}`);
   const html = await res.text();
@@ -791,7 +797,7 @@ async function fetchRoscommonSport(sport) {
   const panelHtml = (startIdx !== -1 && endIdx !== -1)
     ? html.slice(startIdx, endIdx)
     : (startIdx !== -1 ? html.slice(startIdx) : html);
-  return roscommonParsePanel(panelHtml, null, sport === 'football' ? 'Football' : 'Hurling');
+  return roscommonParsePanel(panelHtml, compNameFn, sport === 'football' ? 'Football' : 'Hurling');
 }
 
 // Maps website competition title (sponsor-prefixed) to the user-facing short name.
@@ -800,7 +806,8 @@ function roscommonFootballCompName(raw) {
   if (/Junior A Football Championship/i.test(raw)) return 'Junior A Football Championship';
   if (/Intermediate Football Championship/i.test(raw)) return 'Intermediate Football Championship';
   if (/Senior Football Championship/i.test(raw)) return 'Senior Football Championship';
-  // Skip underage/minor only
+  // Minor / U20: top division only (see isTopUnderage); other underage skipped
+  if (underageAge(raw)) return roscommonUnderageName(raw, 'football');
   if (/\b(minor|under.?\d+|u\d+|u-\d+|feile|bainne|primary)\b/i.test(raw)) return null;
   // Strip leading sponsor prefix (first ' - ' segment if present) and trailing round suffix
   const parts = raw.split(' - ');
@@ -2028,7 +2035,13 @@ function underageCompAndRound(heading, sport, noGroup) {
     .replace(/\bF(?:B|BALL)\b/i, 'Football').replace(/\bHrl\b/i, 'Hurling')
     .replace(/\bCha?mpi?os?nhip\b/i, 'Championship').replace(/['‘’"“”]([A-F])['‘’"“”]/g, '$1')
     .replace(/\s*20\d\d\b/, '').replace(/\(([^)]*)\)/, '').replace(/\s+/g, ' ').trim();
-  if (!/hurling|football|camogie/i.test(comp)) comp += ' ' + sport.charAt(0).toUpperCase() + sport.slice(1);
+  // No code in the name: "U20 Championship" -> "U20 Football Championship"
+  if (!/hurling|football|camogie/i.test(comp)) {
+    const code = sport.charAt(0).toUpperCase() + sport.slice(1);
+    // (Kilkenny's "League/Championship Cup" names keep the code at the end, as before)
+    comp = /\b(League|Championship|Cup)\b/.test(comp) && !comp.includes('/')
+      ? comp.replace(/\b(League|Championship|Cup)\b/, `${code} $1`) : `${comp} ${code}`;
+  }
   // Same group suffix as the adult CAC scrapers ("... Group 1")
   const rest = parts.slice(1).join(' - ');
   const g = rest.match(/(?:Group|Division)\s+(\w+)/i);
@@ -3722,7 +3735,10 @@ async function scrapeGroupD(kv, env) {
     fetchMonaghanCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Monaghan', 'www.monaghangaa.ie', c, cacDebug)))).catch(() => []),
     fetchMeathCompetitions().then(dc => Promise.all(dc.map(c => fetchCacDirectCompetition('Meath', 'meath.gaa.ie', c, cacDebug)))).catch(() => []),
     fetchRoscommonFootball().catch(() => []),
-    fetchRoscommonSport('hurling').catch(() => []),
+    Promise.all([
+      fetchRoscommonSport('hurling').catch(() => []),
+      fetchRoscommonSport('hurling', 'minor', raw => roscommonUnderageName(raw, 'hurling')).catch(() => []),
+    ]).then(r => r.flat()),
     fetchLongford(env.FOIREANN_API_KEY).catch(() => []),
     fetchBucsPlaywazeTimes().catch(() => null),
   ]);
