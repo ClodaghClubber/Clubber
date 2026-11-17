@@ -3042,8 +3042,9 @@ document.getElementById('clubberConfirmBody').addEventListener('change', e => {
   const sel = e.target.closest('select.grade-edit');
   if (!sel) return;
   const r = _pendingClubberResults[+sel.dataset.idx];
-  if (!r || !['Munster', 'Leinster'].includes(r.fixture.county)) return;
-  const price = provincialGradePrice(sel.value);
+  if (!r) return;
+  // Minor / U20-21: 14.99 anywhere; Munster / Leinster: by grade
+  const price = underageGradePrice(sel.value) ?? (['Munster', 'Leinster'].includes(r.fixture.county) ? provincialGradePrice(sel.value) : null);
   const inp = sel.closest('tr').querySelector('.price-edit');
   if (price != null && inp) inp.value = price;
 });
@@ -3119,7 +3120,7 @@ document.getElementById('clubberConfirmBody').addEventListener('click', async e 
   const f = r.fixture;
   const isHEFixture = f.county === 'Higher Education';
   // Schools fixtures: Clubber's school list (schools aren't in its club list)
-  const isPPSFixture = f.county === 'Leinster PPS' || f.county === 'Munster PPS';
+  const isPPSFixture = isSchoolsFixture(f);
   const kind = isHEFixture ? 'university' : isPPSFixture ? 'school' : 'club';
   const hits = Object.values(isHEFixture ? sportsUniversitiesIndex : isPPSFixture ? sportsSchoolsIndex : sportsCountiesIndex).flat().filter(c => c.id === id);
   const club = hits.find(c => c.county === u.county) || hits[0];
@@ -4290,6 +4291,10 @@ const CLUBBER_GRADES = ['Senior 1', 'Senior 2', 'Intermediate 1', 'Intermediate 
 
 // Munster / Leinster price by grade: Senior 16.99, Intermediate / Junior 14.99
 // (null for other grades - the usual round-based price applies)
+// Minor and U20/U21 games: 14.99 everywhere, whatever the round
+function underageGradePrice(grade) {
+  return /^(Minor|Underage 20\/21)$/i.test(grade || '') ? 14.99 : null;
+}
 function provincialGradePrice(grade) {
   if (/^Senior\b/i.test(grade || '')) return 16.99;
   if (/^(Intermediate|Junior)\b/i.test(grade || '')) return 14.99;
@@ -4586,6 +4591,11 @@ const VENUE_HINTS = {
 const VENUE_FILLER = /\b(gaa|gac|gfc|clg|cumann|club|grounds?|pitch|centre|center|park|pairc|the|co|county|field|sports?|complex|venue|supervalu|super valu)\b/g;
 function venueCore(s) { return venueKey(s).replace(VENUE_FILLER, ' ').replace(/\s+/g, ' ').trim(); }
 // Counties a fixture's venue is looked for in (Clubber lists venues by county)
+// Schools fixtures: the provincial PPS feeds, plus county schools
+// competitions (e.g. Louth "Lennon Cup Schools"). Teams are Clubber schools.
+function isSchoolsFixture(f) {
+  return f.county === 'Leinster PPS' || f.county === 'Munster PPS' || /\bschools?\b/i.test(f.competition || '');
+}
 function venueScope(f) {
   const base = String(f.county || '').replace(/\s+(LGFA|Ladies|Camogie|Schools)$/i, '').replace(/^(North|South|East|West|Mid)\s+/i, '');
   if (/^Munster/.test(f.county)) return { key: f.county, counties: MUNSTER_COUNTIES, home: [f.teamACounty, f.teamBCounty].filter(Boolean) };
@@ -4663,6 +4673,7 @@ function buildGamePayload(f) {
   // looked up across all Leinster counties and accepted only if unambiguous.
   const isProvincial = f.county === 'Munster' || f.county === 'Leinster';
   const isPPS = f.county === 'Leinster PPS' || f.county === 'Munster PPS'; // post-primary schools
+  const isSchools = isSchoolsFixture(f); // PPS, or a county schools competition
   const isHE = f.county === 'Higher Education'; // colleges (Clubber universityList)
   const countyA = f.teamACounty || f.county;
   const countyB = f.teamBCounty || f.county;
@@ -4712,8 +4723,8 @@ function buildGamePayload(f) {
     }
     // Schools: only accept a teamMappings entry (filed under the school's own
     // county) - fuzzy matching would pick a club, e.g. "Naas CBS" -> Naas GAA.
-    if (isPPS) {
-      const provinceCounties = f.county === 'Munster PPS' ? MUNSTER_COUNTIES : LEINSTER_COUNTIES;
+    if (isSchools) {
+      const provinceCounties = f.county === 'Munster PPS' ? MUNSTER_COUNTIES : isPPS ? LEINSTER_COUNTIES : [county];
       const hits = new Map();
       provinceCounties.forEach(c => {
         const r = lookupTeam(name, c);
@@ -4777,7 +4788,7 @@ function buildGamePayload(f) {
 
   const isRugby = (f.county === 'Champ' || f.county === 'BUCS' || f.county === 'ACE' || (f.code || '').toLowerCase() === 'rugby');
 
-  const grade = isRugby ? '' : isPPS ? 'Senior 1' : deriveGrade(f.county, f.competition);
+  const grade = isRugby ? '' : isPPS ? 'Senior 1' : (deriveGrade(f.county, f.competition) || (isSchools ? 'Senior 1' : ''));
   if (!isRugby && !grade) errors.push(`grade could not be derived from competition "${f.competition}"`);
   if (!isRugby && !(f.code || '').trim()) errors.push(`Code is missing — set a code (e.g. Football, Hurling, LGFA) before exporting`);
 
@@ -4829,6 +4840,8 @@ function buildGamePayload(f) {
   // Munster & Leinster club fixtures: priced by grade, whatever the round
   const provincialPrice = isProvincial ? provincialGradePrice(grade) : null;
   if (provincialPrice != null) price = provincialPrice;
+  const underagePrice = isRugby ? null : underageGradePrice(grade);
+  if (underagePrice != null) price = underagePrice;
 
   const county = isRugby ? 'UK'
     : (isProvincial || isPPS || isHE) ? (teamAResult?.county || countyA)
@@ -4854,7 +4867,7 @@ function buildGamePayload(f) {
   const venueName = venueRes && venueRes.status === 'ok' ? venueRes.venue.name : '';
 
   const payload = {
-    gameScope: (f.county === 'BUCS' || f.county === 'Higher Education') ? 'University' : (f.county === 'ACE' || isPPS) ? 'School' : 'Club',
+    gameScope: (f.county === 'BUCS' || f.county === 'Higher Education') ? 'University' : (f.county === 'ACE' || isSchools) ? 'School' : 'Club',
     date: utc ? utc.date : f.date,
     time: utcTime,
     county,
