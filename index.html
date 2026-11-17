@@ -3236,13 +3236,10 @@ document.getElementById('clubberConfirmDownloadBtn').addEventListener('click', (
     markClubberCreated(eligible.map(r=>r.fixture.id));
     showConflictToast('✓ '+eligible.length+' fixture'+(eligible.length!==1?'s':'')+' marked as Clubber','#16a34a');
   }
-  // Remember the venue each exported game carries (new games, and updates of
-  // games already in Clubber) - see the venue check in runClubberCheck
+  // The venue each exported game carries is recorded only once the upload
+  // into Clubber worked ("Uploaded" button in the summary below) - a failed
+  // upload must leave the "check Clubber has X" flags in place
   const venueRows=eligible.filter(r=>r.payload&&(markBox.checked||r.gameId));
-  if(venueRows.length){
-    saveClubberVenues(venueRows.map(r=>[r.fixture, r.payload.venue||'']));
-    runClubberCheck();
-  }
   // New games and updates (with gameId) go in separate files - each is
   // uploaded in its own place in Clubber
   const stamp=new Date().toISOString().slice(0,10);
@@ -3265,6 +3262,18 @@ document.getElementById('clubberConfirmDownloadBtn').addEventListener('click', (
   const left=results.length-eligible.length;
   const summary=document.getElementById('clubberSummary');
   summary.innerHTML=`<strong>${okCount} of ${eligible.length} fixture${eligible.length!==1?'s':''} mapped successfully.</strong> ${batches.length} JSON file${batches.length!==1?'s':''} downloaded${updCount?` — ${eligible.length-updCount} new, ${updCount} update${updCount!==1?'s':''} (the <em>clubber-…-updates</em> file${updCount>BATCH_SIZE?'s':''}, each with its Clubber gameId)`:''}.${okCount<eligible.length?`<br><span style="color:var(--reject)">${eligible.length-okCount} had mapping errors.</span>`:''}${left?`<br><span style="color:var(--muted)">${left} unticked or not approved, left out.</span>`:''}`;
+  if(venueRows.some(r=>r.payload.venue)){
+    const box=document.createElement('div');
+    box.style.marginTop='8px';
+    box.innerHTML='Once the file'+(batches.length!==1?'s are':' is')+' uploaded into Clubber successfully: <button type="button" class="btn-modal-add" style="padding:3px 10px;font-size:12px;">✓ Upload worked</button>'
+      +'<div style="font-size:11px;color:var(--muted);margin-top:2px;">Records the venues sent, so these games stop showing "check Clubber has …". If the upload failed, don\'t click it.</div>';
+    box.querySelector('button').addEventListener('click',e=>{
+      saveClubberVenues(venueRows.map(r=>[r.fixture, r.payload.venue||'']));
+      runClubberCheck();
+      e.target.disabled=true; e.target.textContent='✓ Venues recorded';
+    });
+    summary.appendChild(box);
+  }
   const list=document.getElementById('clubberResultList');
   const sorted=[...eligible].sort((a,b)=>a.ok-b.ok);
   list.innerHTML=sorted.map(r=>{
