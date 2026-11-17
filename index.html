@@ -1086,7 +1086,10 @@
       <datalist id="aiCountyList"></datalist>
     </div>
     <div id="aiStatus" style="font-size:13px;margin-top:10px;min-height:18px;"></div>
-    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px;">
+    <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:10px;">
+      <label id="aiApproveWrap" style="display:none;margin-right:auto;font-size:13px;cursor:pointer;" title="Add the fixtures as Approved instead of Proposed">
+        <input type="checkbox" id="aiApprove" style="vertical-align:middle;"> Mark as Approved
+      </label>
       <button type="button" id="aiBackBtn" class="btn-remove" style="display:none;">&larr; Change input</button>
       <button type="button" id="aiReadBtn" class="btn-modal-add">Read fixtures</button>
       <button type="button" id="aiAddBtn" class="btn-modal-add" style="display:none;" disabled>Add fixtures</button>
@@ -6244,6 +6247,7 @@ async function handleLogout() {
   function closeModal(){ modal.classList.remove('open'); }
   function resetModal(){
     aiInputs=[]; aiRows=[]; aiLabel='';
+    document.getElementById('aiApprove').checked=false;
     document.getElementById('aiText').value='';
     document.getElementById('aiNote').value='';
     renderChips(); showStep(1); setStatus('');
@@ -6254,6 +6258,7 @@ async function handleLogout() {
     document.getElementById('aiReadBtn').style.display=n===1?'':'none';
     document.getElementById('aiBackBtn').style.display=n===2?'':'none';
     document.getElementById('aiAddBtn').style.display=n===2?'':'none';
+    document.getElementById('aiApproveWrap').style.display=n===2?'':'none';
   }
   function renderChips(){
     document.getElementById('aiFileList').innerHTML=aiInputs.map((f,i)=>
@@ -6436,6 +6441,7 @@ async function handleLogout() {
 
   function addFixtures(){
     let added=0;
+    const approve=document.getElementById('aiApprove').checked;
     aiRows.forEach((r,i)=>{
       if(!r.include||checkRow(r,i).blocking) return;
       const f={
@@ -6448,13 +6454,15 @@ async function handleLogout() {
       };
       manualFixtures.push(f); fixtures.push(f);
       recordManualCreate(f,'screenshot import ('+aiLabel+')');
+      // "Mark as Approved" in the dialog: added as Approved (logged like an approval)
+      if(approve){ recordStatusChange(f,'Proposed','Approved'); f.status='Approved'; }
       added++;
     });
     if(!added) return;
     saveManualFixtures(); saveCache(); saveChangelog();
     populateFilterOptions(); render();
     closeModal();
-    showConflictToast('✓ Added '+added+' fixture'+(added===1?'':'s')+' from '+aiLabel,'#16a34a');
+    showConflictToast('✓ Added '+added+' fixture'+(added===1?'':'s')+(approve?' as Approved':'')+' from '+aiLabel,'#16a34a');
   }
 
   document.getElementById('aiImportBtn').addEventListener('click',openModal);
