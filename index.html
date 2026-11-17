@@ -4845,6 +4845,9 @@ function buildGamePayload(f) {
   if (provincialPrice != null) price = provincialPrice;
   const underagePrice = isRugby ? null : underageGradePrice(grade);
   if (underagePrice != null) price = underagePrice;
+  // Post-primary schools games (Munster / Leinster PPS, county schools cups):
+  // always 14.99, whatever the grade or round
+  if (isSchools && !isRugby) price = 14.99;
 
   const county = isRugby ? 'UK'
     : (isProvincial || isPPS || isHE) ? (teamAResult?.county || countyA)
