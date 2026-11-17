@@ -1900,6 +1900,7 @@ function applyOverrides(){
     if(ov.unit!==undefined){f.unit=ov.unit;}
     if(ov.clubberCreated!==undefined){f.clubberCreated=ov.clubberCreated;}
     if(ov.clubberGameId!==undefined){f.clubberGameId=ov.clubberGameId;}
+    if(ov.clubberVenue!==undefined){f.clubberVenue=ov.clubberVenue;}
     if(ov.teamACounty!==undefined){ if(ov.teamACounty) f.teamACounty=ov.teamACounty; else delete f.teamACounty; }
     if(ov.teamBCounty!==undefined){ if(ov.teamBCounty) f.teamBCounty=ov.teamBCounty; else delete f.teamBCounty; }
     if(ov.clubberPick!==undefined){f.clubberPick=ov.clubberPick;}
@@ -3232,6 +3233,13 @@ document.getElementById('clubberConfirmDownloadBtn').addEventListener('click', (
   if(markBox.checked && eligible.length){
     markClubberCreated(eligible.map(r=>r.fixture.id));
     showConflictToast('✓ '+eligible.length+' fixture'+(eligible.length!==1?'s':'')+' marked as Clubber','#16a34a');
+  }
+  // Remember the venue each exported game carries (new games, and updates of
+  // games already in Clubber) - see the venue check in runClubberCheck
+  const venueRows=eligible.filter(r=>r.payload&&(markBox.checked||r.gameId));
+  if(venueRows.length){
+    saveClubberVenues(venueRows.map(r=>[r.fixture, r.payload.venue||'']));
+    runClubberCheck();
   }
   // New games and updates (with gameId) go in separate files - each is
   // uploaded in its own place in Clubber
@@ -5018,6 +5026,12 @@ async function runClubberCheck() {
     if (p.clubId && p.competitorClubId && g.clubId === p.competitorClubId && g.competitorClubId === p.clubId) diffs.push('Home/away swapped: Clubber has ' + g.club.trim() + ' at home');
     // Round only when Clubber has a different one (it's optional there)
     if (p.round && g.round && g.round.toLowerCase() !== p.round.toLowerCase()) diffs.push('Round: Clubber ' + g.round + ', dashboard ' + p.round);
+    // Venue: Clubber's feed doesn't show it, so compare with the venue last
+    // exported to Clubber (f.clubberVenue, saved on export). A venue we can
+    // match to Clubber's list but haven't sent = needs an update.
+    if (p.venue && (f.clubberVenue || '') !== p.venue) diffs.push(f.clubberVenue
+      ? 'Venue: Clubber ' + f.clubberVenue + ', dashboard ' + p.venue
+      : 'Venue: not in Clubber yet, dashboard ' + p.venue);
     result[f.id] = { game: g, diffs };
     if (!f.clubberCreated || f.clubberGameId !== g.id) toSave.push([f, g.id]);
   }
@@ -5026,6 +5040,26 @@ async function runClubberCheck() {
   // signed in) - the export sends the ID to update that game
   if (toSave.length) saveClubberGameIds(toSave);
   render();
+}
+// Venue sent to Clubber in an export ('' = none), so the Clubber check can
+// tell whether Clubber has the dashboard's venue
+function saveClubberVenues(pairs) {
+  const updates = [];
+  let manualChanged = false;
+  for (const [f, venue] of pairs) {
+    f.clubberVenue = venue;
+    if (f.manual) {
+      const mf = manualFixtures.find(m => String(m.id) === String(f.id));
+      if (mf) { mf.clubberVenue = venue; manualChanged = true; }
+    } else {
+      const k = f._origKey || keyOf(f);
+      fixtureOverrides[k] = Object.assign(fixtureOverrides[k] || {}, { clubberVenue: venue });
+      updates.push({ key: k, fields: { clubberVenue: venue } });
+    }
+  }
+  saveOverrides(); saveCache();
+  if (manualChanged) saveManualFixtures();
+  if (updates.length) syncOverrides(updates);
 }
 function saveClubberGameIds(pairs) {
   const updates = [];
