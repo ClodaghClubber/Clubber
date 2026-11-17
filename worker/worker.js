@@ -1975,7 +1975,7 @@ function underageAge(h) {
 }
 
 // Where the competition name starts once a sponsor in front is dropped
-const UNDERAGE_NAME_START = /\b(?:north|south|mid|east|eastern|west|western|county|minor|under)\b|\bu\.?\s?-?\s?\d/i;
+const UNDERAGE_NAME_START = /\b(?:north|south|mid|east|eastern|west|western|county|minor|under)\b|\bu\.?\s?-?\s?\d|\b2[01]\s+[a-d]\s/i;
 // Shield / plate games inside a top competition (Waterford's Division 1)
 const UNDERAGE_SIDE_ROUND = /shield|plate|bowl/i;
 
@@ -1983,6 +1983,7 @@ const UNDERAGE_SIDE_ROUND = /shield|plate|bowl/i;
 // Sportlomo league name. opts.premierTop: the county's top tier is "Premier"
 // and "Div 1" is the second (Wexford). opts.require: the competition name
 // must match (Kerry: the County championships, not divisional / club ones).
+// opts.allowB: keep B grades as well as A.
 // Heading split at " - ", minus a sponsor part in front ("FBD Insurance - County Tipperary Minor A ...")
 function underageParts(s) {
   const parts = s.split(/\s+[-–]\s+/);
@@ -2002,7 +2003,9 @@ function isTopUnderage(heading, opts = {}) {
   if (/shield|plate|bowl|blitz|tournament|7 a side|summer|development|academy|reserve|t[aá]in|ulster|leinster|munster|connacht|all.?ireland|club championship/.test(comp)) return false;
   if (/\bleagues?\b(?!\s*\/)/.test(comp) && !/champ|cship/.test(comp)) return false;
   // Lower grade letter in the name: "Minor B", "U21B", "Roinn C1", "Football C Championship"
-  if (/(?:\b|\d)[b-f]\d?\b/.test(comp.replace(/\b(fod|ko|fc|hc)\b/g, ''))) return false;
+  // (opts.allowB: B grades too - Kilkenny, Tipperary)
+  const lowerGrade = opts.allowB ? /(?:\b|\d)[c-f]\d?\b/ : /(?:\b|\d)[b-f]\d?\b/;
+  if (lowerGrade.test(comp.replace(/\b(fod|ko|fc|hc)\b/g, ''))) return false;
   if (/premier\s*(2|ii|two|3|iii)\b/.test(all)) return false;
   // Divisions: keep Division 1 (or "1 and 2"), never 2+ or ranges like "1-5"
   if (/\bdiv(?:ision)?\.?\s*(?:[2-9]|1\s?-\s?\d)/.test(all)) return false;
@@ -2018,6 +2021,7 @@ function underageCompAndRound(heading, sport, noGroup) {
   let comp = parts[0];
   const start = comp.search(UNDERAGE_NAME_START);
   if (start > 0) comp = comp.slice(start);
+  comp = comp.replace(/^(2[01])\s/, 'U$1 '); // Kilkenny "JJ Kavanagh 21 B Hurling"
   if (comp === comp.toUpperCase()) comp = comp.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
   comp = comp
     .replace(/\bU-?(\d\d)\s*([HF])C\b/i, (_, a, c) => `U${a} ${/h/i.test(c) ? 'Hurling' : 'Football'} Championship`)
@@ -2042,13 +2046,13 @@ function underageCompAndRound(heading, sport, noGroup) {
 
 // ClubAndCounty sites: one grade-level feed per county / code / grade
 const UNDERAGE_CAC_SOURCES = [
-  { county: 'Kilkenny',  domain: 'kilkennygaa.ie',            grades: ['minor', 'u21', 'juvenile'] }, // minor football is filed under juvenile
+  { county: 'Kilkenny',  domain: 'kilkennygaa.ie',            grades: ['minor', 'u21', 'juvenile'], allowB: true }, // minor football is filed under juvenile
   { county: 'Laois',     domain: 'laoisgaa.ie',               grades: ['juvenile'] },                 // U17 (minor) + U20
   { county: 'Wexford',   domain: 'wexford.clubandcounty.com', grades: ['minor', 'u21'], premierTop: true },
   { county: 'Monaghan',  domain: 'www.monaghangaa.ie',        grades: ['minor'] },
   { county: 'Meath',     domain: 'meath.gaa.ie',              grades: ['minor', 'u21'] },
   { county: 'Offaly',    domain: 'offaly.gaa.ie',             grades: ['minor', 'u21'] },
-  { county: 'Tipperary', domain: 'tipperary.gaa.ie',          grades: ['minor', 'u21'] },
+  { county: 'Tipperary', domain: 'tipperary.gaa.ie',          grades: ['minor', 'u21'], allowB: true },
   { county: 'Kerry',     domain: 'www.kerrygaa.ie',           grades: ['minor', 'u21'], require: /\bcounty\b/ },
   { county: 'Kildare',   domain: 'kildaregaa.ie',             grades: ['minor', 'u21'] },
 ];
