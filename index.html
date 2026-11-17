@@ -110,6 +110,8 @@
   .clubber-new{font-size:11px;color:#16a34a;margin-top:3px;}
   .badge-clubber-differs{display:inline-flex;align-items:center;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:#d97706;color:#fff;padding:2px 5px;border-radius:8px;margin-top:3px;white-space:nowrap;cursor:help;}
   .clubber-diff-list{font-size:10px;line-height:1.3;margin-top:2px;text-align:left;white-space:normal;max-width:190px;}
+  .clubber-venue-ok{margin-top:3px;font-size:10px;padding:1px 6px;border:1px solid #16a34a;border-radius:4px;background:transparent;color:#16a34a;cursor:pointer;}
+  .clubber-venue-ok:hover{background:#16a34a;color:#fff;}
   .badge-clubber-created{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:#1a6fa8;color:#fff;padding:2px 5px;border-radius:8px;margin-right:5px;vertical-align:middle;white-space:nowrap;}
   .badge-manual{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:transparent;color:var(--muted);border:1px dashed var(--muted);padding:1px 5px;border-radius:8px;margin-left:5px;vertical-align:middle;white-space:nowrap;}
   .badge-claude{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:#d97706;color:#fff;padding:1px 5px;border-radius:8px;margin-left:5px;vertical-align:middle;white-space:nowrap;}
@@ -5032,7 +5034,7 @@ async function runClubberCheck() {
     if (p.venue && (f.clubberVenue || '') !== p.venue) diffs.push(f.clubberVenue
       ? 'Venue: Clubber ' + f.clubberVenue + ', dashboard ' + p.venue
       : 'Venue: not in Clubber yet, dashboard ' + p.venue);
-    result[f.id] = { game: g, diffs };
+    result[f.id] = { game: g, diffs, venue: p.venue || '' };
     if (!f.clubberCreated || f.clubberGameId !== g.id) toSave.push([f, g.id]);
   }
   clubberCheck = result;
@@ -5096,9 +5098,24 @@ function clubberDiffHtml(f) {
   if (!c || !c.diffs.length) return '';
   const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
   const when = _clubberGamesAt ? ' (Clubber checked ' + new Date(_clubberGamesAt).toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' }) + ')' : '';
+  // Clubber's feed has no venues: after checking Clubber, "Clubber has this
+  // venue" records it as sent and clears the venue line
+  const venueOk = c.venue && c.diffs.some(d => /^Venue:/.test(d))
+    ? '<br><button class="clubber-venue-ok" data-clubber-venue-ok="' + esc(f.id) + '" title="Clubber already shows this venue - stop flagging it">✓ Clubber has this venue</button>' : '';
   return '<div><span class="badge-clubber-differs" title="' + esc(c.diffs.join('\n') + when) + '">⚠ Clubber differs</span></div>'
-    + '<div class="clubber-diff-list">' + c.diffs.map(esc).join('<br>') + '</div>';
+    + '<div class="clubber-diff-list">' + c.diffs.map(esc).join('<br>') + venueOk + '</div>';
 }
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-clubber-venue-ok]');
+  if (!b) return;
+  e.stopPropagation();
+  const id = b.dataset.clubberVenueOk;
+  const f = fixtures.find(x => String(x.id) === id), c = clubberCheck[id];
+  if (!f || !c || !c.venue) return;
+  saveClubberVenues([[f, c.venue]]);
+  c.diffs = c.diffs.filter(d => !/^Venue:/.test(d));
+  render();
+});
 
 function downloadJson(data, filename) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
