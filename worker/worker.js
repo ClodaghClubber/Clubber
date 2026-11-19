@@ -3912,6 +3912,179 @@ async function runTeamsAlert(kv, env) {
   }
 }
 
+// ---- Clubber update alert ----
+// Approved, upcoming fixtures already in Clubber (Game ID saved by the
+// dashboard) whose date or time in Clubber differs from the dashboard's -
+// the games the Approved tab's "Update fixtures in Clubber" button exports.
+// Each difference is posted to Teams once; it posts again only if it changes,
+// or if it's fixed and comes back.
+const CLUBBER_UPDATE_ALERT_KEY = 'clubberUpdateAlerts';
+const DASHBOARD_URL = 'https://clodaghclubber.github.io/Clubber/';
+
+// Clubber's upcoming games (IE + UK feeds), cached 15 minutes in KV
+async function getClubberGames(kv) {
+  const KEY = 'clubberGames', TTL_MS = 15 * 60 * 1000;
+  const FEEDS = [
+    ['IE', 'https://prodgameservicecontainer.azurewebsites.net/api/Game/GetUpcomingGames?getAll=true'],
+    ['UK', 'https://ukgameservice-evdqecczd6guhtft.westeurope-01.azurewebsites.net/api/Game/GetUpcomingGames?getAll=true'],
+  ];
+  const cached = kv ? await kv.get(KEY) : null;
+  if (cached && Date.now() - new Date(JSON.parse(cached).fetchedAt).getTime() < TTL_MS) return cached;
+  const byId = new Map();
+  let ok = 0;
+  await Promise.all(FEEDS.map(async ([site, feedUrl]) => {
+    try {
+      const res = await fetch(feedUrl, { headers: { Accept: 'application/json' } });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const j = await res.json();
+      for (const g of (j && j.result) || []) {
+        const t = g.teams || {};
+        byId.set(g.id, { id: g.id, site: g.source || site, sportType: g.sportType, clubId: g.clubId, club: t.clubName || g.club,
+          county: t.county || '', competitorClubId: t.competitorClubId || '', competitorClubName: t.competitorClubName || '',
+          competitorClubCounty: t.competitorClubCounty || '', date: g.date, time: g.time, round: g.round || '',
+          grade: g.grade || '', code: g.code || '', championsType: g.championsType || '', price: g.price });
+      }
+      ok++;
+    } catch (e) { console.error('clubberGames feed failed', site, e && e.message); }
+  }));
+  if (!ok) return cached || JSON.stringify({ ok: false, error: 'Clubber feed unavailable', games: [] });
+  const body = JSON.stringify({ ok: true, fetchedAt: new Date().toISOString(), games: [...byId.values()] });
+  if (kv) await kv.put(KEY, body, { expirationTtl: 60 * 60 * 24 });
+  return body;
+}
+
+// Same as the dashboard's from12h: '7:15 PM' -> '19:15', '9:00' -> '09:00', TBC -> ''
+function clubberLocalTime(t) {
+  if (!t) return '';
+  const m = t.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if (m) {
+    let h = parseInt(m[1], 10);
+    if (m[3].toUpperCase() === 'PM' && h !== 12) h += 12;
+    if (m[3].toUpperCase() === 'AM' && h === 12) h = 0;
+    return `${String(h).padStart(2, '0')}:${m[2]}`;
+  }
+  return /^\d{1,2}:\d{2}$/.test(t.trim()) ? t.trim().padStart(5, '0') : '';
+}
+// Clubber stores UTC; '00:01' = no time
+function clubberToDublin(date, time) {
+  if (!time || time === '00:01') return { date, time: '' };
+  const d = new Date(`${date}T${time}:00Z`);
+  return {
+    date: d.toLocaleDateString('en-CA', { timeZone: 'Europe/Dublin' }),
+    time: d.toLocaleTimeString('en-GB', { timeZone: 'Europe/Dublin', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }),
+  };
+}
+function clubberTimeLabel(t) {
+  if (!t) return 'no time';
+  const [h, m] = t.split(':').map(Number);
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`;
+}
+function clubberDateLabel(iso) {
+  return new Date(iso + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+}
+
+async function findClubberUpdates(kv) {
+  const [baseFixtures, manualFixtures, overrides, statusMap, gamesRaw] = await Promise.all([
+    getAllCachedFixtures(kv), getManualFixtures(kv), getOverridesMap(kv), getStatusMap(kv), getClubberGames(kv),
+  ]);
+  const feed = JSON.parse(gamesRaw);
+  if (!feed.ok) return { ok: false, updates: [] };
+  const gameById = new Map((feed.games || []).map(g => [g.id, g]));
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Dublin' });
+  const updates = [];
+  const check = (key, f, gameId) => {
+    const g = gameId && gameById.get(gameId);
+    if (!g) return;
+    const date = isoDateAny(f.date);
+    if (!date || date < today) return;
+    const time = clubberLocalTime(f.time);
+    const c = clubberToDublin(g.date, g.time);
+    const diffs = [];
+    if (c.date !== date) diffs.push(`Date: Clubber ${clubberDateLabel(c.date)}, dashboard ${clubberDateLabel(date)}`);
+    if (c.time !== time) diffs.push(`Time: Clubber ${clubberTimeLabel(c.time)}, dashboard ${clubberTimeLabel(time)}`);
+    if (diffs.length) updates.push({ key, teamA: f.teamA, teamB: f.teamB, county: f.county, competition: f.competition,
+      sport: f.sport, date, gameId, diffs });
+  };
+
+  for (const f of baseFixtures) {
+    const key = fixtureKey(f);
+    if ((statusMap[key] || f.status || 'Proposed') !== 'Approved') continue;
+    const ov = overrides[key] || {};
+    if (!ov.clubberGameId) continue;
+    // What the dashboard shows: dashboard edits on top of the source
+    const shown = { ...f, ...['date', 'time'].reduce((o, k) => (ov[k] ? { ...o, [k]: ov[k] } : o), {}) };
+    check(key, shown, ov.clubberGameId);
+  }
+  for (const f of manualFixtures) {
+    if (!f || !f.id || !f.date || !f.clubberGameId) continue;
+    const statusKey = `${f.county}|${f.competition}|${f.teamA}|${f.teamB}|${isoDateAny(f.date)}`;
+    if ((statusMap[statusKey] || f.status || 'Proposed') !== 'Approved') continue;
+    check('manual:' + f.id, f, f.clubberGameId);
+  }
+  updates.sort((a, b) => a.date.localeCompare(b.date));
+  return { ok: true, updates };
+}
+
+async function sendClubberUpdateCard(webhookUrl, updates, site) {
+  if (!webhookUrl || !updates.length) return;
+  const rows = updates.map(u =>
+    `### ${u.teamA} v ${u.teamB}\n${u.county} · ${u.competition} · ${clubberDateLabel(u.date)}\n\n${u.diffs.join('\n\n')}`
+  ).join('\n\n---\n\n');
+  const n = updates.length;
+  await fetch(webhookUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      type: 'message',
+      attachments: [{
+        contentType: 'application/vnd.microsoft.card.adaptive',
+        content: {
+          $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
+          type: 'AdaptiveCard',
+          version: '1.4',
+          body: [
+            { type: 'TextBlock', text: `🔄 ${site ? site + ': ' : ''}${n} fixture${n > 1 ? 's need' : ' needs'} updating in Clubber`, weight: 'Bolder', size: 'Medium' },
+            { type: 'TextBlock', text: rows, wrap: true },
+            { type: 'TextBlock', text: 'Approved tab → **Update fixtures in Clubber** downloads the update file.', wrap: true, isSubtle: true },
+          ],
+          actions: [{ type: 'Action.OpenUrl', title: 'Open the dashboard', url: DASHBOARD_URL }],
+        },
+      }],
+    }),
+  });
+}
+
+async function runClubberUpdateAlert(kv, env) {
+  const { ok, updates } = await findClubberUpdates(kv);
+  if (!ok) return; // Clubber feed down - try again next hour
+  const raw = await kv.get(CLUBBER_UPDATE_ALERT_KEY);
+  let sent = {};
+  try { sent = raw ? JSON.parse(raw) : {}; } catch { sent = {}; }
+  const sig = u => `${u.gameId}|${u.diffs.join('|')}`;
+  const fresh = updates.filter(u => sent[u.key] !== sig(u));
+  // Only current issues are kept, so a fixed one that comes back posts again
+  const next = Object.fromEntries(updates.map(u => [u.key, sig(u)]));
+
+  if (fresh.length) {
+    // Own Teams channel if set (TEAMS_CLUBBER_WEBHOOK_URL[_UK]), else the change-alert one
+    const ieUrl = env.TEAMS_CLUBBER_WEBHOOK_URL || env.TEAMS_WEBHOOK_URL;
+    const ukUrl = env.TEAMS_CLUBBER_WEBHOOK_URL_UK || env.TEAMS_WEBHOOK_URL_UK;
+    const sends = ukUrl
+      ? [[ieUrl, fresh.filter(u => !isRugbyChange(u)), 'IE'], [ukUrl, fresh.filter(isRugbyChange), 'UK']]
+      : [[ieUrl, fresh, '']];
+    for (const [url, list, site] of sends) {
+      try {
+        await sendClubberUpdateCard(url, list, site);
+      } catch (e) {
+        console.error(`Cron: Clubber update alert failed (${site || 'all'})`, e);
+        // Not sent: forget these so the next run tries again
+        for (const u of list) delete next[u.key];
+      }
+    }
+  }
+  await kv.put(CLUBBER_UPDATE_ALERT_KEY, JSON.stringify(next));
+}
+
 export default {
   // Cron handler: staggered across 5 time slots, each scraping a county group.
   // Group E (minute 48) also runs the Teams alert check.
@@ -3932,6 +4105,8 @@ export default {
       else if (cron === '48 * * * *') {
         await scrapeGroupE(kv);
         await runTeamsAlert(kv, env);
+        try { await runClubberUpdateAlert(kv, env); }
+        catch (e) { console.error('Cron: Clubber update alert failed', e); }
       }
     } catch (e) {
       console.error(`Cron ${cron} failed:`, e);
@@ -4204,35 +4379,12 @@ export default {
     // the UK games). The dashboard checks fixtures marked In Clubber against it.
     // Cached 15 minutes; the browser can't read the feed itself (no CORS).
     if (url.searchParams.get('action') === 'clubberGames') {
-      const KEY = 'clubberGames', TTL_MS = 15 * 60 * 1000;
-      const FEEDS = [
-        ['IE', 'https://prodgameservicecontainer.azurewebsites.net/api/Game/GetUpcomingGames?getAll=true'],
-        ['UK', 'https://ukgameservice-evdqecczd6guhtft.westeurope-01.azurewebsites.net/api/Game/GetUpcomingGames?getAll=true'],
-      ];
-      const reply = body => new Response(body, { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...CORS_HEADERS } });
-      const cached = kv ? await kv.get(KEY) : null;
-      if (cached && Date.now() - new Date(JSON.parse(cached).fetchedAt).getTime() < TTL_MS) return reply(cached);
-      const byId = new Map();
-      let ok = 0;
-      await Promise.all(FEEDS.map(async ([site, feedUrl]) => {
-        try {
-          const res = await fetch(feedUrl, { headers: { Accept: 'application/json' } });
-          if (!res.ok) throw new Error('HTTP ' + res.status);
-          const j = await res.json();
-          for (const g of (j && j.result) || []) {
-            const t = g.teams || {};
-            byId.set(g.id, { id: g.id, site: g.source || site, sportType: g.sportType, clubId: g.clubId, club: t.clubName || g.club,
-              county: t.county || '', competitorClubId: t.competitorClubId || '', competitorClubName: t.competitorClubName || '',
-              competitorClubCounty: t.competitorClubCounty || '', date: g.date, time: g.time, round: g.round || '',
-              grade: g.grade || '', code: g.code || '', championsType: g.championsType || '', price: g.price });
-          }
-          ok++;
-        } catch (e) { console.error('clubberGames feed failed', site, e && e.message); }
-      }));
-      if (!ok) return cached ? reply(cached) : reply(JSON.stringify({ ok: false, error: 'Clubber feed unavailable', games: [] }));
-      const body = JSON.stringify({ ok: true, fetchedAt: new Date().toISOString(), games: [...byId.values()] });
-      if (kv) await kv.put(KEY, body, { expirationTtl: 60 * 60 * 24 });
-      return reply(body);
+      return new Response(await getClubberGames(kv), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...CORS_HEADERS } });
+    }
+
+    // What the Clubber update alert would post right now (nothing is sent)
+    if (url.searchParams.get('action') === 'clubberUpdates' && kv) {
+      return new Response(JSON.stringify(await findClubberUpdates(kv)), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...CORS_HEADERS } });
     }
 
     // GET reads exclusively from the 5 group KV keys written by the cron scrapers.
