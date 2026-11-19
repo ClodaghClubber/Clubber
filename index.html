@@ -3097,7 +3097,8 @@ document.getElementById('clubberConfirmBody').addEventListener('change', e => {
   if (!r) return;
   applyDialogGrade(+sel.dataset.idx, sel.value);
   // Minor / U20-21: 14.99 anywhere; Munster / Leinster: by grade
-  const price = underageGradePrice(sel.value) ?? (['Munster', 'Leinster'].includes(r.fixture.county) ? provincialGradePrice(sel.value) : null);
+  // Camogie stays 14.99 whatever the grade
+  const price = /camogie/i.test((r.payload && r.payload.code) || '') ? 14.99 : underageGradePrice(sel.value) ?? (['Munster', 'Leinster'].includes(r.fixture.county) ? provincialGradePrice(sel.value) : null);
   const inp = sel.closest('tr').querySelector('.price-edit');
   if (price != null && inp) inp.value = price;
 });
@@ -4901,7 +4902,7 @@ function buildGamePayload(f) {
     }
     return ''; // Group Stage, Relegation Round, etc. — leave blank
   }
-  const isCamogie = (f.competition || '').toLowerCase().includes('camogie');
+  const isCamogie = /camogie/i.test([f.competition, f.sport, f.code, f.county].join(' '));
   let price = (f.county === 'BUCS' || f.county === 'ACE') ? 7.99 : isRugby ? 9.99 : 14.99;
   if (!isRugby && !isCamogie) {
     if (/\bfinal\b/.test(roundNorm) && !/semi/.test(roundNorm) && !/quarter/.test(roundNorm)) price = 19.99;
@@ -4915,6 +4916,8 @@ function buildGamePayload(f) {
   // Post-primary schools games (Munster / Leinster PPS, county schools cups):
   // always 14.99, whatever the grade or round
   if (isSchools && !isRugby) price = 14.99;
+  // Camogie: always 14.99, whatever the grade, round or province
+  if (isCamogie && !isRugby) price = 14.99;
 
   const county = isRugby ? 'UK'
     : (isProvincial || isPPS || isHE) ? (teamAResult?.county || countyA)
