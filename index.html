@@ -537,6 +537,7 @@
     <div><label>To</label><input type="date" id="apTo"></div>
     <div><label>Sport</label><select id="apSport"><option value="gaa">GAA only</option><option value="rugby">Rugby only</option><option value="both">GAA + Rugby</option></select></div>
     <div><button type="button" class="btn-remove" id="apClear" style="margin-bottom:2px;">Clear filters</button></div>
+    <div style="margin-left:auto;"><button type="button" class="btn-modal-add" id="apUpdateClubberBtn" style="margin-bottom:2px;" disabled title="Approved games already in Clubber whose details differ (⚠ Clubber differs): review, then download a JSON file to load into Clubber's game update">Update fixtures in Clubber</button></div>
   </div>
   <div id="apSummary" style="font-size:13px;color:var(--muted);margin-bottom:8px;"></div>
   <div style="overflow:auto;"><table id="apTable"><thead><tr>
@@ -2932,6 +2933,22 @@ function openClubberConfirm(selFixtures, site) {
   document.getElementById('clubberConfirmModal').classList.add('open');
 }
 
+// Update of a game already in Clubber: exactly the fields, in the order, of
+// Clubber's own GameDetails.json export (its update upload takes that format).
+// No venue / hideFromFan there - extra fields made an upload fail. Rugby keeps
+// sportType, as the UK create file needs it.
+const CLUBBER_UPDATE_FIELDS = ['gameId','gameScope','date','time','county','club','clubId','code','grade',
+  'championsType','season','round','title','competitorClubName','competitorClubId','competitorClubCounty',
+  'sendToSpectatr','sendToMagnifi','price'];
+function toClubberUpdate(gameId, payload) {
+  const src = { gameId, ...payload }, out = {};
+  for (const k of CLUBBER_UPDATE_FIELDS) {
+    if (k === 'grade' && src.sportType) out.sportType = src.sportType;
+    out[k] = src[k] !== undefined ? src[k] : (k === 'title' ? '' : src[k]);
+  }
+  return out;
+}
+
 function buildClubberResults(selFixtures) {
   return selFixtures.map(f=>{
     if(f.status!=='Approved') return{fixture:f,payload:null,errors:['Not Approved'],warnings:[],unmapped:[],ok:false,skipped:true};
@@ -2939,7 +2956,7 @@ function buildClubberResults(selFixtures) {
     // Already in Clubber: send its Game ID so the upload updates that game
     const chk=clubberCheck&&clubberCheck[f.id];
     const gameId=f.clubberGameId||(chk&&chk.game&&chk.game.id)||'';
-    const out=gameId&&payload?{gameId,...payload}:payload;
+    const out=gameId&&payload?toClubberUpdate(gameId,payload):payload;
     return{fixture:f,payload:out,errors,warnings,unmapped,venue,gameId,clubberGame:chk&&chk.game&&chk.game.id===gameId?chk.game:null,clubberDiffs:chk&&chk.game&&chk.game.id===gameId?chk.diffs:null,ok:errors.length===0,skipped:false};
   });
 }
@@ -2990,7 +3007,8 @@ function confirmNotesHtml(r, i) {
       r.skipped ? '<div class="err-badge">✗ Not Approved — skipped</div>' : '',
       r.gameId ? '<div class="clubber-upd">↻ Update of Clubber game ' + esc(r.gameId.slice(0,8)) + '…'
         + (r.clubberGame ? ' (' + esc(r.clubberGame.club.trim()) + ' v ' + esc(r.clubberGame.competitorClubName.trim()) + ', ' + esc(utcToDublinDate(r.clubberGame.date, r.clubberGame.time)) + ')' : '')
-        + (r.clubberDiffs && r.clubberDiffs.length ? '<br>Changes: ' + r.clubberDiffs.map(esc).join('; ') : r.clubberGame ? '<br>No changes found' : '') + '</div>'
+        + (r.clubberDiffs && r.clubberDiffs.length ? '<br>Changes: ' + r.clubberDiffs.map(esc).join('; ') : r.clubberGame ? '<br>No changes found' : '')
+        + (r.clubberDiffs && r.clubberDiffs.some(d => /^Venue:/.test(d)) ? '<br><span style="color:#d97706">Venue isn\'t in Clubber\'s update file - change it in Clubber directly</span>' : '') + '</div>'
         : (r.payload ? '<div class="clubber-new">＋ New in Clubber</div>' : ''),
       f.clubberPick ? '<span class="badge-pick">PICK</span>' : '',
       f.hero ? '<span class="badge-hero">HERO</span>' : '',
@@ -3239,7 +3257,8 @@ document.getElementById('clubberConfirmDownloadBtn').addEventListener('click', (
   // The venue each exported game carries is recorded only once the upload
   // into Clubber worked ("Uploaded" button in the summary below) - a failed
   // upload must leave the "check Clubber has X" flags in place
-  const venueRows=eligible.filter(r=>r.payload&&(markBox.checked||r.gameId));
+  // (new games only - the update file has no venue field)
+  const venueRows=eligible.filter(r=>r.payload&&markBox.checked&&!r.gameId);
   // New games and updates (with gameId) go in separate files - each is
   // uploaded in its own place in Clubber
   const stamp=new Date().toISOString().slice(0,10);
@@ -6758,10 +6777,27 @@ let currentIsAdmin = false;
       return true;
     }).sort((a,b)=>a.date.localeCompare(b.date)||timeKey(a.time).localeCompare(timeKey(b.time))||a.county.localeCompare(b.county));
   }
+  // Approved games in Clubber that need changing there: a Clubber Game ID and
+  // a difference the update file can carry (not venue - Clubber's update
+  // format has no venue field)
+  function needsClubberUpdate(f){
+    const c=clubberCheck&&clubberCheck[f.id];
+    return !!(c&&c.game&&c.diffs.some(d=>!/^Venue:/.test(d)));
+  }
+  els('apUpdateClubberBtn').addEventListener('click',()=>{
+    const list=approved().filter(apSportMatches).filter(needsClubberUpdate);
+    if(!list.length) return;
+    // One Clubber site per file: GAA -> IE, rugby -> UK
+    const gaa=list.filter(f=>!isRugbyFixture(f)), rugby=list.filter(isRugbyFixture);
+    if(gaa.length) openClubberConfirm(gaa,'IE'); else openClubberConfirm(rugby,'UK');
+  });
   window.renderApproved=function(){
     const all=approved();
     const base=all.filter(apSportMatches);
     els('apTabCount').textContent=base.length;
+    const upd=base.filter(needsClubberUpdate).length;
+    els('apUpdateClubberBtn').disabled=!upd;
+    els('apUpdateClubberBtn').textContent='Update fixtures in Clubber'+(upd?' ('+upd+')':'');
     if(activeTab!=='approved') return;
     fillSelect('apCounty',[...new Set(base.map(f=>f.county).filter(Boolean))].sort());
     fillSelect('apCode',[...new Set(base.map(f=>f.code).filter(Boolean))].sort());
