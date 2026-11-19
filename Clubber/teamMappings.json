@@ -1222,6 +1222,7 @@
     }
   },
   "Roscommon": {
+    "Oran/St. Croan's": "e7af003b-6728-4411-8890-b289d20498af",
     "Athleague": "9393ebaf-518c-4cd6-9aac-daf3973a835f",
     "Ballinameen": "87c69c0c-3cfe-48f2-8734-548832ad4b76",
     "Boyle": "5602dc03-93e7-484c-91e7-d2c9d3e61888",
@@ -2249,6 +2250,7 @@
     }
   },
   "Limerick": {
+    "Blackrock Effin": "1c580b1a-3ea5-47fd-abda-73702021abe8",
     "Castletroy College": {
       "id": "c8f037eb-c4ef-485d-a212-a16cf25fff82",
       "name": "Castletroy College"
@@ -2263,6 +2265,7 @@
     }
   },
   "Clare": {
+    "Scariff Ogonnelloe": "15dc396c-a0bf-4cbe-ab63-5c46ae83d553",
     "St. Flannans College Ennis": {
       "id": "ecb339d6-db12-4e22-8484-7494f3264a2e",
       "name": "St Flannans College, Ennis"
