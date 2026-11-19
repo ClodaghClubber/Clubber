@@ -5037,12 +5037,12 @@ async function runClubberCheck() {
     if (p.clubId && p.competitorClubId && g.clubId === p.competitorClubId && g.competitorClubId === p.clubId) diffs.push('Home/away swapped: Clubber has ' + g.club.trim() + ' at home');
     // Round only when Clubber has a different one (it's optional there)
     if (p.round && g.round && g.round.toLowerCase() !== p.round.toLowerCase()) diffs.push('Round: Clubber ' + g.round + ', dashboard ' + p.round);
-    // Venue: Clubber's feed doesn't show it, so compare with the venue last
-    // exported to Clubber (f.clubberVenue, saved on export). A venue we can
-    // match to Clubber's list but haven't sent = needs an update.
-    if (p.venue && (f.clubberVenue || '') !== p.venue) diffs.push(f.clubberVenue
-      ? 'Venue: Clubber ' + f.clubberVenue + ', dashboard ' + p.venue
-      : 'Venue: check Clubber has ' + p.venue + ' (not sent from here)');
+    // Venue: Clubber's feed doesn't show it, so the only venue we know Clubber
+    // has is one we sent (f.clubberVenue, recorded via "Upload worked"). Flag
+    // only a known difference - never a venue we simply haven't sent, which
+    // Clubber may well have already.
+    if (p.venue && f.clubberVenue && f.clubberVenue !== p.venue)
+      diffs.push('Venue: Clubber ' + f.clubberVenue + ', dashboard ' + p.venue);
     result[f.id] = { game: g, diffs, venue: p.venue || '' };
     if (!f.clubberCreated || f.clubberGameId !== g.id) toSave.push([f, g.id]);
   }
@@ -5110,7 +5110,7 @@ function clubberDiffHtml(f) {
   // Clubber's feed has no venues: after checking Clubber, "Clubber has this
   // venue" records it as sent and clears the venue line
   const venueOk = c.venue && c.diffs.some(d => /^Venue:/.test(d))
-    ? '<br><button class="clubber-venue-ok" data-clubber-venue-ok="' + esc(f.id) + '" title="Clubber already shows this venue on the game - stop flagging it">✓ Yes, it\'s in Clubber</button>' : '';
+    ? '<br><button class="clubber-venue-ok" data-clubber-venue-ok="' + esc(f.id) + '" title="Clubber now shows the dashboard\'s venue on this game - stop flagging it">✓ Clubber has ' + esc(c.venue) + ' now</button>' : '';
   return '<div><span class="badge-clubber-differs" title="' + esc(c.diffs.join('\n') + when) + '">⚠ Clubber differs</span></div>'
     + '<div class="clubber-diff-list">' + c.diffs.map(esc).join('<br>') + venueOk + '</div>';
 }
