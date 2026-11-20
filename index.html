@@ -6480,15 +6480,109 @@ async function handleLogout() {
     const x=normClubName(f.teamA), y=normClubName(f.teamB);
     return (a===x&&b===y)||(a===y&&b===x);
   };
+  // ---- matching a read-in row to a fixture already on the dashboard ----
+  // Same two teams (either way round, by name or by Clubber club ID), same
+  // code, and the closest date within 6 weeks - so a moved game still matches.
+  const MATCH_DAYS=42;
+  const dayGap=(a,b)=>Math.abs((new Date(a)-new Date(b))/864e5);
+  // Club IDs the Clubber export would use (handles Munster / Leinster games,
+  // whose clubs come from several counties); cached per fixture
+  const _fixtureIds=new Map();
+  const exportIds=f=>{
+    let p=null; try{ p=buildGamePayload(f).payload; }catch(_){}
+    return p?[p.clubId||'',p.competitorClubId||'']:['',''];
+  };
+  // Team names without the club words ("Dicksboro GAA and Camogie Club" -> "dicksboro");
+  // one name inside the other as whole words counts too
+  const looseName=n=>normClubName(n||'').replace(/\b(gaa|gac|gfc|hc|cc|camogie|hurling|football|club|clubs|and|cumann|clg)\b|&/g,' ').replace(/\s+/g,' ').trim();
+  const nameEq=(x,y)=>{
+    const a=looseName(x), b=looseName(y); if(!a||!b) return false; if(a===b) return true;
+    const [s,l]=a.length<b.length?[a,b]:[b,a];
+    return s.length>=4&&(' '+l+' ').includes(' '+s+' ');
+  };
+  // Both teams match - each by name or by Clubber club ID - either way round
+  const sameClubIds=(f,r)=>{
+    if(!_fixtureIds.has(f.id)) _fixtureIds.set(f.id,exportIds(f));
+    const fx=_fixtureIds.get(f.id);
+    // The row as a fixture, in the matched fixture's county if it has none
+    const rc=normaliseCounty(r.county||'')||f.county;
+    const key=[rc,r.teamA,r.teamB,r.date,r.code,f.code].join('|');
+    if(r._idsKey!==key){ r._idsKey=key; r._ids=exportIds({...r,id:'ai',county:rc,time:'',code:r.code||f.code}); }
+    const rx=r._ids;
+    const eq=(rn,ri,fn,fi)=>nameEq(rn,fn)||(!!ri&&ri===fi);
+    return (eq(r.teamA,rx[0],f.teamA,fx[0])&&eq(r.teamB,rx[1],f.teamB,fx[1]))
+        || (eq(r.teamA,rx[0],f.teamB,fx[1])&&eq(r.teamB,rx[1],f.teamA,fx[0]));
+  };
+  function findMatch(r){
+    if(!String(r.teamA||'').trim()||!String(r.teamB||'').trim()||!/^\d{4}-\d{2}-\d{2}$/.test(r.date||'')) return null;
+    const code=(r.code||'').toLowerCase();
+    const near=fixtures.filter(f=>f.date&&f.status!=='Removed'&&dayGap(f.date,r.date)<=MATCH_DAYS
+      &&(!code||!f.code||f.code.toLowerCase()===code));
+    let cands=near.filter(f=>sameTeams(f,r));
+    if(!cands.length) cands=near.filter(f=>sameClubIds(f,r));
+    if(!cands.length) return null;
+    // Closest date first; a Rejected fixture only if nothing else matches
+    cands.sort((a,b)=>((a.status==='Rejected')-(b.status==='Rejected'))||(dayGap(a.date,r.date)-dayGap(b.date,r.date)));
+    return cands[0];
+  }
+  const normVenue=v=>String(v||'').toLowerCase().replace(/\b(gaa|gac|club|grounds?|park|pitch)\b|[^a-z0-9]/g,'');
+  // What the read-in row would change on the matched fixture (only fields it
+  // has a value for). Competition wording often differs from the county
+  // site's, so that change starts unticked.
+  const IMPORT_FIELDS=[['date','Date'],['time','Time'],['venue','Venue'],['round','Round'],['competition','Competition']];
+  function importChanges(r,f){
+    const out=[];
+    const t=r.time?to12h(r.time):'';
+    if(r.date&&r.date!==f.date) out.push({k:'date',from:f.date,to:r.date});
+    if(t&&from12h(t)!==from12h(f.time||'')) out.push({k:'time',from:f.time||'no time',to:t});
+    const v=String(r.venue||'').trim();
+    if(v&&normVenue(v)!==normVenue(f.venue)) out.push({k:'venue',from:f.venue||'none',to:v});
+    const rd=String(r.round||'').trim();
+    // "Final" v "Championship Final" is the same round
+    const fr=String(f.round||'').trim().toLowerCase(), rl=rd.toLowerCase();
+    if(rd&&!(fr&&(fr.includes(rl)||rl.includes(fr)))) out.push({k:'round',from:f.round||'none',to:rd});
+    const c=String(r.competition||'').trim();
+    if(c&&c.toLowerCase()!==String(f.competition||'').trim().toLowerCase()) out.push({k:'competition',from:f.competition||'none',to:c});
+    if(!r.fieldOn) r.fieldOn={};
+    out.forEach(x=>{ if(r.fieldOn[x.k]===undefined) r.fieldOn[x.k]=x.k!=='competition'; x.on=r.fieldOn[x.k]; });
+    return out;
+  }
+  const isUpdate=r=>r.matchId!=null&&r.action!=='new';
+
   function checkRow(r,i){
     const notes=[]; let blocking=false;
-    ['county','teamA','teamB','date'].forEach(k=>{ if(!String(r[k]||'').trim()){ blocking=true; } });
-    if(blocking) notes.push('<span class="ai-err">Needs county, both teams and a date</span>');
+    // The match is worked out once, and again only if the teams / date / code are edited
+    const sig=[r.teamA,r.teamB,r.date,r.code,r.county].join('|');
+    if(r._matchSig!==sig){ r._matchSig=sig; const m=findMatch(r); r.matchId=m?m.id:null; }
+    const match=r.matchId!=null?fixtures.find(f=>f.id===r.matchId):null;
+    if(!match) r.matchId=null;
+    const updating=!!match&&r.action!=='new';
+    // An update only needs the teams and date (to find the game); a new fixture needs a county too
+    (updating?['teamA','teamB','date']:['county','teamA','teamB','date']).forEach(k=>{ if(!String(r[k]||'').trim()){ blocking=true; } });
+    if(blocking) notes.push('<span class="ai-err">Needs '+(updating?'':'county, ')+'both teams and a date</span>');
     if(r.date&&!/^\d{4}-\d{2}-\d{2}$/.test(r.date)){ blocking=true; notes.push('<span class="ai-err">Date must be YYYY-MM-DD</span>'); }
-    const dup=r.date&&fixtures.some(f=>f.date===r.date&&sameTeams(f,r));
+    let changes=[];
+    if(match){
+      changes=importChanges(r,match);
+      const where=esc(match.teamA)+' v '+esc(match.teamB)+', '+esc(match.date)+(match.time?' '+esc(match.time):'')+' ('+esc(match.county)+', '+esc(match.status||'Proposed')+')';
+      notes.push('<span class="ai-ok">Matches a fixture on the dashboard: '+where+'</span>'
+        +'<br><select data-i="'+i+'" data-k="action" style="width:auto;margin-top:3px;">'
+        +'<option value="update"'+(updating?' selected':'')+'>Update that fixture</option>'
+        +'<option value="new"'+(updating?'':' selected')+'>Add as a new fixture</option></select>');
+      if(updating){
+        if(!changes.length) notes.push('<span class="ai-warn">Nothing to update - it already has these details</span>');
+        else notes.push(changes.map(x=>'<label style="display:block;cursor:pointer;"><input type="checkbox" data-i="'+i+'" data-f="'+x.k+'"'+(x.on?' checked':'')+' style="width:auto;vertical-align:middle;"> '
+          +esc(IMPORT_FIELDS.find(p=>p[0]===x.k)[1])+': '+esc(x.from)+' &rarr; <strong>'+esc(x.to)+'</strong></label>').join(''));
+      }
+    }
     const dupBatch=aiRows.some((o,j)=>j<i&&o.include&&o.date===r.date&&sameTeams(o,r));
-    if(dup) notes.push('<span class="ai-warn">Already on the dashboard</span>');
-    else if(dupBatch) notes.push('<span class="ai-warn">Duplicate of a row above</span>');
+    if(dupBatch) notes.push('<span class="ai-warn">Duplicate of a row above</span>');
+    const dup=dupBatch||(updating&&!changes.some(x=>x.on));
+    r._changes=changes;
+    if(updating){
+      if(r.uncertain) notes.push('<span class="ai-warn">Claude: '+esc(r.uncertain)+'</span>');
+      return {blocking, dup, update:true, html:notes.join('<br>')};
+    }
     // Same rules as the Clubber export, so this column agrees with what export will do
     if(!blocking){
       const g={...r, county:normaliseCounty(r.county), time:r.time?to12h(r.time):'', code:r.code||deriveCode(r.competition||'',null)};
@@ -6527,37 +6621,91 @@ async function handleLogout() {
     showStep(2);
   }
   function refreshChecks(){
-    let addable=0;
+    let addable=0, updatable=0;
     aiRows.forEach((r,i)=>{
       const c=checkRow(r,i);
+      if(r.include&&!c.blocking&&c.update&&r._changes.some(x=>x.on)) updatable++;
       document.getElementById('aiCheck'+i).innerHTML=c.html;
       const tr=document.querySelector('#aiBody tr[data-row="'+i+'"]');
       tr.classList.toggle('ai-dup',c.dup&&!r.include);
       ['county','teamA','teamB','date'].forEach(k=>{
         const el=tr.querySelector('[data-k="'+k+'"]'); if(el) el.classList.toggle('ai-missing',!String(r[k]||'').trim());
       });
-      if(r.include&&!c.blocking) addable++;
+      if(r.include&&!c.blocking&&!c.update) addable++;
     });
     const btn=document.getElementById('aiAddBtn');
-    btn.disabled=!addable; btn.textContent='Add '+addable+' fixture'+(addable===1?'':'s');
+    const pl=n=>n+' fixture'+(n===1?'':'s');
+    btn.disabled=!addable&&!updatable;
+    btn.textContent=updatable&&addable?'Add '+addable+', update '+updatable:updatable?'Update '+pl(updatable):'Add '+pl(addable);
     document.getElementById('aiSummary').textContent='Claude found '+aiRows.length+' fixture'+(aiRows.length===1?'':'s')+' in '+aiLabel+'. Check each row - edit anything that\'s wrong, untick rows you don\'t want.';
   }
+  // Row tick boxes follow r.include (a ticked field ticks its row)
+  function syncIncludeBoxes(){
+    document.querySelectorAll('#aiBody input[data-k="include"]').forEach(cb=>{ cb.checked=!!aiRows[+cb.getAttribute('data-i')].include; });
+  }
   document.getElementById('aiBody').addEventListener('input',e=>{
-    const i=e.target.getAttribute('data-i'), k=e.target.getAttribute('data-k'); if(i===null) return;
+    const i=e.target.getAttribute('data-i'), k=e.target.getAttribute('data-k'); if(i===null||!k) return;
+    if(k==='action') return; // handled on change
     aiRows[+i][k]=k==='include'?e.target.checked:e.target.value;
     refreshChecks();
   });
   document.getElementById('aiBody').addEventListener('change',e=>{
-    const i=e.target.getAttribute('data-i'), k=e.target.getAttribute('data-k'); if(i===null) return;
+    const i=e.target.getAttribute('data-i'), k=e.target.getAttribute('data-k'), fld=e.target.getAttribute('data-f');
+    if(i===null) return;
+    // A field tick box on an update row
+    if(fld){ const r=aiRows[+i]; r.fieldOn=r.fieldOn||{}; r.fieldOn[fld]=e.target.checked; if(e.target.checked) r.include=true; refreshChecks(); syncIncludeBoxes(); return; }
+    if(!k) return;
     aiRows[+i][k]=k==='include'?e.target.checked:e.target.value;
+    // Switching between "update" and "add as new": tick the row again
+    if(k==='action'){ aiRows[+i].include=true; refreshChecks(); syncIncludeBoxes(); return; }
     refreshChecks();
   });
 
+  // Saves a read-in row's ticked changes onto the matched fixture - the same
+  // way as editing it by hand (dashboard edit for scraped fixtures, the
+  // fixture itself for manual ones, plus a line in its change history)
+  function updateExisting(r,ex,approve,statusIds){
+    const edit={};
+    (r._changes||[]).filter(x=>x.on).forEach(x=>{ edit[x.k]=x.to; });
+    if(!Object.keys(edit).length) return false;
+    const origKey=ex._origKey||keyOf(ex);
+    const base={date:ex.date,day:ex.day,time:ex.time||'',venue:ex.venue||'',round:ex.round||'',competition:ex.competition||''};
+    if(edit.date) edit.day=dayName(edit.date);
+    Object.assign(ex,edit);
+    if(ex.manual){
+      const mf=manualFixtures.find(m=>m.id===ex.id);
+      if(mf) Object.assign(mf,edit);
+    } else {
+      fixtureOverrides[origKey]=Object.assign(fixtureOverrides[origKey]||{},edit);
+      syncOverrides([{key:origKey,fields:edit}]);
+    }
+    const sk=stableKeyOf(ex);
+    const _fl={date:'Date',time:'Time',venue:'Venue',round:'Round',competition:'Competition'};
+    const diffs=Object.keys(edit).filter(k=>k!=='day').map(k=>({field:_fl[k]||k,from:base[k],to:edit[k]}));
+    if(!fixtureChangelog[sk]) fixtureChangelog[sk]={type:'changed',data:{county:ex.county,teamA:ex.teamA,teamB:ex.teamB,competition:ex.competition,date:ex.date,time:ex.time,venue:ex.venue||'',round:ex.round||'',code:ex.code||''},history:[]};
+    fixtureChangelog[sk].history.push({at:new Date().toLocaleString('en-IE'),who:(currentUser||'Unknown')+' (screenshot import: '+aiLabel+')',diffs});
+    fixtureChangelog[sk].type='changed';
+    // "Mark as Approved" approves an updated fixture too
+    if(approve&&ex.status!=='Approved'){
+      recordStatusChange(ex,ex.status||'Proposed','Approved'); ex.status='Approved';
+      const mf=ex.manual&&manualFixtures.find(m=>m.id===ex.id); if(mf) mf.status='Approved';
+      statusIds.push(ex.id);
+    }
+    return true;
+  }
+
   function addFixtures(){
-    let added=0;
+    let added=0, updated=0;
     const approve=document.getElementById('aiApprove').checked;
+    const statusIds=[];
     aiRows.forEach((r,i)=>{
-      if(!r.include||checkRow(r,i).blocking) return;
+      const c=checkRow(r,i);
+      if(!r.include||c.blocking) return;
+      if(c.update){
+        const ex=fixtures.find(f=>f.id===r.matchId);
+        if(ex&&updateExisting(r,ex,approve,statusIds)) updated++;
+        return;
+      }
       const f={
         id:'m'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
         county:normaliseCounty(r.county.trim()), teamA:r.teamA.trim(), teamB:r.teamB.trim(),
@@ -6572,11 +6720,15 @@ async function handleLogout() {
       if(approve){ recordStatusChange(f,'Proposed','Approved'); f.status='Approved'; }
       added++;
     });
-    if(!added) return;
+    if(!added&&!updated) return;
+    if(updated){ saveOverrides(); }
+    if(statusIds.length) syncStatus(statusIds,'Approved');
     saveManualFixtures(); saveCache(); saveChangelog();
     populateFilterOptions(); render();
     closeModal();
-    showConflictToast('✓ Added '+added+' fixture'+(added===1?'':'s')+(approve?' as Approved':'')+' from '+aiLabel,'#16a34a');
+    const pl=n=>n+' fixture'+(n===1?'':'s');
+    const what=[added?'added '+pl(added):'',updated?'updated '+pl(updated):''].filter(Boolean).join(', ');
+    showConflictToast('✓ '+what.charAt(0).toUpperCase()+what.slice(1)+(approve?' (Approved)':'')+' from '+aiLabel,'#16a34a');
   }
 
   document.getElementById('aiImportBtn').addEventListener('click',openModal);
