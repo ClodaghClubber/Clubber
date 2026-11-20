@@ -1751,6 +1751,32 @@ function recordManualCreate(f, source){
     history:[{at:now,who,note:`Manually created${source?' via '+source:''} by ${who}`,diffs:[]}]
   };
   saveChangelog();
+  shareEdit(sk,[],`Manually created${source?' via '+source:''} by ${who}`);
+}
+// Fixture edits / creations also go to the shared edit history on the worker,
+// so the change history shows them in every browser. Batched; anything that
+// fails to send is kept and retried on the next load.
+const PENDING_EDITS_KEY='gaaPendingSharedEdits';
+var _editQueue=[], _editTimer=null;
+function shareEdit(sk,diffs,note){
+  _editQueue.push({sk,diffs:diffs||[],...(note?{note}:{})});
+  clearTimeout(_editTimer);
+  _editTimer=setTimeout(flushSharedEdits,400);
+}
+async function flushSharedEdits(){
+  let pending=[];
+  try{ pending=JSON.parse(localStorage.getItem(PENDING_EDITS_KEY)||'[]'); }catch(_){}
+  const entries=[...pending,..._editQueue]; _editQueue=[];
+  if(!entries.length||!authToken) { if(entries.length) try{localStorage.setItem(PENDING_EDITS_KEY,JSON.stringify(entries.slice(-300)));}catch(_){} return; }
+  try{
+    const res=await authFetch(WORKER_URL,{method:'POST',body:JSON.stringify({action:'logEdits',entries})});
+    const j=await res.json();
+    if(!j.ok) throw new Error(j.error||'rejected');
+    try{localStorage.removeItem(PENDING_EDITS_KEY);}catch(_){}
+  }catch(e){
+    console.warn('Shared edit history sync failed:',e);
+    try{localStorage.setItem(PENDING_EDITS_KEY,JSON.stringify(entries.slice(-300)));}catch(_){}
+  }
 }
 function recordStatusChange(f, fromStatus, toStatus){
   const sk=stableKeyOf(f);
@@ -1784,14 +1810,33 @@ async function openChangeHistoryModal(sk,fid){
   document.getElementById('changeHistoryModal').classList.add('open');
 
   // Merge local changelog with KV status history for this fixture
+  // Local entries are stamped toLocaleString('en-IE') ("20/11/2026, 10:00:28"),
+  // which Date() can't parse - read it by hand so the list sorts properly
+  const parseAt=s=>{
+    const m=String(s||'').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+    if(m) return new Date(+m[3],+m[2]-1,+m[1],+m[4],+m[5],+(m[6]||0)).getTime();
+    const t=new Date(s).getTime(); return isNaN(t)?0:t;
+  };
   const localEntries=(chg.history||[]).map(e=>({
-    _ts: (() => { try { return new Date(e.at).getTime(); } catch(_){ return 0; } })(),
-    at: e.at, who: e.who||'', note: e.note||'', diffs: e.diffs||[]
+    _ts: parseAt(e.at), at: e.at, who: e.who||'', note: e.note||'', diffs: e.diffs||[]
   }));
 
-  let kvEntries=[];
+  let kvEntries=[], sharedEdits=[];
   try {
-    const res=await fetch(WORKER_URL+'?history=1',{cache:'no-store'});
+    const [res,eres]=await Promise.all([
+      fetch(WORKER_URL+'?history=1',{cache:'no-store'}),
+      fetch(WORKER_URL+'?editHistory=1',{cache:'no-store'}).catch(()=>null)
+    ]);
+    try{
+      const ej=eres&&eres.ok?await eres.json():null;
+      sharedEdits=((ej&&ej.edits)||[]).filter(e=>e.sk===sk).map(e=>({
+        _ts:new Date(e.timestamp).getTime(),
+        at:new Date(e.timestamp).toLocaleString('en-IE'),
+        who:[e.user,e.device].filter(Boolean).join(' · ')||'Unknown',
+        note:e.note||'',
+        diffs:e.diffs||[], _shared:true
+      }));
+    }catch(_){}
     const json=await res.json();
     // stableKeyOf = county|teamA|teamB|competition
     // keyOf (KV key) = county|competition|teamA|teamB|date
@@ -1814,22 +1859,32 @@ async function openChangeHistoryModal(sk,fid){
   } catch(_){}
 
   // Merge, deduplicate status entries (KV is authoritative, drop matching local ones)
-  const kvTs=new Set(kvEntries.map(e=>e._ts));
-  const filteredLocal=localEntries.filter(e=>
-    !(e.diffs.length===1&&e.diffs[0].field==='Status'&&kvTs.has(e._ts))
-  );
-  const all=[...filteredLocal,...kvEntries].sort((a,b)=>b._ts-a._ts);
+  // A local status entry is a copy of a shared one when the shared history has
+  // the same change at (or shortly before) that time - e.g. another user's
+  // approval this browser noticed on load. Shared history is authoritative.
+  const isStatusDiff=e=>e.diffs.length===1&&['Status','Clubber Pick'].includes(e.diffs[0].field);
+  const sameDiffs=(a,b)=>JSON.stringify(a.diffs.map(d=>[d.field,String(d.from??''),String(d.to??'')]))===JSON.stringify(b.diffs.map(d=>[d.field,String(d.from??''),String(d.to??'')]));
+  const filteredLocal=localEntries.filter(e=>{
+    if(isStatusDiff(e)) return !kvEntries.some(k=>sameDiffs(k,e)&&k._ts<=e._ts+5*60000);
+    // Edits / creations also saved to the shared edit history: show that copy
+    if(/^Manually created/.test(e.note)) return !sharedEdits.some(s=>/^Manually created/.test(s.note)&&Math.abs(s._ts-e._ts)<10*60000);
+    if(e.diffs.length&&e.who!=='Source') return !sharedEdits.some(s=>sameDiffs(s,e)&&Math.abs(s._ts-e._ts)<10*60000);
+    return true;
+  });
+  // Oldest first
+  const all=[...filteredLocal,...kvEntries,...sharedEdits].sort((a,b)=>a._ts-b._ts);
 
   const STATUS_C={Approved:'#4a9e1a',Rejected:'#dc2626',Removed:'#6b7280',Proposed:'#d97706','In Clubber':'#1d4ed8'};
+  const _he=v=>String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const renderDiff=dd=>{
     const isStatus=dd.field==='Status';
     const fromCol=isStatus?(STATUS_C[dd.from]||'var(--muted)'):'var(--muted)';
     const toCol=isStatus?(STATUS_C[dd.to]||'var(--text)'):'var(--text)';
     return `<div class="chg-diff-row">
-      <span class="chg-diff-field">${dd.field}</span>
-      <span class="chg-diff-from" style="color:${fromCol}">${dd.from||'—'}</span>
+      <span class="chg-diff-field">${_he(dd.field)}</span>
+      <span class="chg-diff-from" style="color:${fromCol}">${_he(dd.from)||'—'}</span>
       <span style="color:var(--muted);">→</span>
-      <span class="chg-diff-to" style="color:${toCol};font-weight:${isStatus?700:400}">${dd.to||'—'}</span>
+      <span class="chg-diff-to" style="color:${toCol};font-weight:${isStatus?700:400}">${_he(dd.to)||'—'}</span>
     </div>`;
   };
 
@@ -1838,12 +1893,11 @@ async function openChangeHistoryModal(sk,fid){
     :all.map((entry,i,arr)=>`
       <div class="chg-timeline-entry">
         <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">
-          <div class="chg-timeline-time">${entry.at}</div>
-          ${entry.who?`<div style="font-size:11px;color:var(--muted);">${entry.who}</div>`:''}
+          <div class="chg-timeline-time">${_he(entry.at)}</div>
+          ${entry.who?`<div style="font-size:11px;color:var(--muted);">${_he(entry.who)}</div>`:''}
         </div>
-        ${entry.note
-          ?`<div style="font-size:13px;color:var(--muted);">${entry.note}</div>`
-          :entry.diffs.map(renderDiff).join('')}
+        ${entry.note?`<div style="font-size:13px;color:var(--muted);">${_he(entry.note)}</div>`:''}
+        ${entry.diffs.map(renderDiff).join('')}
       </div>${i<arr.length-1?'<hr style="border:none;border-top:1px solid var(--border);margin:12px 0;">':''}`
     ).join('');
   // CHANGED badge = date/time/venue/round now differ from when this browser
@@ -2324,6 +2378,7 @@ function setupModal(){
           const diffs=Object.keys(structEdit).map(k=>({field:_fl[k]||k,from:base[k],to:structEdit[k]}));
           if(!fixtureChangelog[sk]) fixtureChangelog[sk]={type:'changed',data:{county:ex.county,teamA:ex.teamA,teamB:ex.teamB,competition:ex.competition,date:ex.date,time:ex.time,venue:ex.venue||'',round:ex.round||'',code:ex.code||''},history:[]};
           fixtureChangelog[sk].history.push({at:now,who:currentUser||'Manual edit',diffs});
+          shareEdit(sk,diffs);
           fixtureChangelog[sk].type='changed';
           saveChangelog();
         }
@@ -3618,12 +3673,9 @@ function mergeFixtures(incoming){
     // Spread ex first so local state (clubberCreated, socials, etc.) survives
     // the refresh; inc fields (including status from KV) take precedence.
     const merged = ex ? {...ex, ...inc, id: ex.id, _origKey: origKey} : {...inc, id: nextId++, _origKey: origKey};
-    // Record status changes that arrived from KV (set by another device/user)
-    // so every status transition is visible in the per-fixture history.
-    const prevStatus = ex ? ex.status : null;
-    if (prevStatus && prevStatus !== merged.status) {
-      recordStatusChange(merged, prevStatus, merged.status);
-    }
+    // Status changes made by other users are already in the shared status
+    // history (shown in each fixture's history) - recording them here too
+    // listed them again under this browser's user at load time.
     return merged;
   });
   saveCache();
@@ -3635,14 +3687,33 @@ function mergeFixtures(incoming){
   for (const id of selected) { if (!existingIds.has(id)) selected.delete(id); }
 }
 
+// Edits that didn't reach the worker are kept here and re-sent on the next
+// load, so a failed save can't leave a change in this browser only
+const PENDING_OVERRIDES_KEY='gaaPendingOverrides';
+function loadPendingOverrides(){ try{ return JSON.parse(localStorage.getItem(PENDING_OVERRIDES_KEY)||'[]'); }catch(_){ return []; } }
 async function syncOverrides(updates){
   if(!updates||!updates.length) return;
   try{
-    await authFetch(WORKER_URL,{
+    const res=await authFetch(WORKER_URL,{
       method:'POST',
       body:JSON.stringify({action:'setOverrides',updates,user:currentUser||''})
     });
-  }catch(e){ console.warn('Override sync failed:',e); }
+    let j=null; try{ j=await res.json(); }catch(_){}
+    if(!res.ok||!j||!j.ok) throw new Error((j&&j.error)||('HTTP '+res.status));
+  }catch(e){
+    console.warn('Override sync failed:',e);
+    try{ localStorage.setItem(PENDING_OVERRIDES_KEY,JSON.stringify([...loadPendingOverrides(),...updates].slice(-500))); }catch(_){}
+    if(typeof loadStatus!=='undefined'&&loadStatus) loadStatus.textContent=`Saved in this browser, but not yet shared with other users (${e.message}) - it will retry on the next refresh.`;
+  }
+}
+// Re-send edits that failed earlier (after KV overrides are merged, so they win)
+function retryPendingOverrides(){
+  const pending=loadPendingOverrides();
+  if(!pending.length) return;
+  try{ localStorage.removeItem(PENDING_OVERRIDES_KEY); }catch(_){}
+  for(const {key,fields} of pending) if(key&&fields) fixtureOverrides[key]=Object.assign(fixtureOverrides[key]||{},fields);
+  saveOverrides();
+  syncOverrides(pending);
 }
 
 // Stable keys of the manual fixtures KV is known to hold (from the last load
@@ -3723,6 +3794,8 @@ async function loadFixtures(isRefresh){
       }
       saveOverrides();
     }
+    retryPendingOverrides();
+    if(authToken) flushSharedEdits();
     const incoming=(json.fixtures||[]).map(f=>({...mk(f.county,f.teamA,f.teamB,f.date,f.time,f.venue,f.competition,f.round), code:f.code||deriveCode(f.competition,f.sport), status:f.status||'Proposed', ...(f.clubberCreated!==undefined?{clubberCreated:f.clubberCreated}:{}), ...(f.clubberGameId?{clubberGameId:f.clubberGameId}:{}), ...(f.teamACounty?{teamACounty:f.teamACounty}:{}), ...(f.teamBCounty?{teamBCounty:f.teamBCounty}:{}), ...(f.teamACountySource?{teamACountySource:f.teamACountySource}:{}), ...(f.teamBCountySource?{teamBCountySource:f.teamBCountySource}:{}), ...(f.sourceUrl?{sourceUrl:f.sourceUrl}:{}), ...(f.statusKey?{statusKey:f.statusKey}:{})}));
     mergeFixtures(incoming);
     detectChanges(takeSnapshot());
@@ -3759,6 +3832,16 @@ if(cached){
   loadStatus.textContent=`Showing cached fixtures from ${new Date(cached.savedAt).toLocaleString()} · refreshing…`;
 }
 loadFixtures(false);
+// Pick up other users' changes (approvals, edits, Clubber IDs) when you come
+// back to the tab, instead of only on a page reload. Skipped while a dialog is
+// open so nothing changes under an edit in progress.
+var _lastLoadAt=Date.now(), _autoLoading=false;
+document.addEventListener('visibilitychange',async()=>{
+  if(document.visibilityState!=='visible'||_autoLoading||Date.now()-_lastLoadAt<2*60*1000) return;
+  if(document.querySelector('.modal.open, .modal-overlay.open, #addModal.open, #aiImportModal.open, [id$="Modal"].open')) return;
+  _autoLoading=true; _lastLoadAt=Date.now();
+  try{ await loadFixtures(true); }finally{ _autoLoading=false; }
+});
 setupModal();
 
 // ---- User name management ----
@@ -6690,6 +6773,7 @@ async function handleLogout() {
     const diffs=Object.keys(edit).filter(k=>k!=='day').map(k=>({field:_fl[k]||k,from:base[k],to:edit[k]}));
     if(!fixtureChangelog[sk]) fixtureChangelog[sk]={type:'changed',data:{county:ex.county,teamA:ex.teamA,teamB:ex.teamB,competition:ex.competition,date:ex.date,time:ex.time,venue:ex.venue||'',round:ex.round||'',code:ex.code||''},history:[]};
     fixtureChangelog[sk].history.push({at:new Date().toLocaleString('en-IE'),who:(currentUser||'Unknown')+' (screenshot import: '+aiLabel+')',diffs});
+    shareEdit(sk,diffs,'Screenshot import: '+aiLabel);
     fixtureChangelog[sk].type='changed';
     // "Mark as Approved" approves an updated fixture too
     if(approve&&ex.status!=='Approved'){

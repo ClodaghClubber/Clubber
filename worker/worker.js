@@ -3476,6 +3476,8 @@ const TEAM_MAPPINGS_EXTRA_KEY = 'teamMappingsExtra';
 const VENUE_MAPPINGS_KEY = 'venueMappings';
 const STATUS_HISTORY_KV_KEY = 'statusHistory';
 const STATUS_HISTORY_MAX = 500;
+const EDIT_HISTORY_KV_KEY = 'editHistory';
+const EDIT_HISTORY_MAX = 2000;
 const CLUBBER_SNAPSHOT_KV_KEY = 'clubberSnapshot';
 const FIXTURE_CACHE_KV_KEY = 'fixtureCache';
 const CACHE_A_KEY = 'cache_A'; // Cork, Waterford
@@ -4258,6 +4260,29 @@ export default {
         if (!sessionUser) return jsonResp({ ok: false, error: 'Not authenticated' }, 401);
         body.user = displayNameOf(sessionUser.username, sessionUser.user);
 
+        // Shared edit history: fixture edits (date, time, venue...) and manual
+        // creations, so every browser's change history shows them
+        if (body.action === 'logEdits') {
+          const list = Array.isArray(body.entries) ? body.entries.slice(0, 200) : [];
+          const clean = v => String(v == null ? '' : v).slice(0, 200);
+          const timestamp = new Date().toISOString();
+          const device = parseDevice(request.headers.get('User-Agent') || '');
+          const add = list.filter(e => e && typeof e.sk === 'string' && e.sk).map(e => ({
+            sk: e.sk.slice(0, 400), timestamp, user: body.user, device,
+            ...(e.note ? { note: clean(e.note) } : {}),
+            diffs: (Array.isArray(e.diffs) ? e.diffs : []).slice(0, 20).map(d => ({ field: clean(d && d.field), from: clean(d && d.from), to: clean(d && d.to) })),
+          }));
+          if (!add.length) return jsonResp({ ok: true, added: 0 });
+          const raw = await kv.get(EDIT_HISTORY_KV_KEY);
+          let hist = [];
+          try { hist = raw ? JSON.parse(raw) : []; } catch { hist = []; }
+          if (!Array.isArray(hist)) hist = [];
+          hist.push(...add);
+          if (hist.length > EDIT_HISTORY_MAX) hist.splice(0, hist.length - EDIT_HISTORY_MAX);
+          await kv.put(EDIT_HISTORY_KV_KEY, JSON.stringify(hist));
+          return jsonResp({ ok: true, added: add.length });
+        }
+
         // Club mappings added from the dashboard's Review Before Export dialog.
         // Same shape as teamMappings.json ({county: {clubName: id}}); the
         // dashboard merges them over that file.
@@ -4436,6 +4461,15 @@ export default {
     }
 
     // History endpoint — lightweight, returns only the audit log
+    // Shared fixture edit history (see logEdits), newest first
+    if (url.searchParams.has('editHistory')) {
+      let hist = [];
+      try { hist = JSON.parse((kv && await kv.get(EDIT_HISTORY_KV_KEY)) || '[]'); } catch { hist = []; }
+      return new Response(JSON.stringify({ ok: true, edits: Array.isArray(hist) ? hist.slice().reverse() : [] }), {
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...CORS_HEADERS },
+      });
+    }
+
     if (url.searchParams.has('history')) {
       try {
         const hist = await getStatusHistory(kv);
