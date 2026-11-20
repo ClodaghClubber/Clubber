@@ -177,7 +177,7 @@
   #aiImportBtn:hover{background:rgba(90,79,207,.08);}
   #aiImportModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;align-items:flex-start;justify-content:center;padding-top:30px;}
   #aiImportModal.open{display:flex;}
-  #aiImportModal .modal-box{width:min(1180px,97vw);max-height:calc(100vh - 50px);display:flex;flex-direction:column;}
+  #aiImportModal .modal-box{width:min(1800px,98vw);max-width:none;max-height:calc(100vh - 50px);display:flex;flex-direction:column;}
   #aiDrop{border:2px dashed var(--border);border-radius:10px;padding:22px;text-align:center;color:var(--muted);font-size:13px;cursor:pointer;}
   #aiDrop.dragover,#aiDrop:hover{border-color:var(--accent);background:rgba(90,79,207,.06);}
   #aiFileList{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0;}
@@ -194,7 +194,9 @@
   #aiTable input,#aiTable select{width:100%;box-sizing:border-box;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:4px 5px;font-family:inherit;font-size:12px;}
   #aiTable input.ai-missing{border-color:#dc2626;background:rgba(220,38,38,.06);}
   #aiTable tr.ai-dup{opacity:.55;}
-  .ai-check{font-size:11px;line-height:1.35;}
+  .ai-check{font-size:11px;line-height:1.35;min-width:220px;}
+  #aiTable td.ai-check{white-space:normal;} /* beats the main table's td:nth-child(11) nowrap */
+  .ai-check select{width:auto;max-width:100%;}
   .inline-approve{visibility:hidden;margin-left:4px;padding:0 6px;border:1px solid #16a34a;border-radius:10px;background:none;color:#16a34a;font-size:11px;font-weight:700;line-height:16px;cursor:pointer;vertical-align:middle;}
   tr:hover .inline-approve{visibility:visible;}
   .inline-approve:hover{background:#16a34a;color:#fff;}
@@ -6525,7 +6527,9 @@ async function handleLogout() {
     cands.sort((a,b)=>((a.status==='Rejected')-(b.status==='Rejected'))||(dayGap(a.date,r.date)-dayGap(b.date,r.date)));
     return cands[0];
   }
-  const normVenue=v=>String(v||'').toLowerCase().replace(/\b(gaa|gac|club|grounds?|park|pitch)\b|[^a-z0-9]/g,'');
+  const normVenue=v=>String(v||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\b(gaa|gac|club|grounds?|park|pitch)\b|[^a-z0-9]/g,'');
+  // Same venue if one name contains the other ("Pairc Ui Chaoimh, Cork" v "Pairc Ui Chaoimh")
+  const sameVenue=(a,b)=>{ const x=normVenue(a), y=normVenue(b); return !!x&&!!y&&(x.includes(y)||y.includes(x)); };
   // What the read-in row would change on the matched fixture (only fields it
   // has a value for). Competition wording often differs from the county
   // site's, so that change starts unticked.
@@ -6536,7 +6540,7 @@ async function handleLogout() {
     if(r.date&&r.date!==f.date) out.push({k:'date',from:f.date,to:r.date});
     if(t&&from12h(t)!==from12h(f.time||'')) out.push({k:'time',from:f.time||'no time',to:t});
     const v=String(r.venue||'').trim();
-    if(v&&normVenue(v)!==normVenue(f.venue)) out.push({k:'venue',from:f.venue||'none',to:v});
+    if(v&&!sameVenue(v,f.venue)) out.push({k:'venue',from:f.venue||'none',to:v});
     const rd=String(r.round||'').trim();
     // "Final" v "Championship Final" is the same round
     const fr=String(f.round||'').trim().toLowerCase(), rl=rd.toLowerCase();
@@ -6606,15 +6610,15 @@ async function handleLogout() {
       const inp=(k,type,extra)=>'<input data-i="'+i+'" data-k="'+k+'" type="'+(type||'text')+'" value="'+esc(r[k])+'"'+(extra||'')+'>';
       return '<tr data-row="'+i+'">'+
         '<td><input type="checkbox" data-i="'+i+'" data-k="include"'+(r.include?' checked':'')+' style="width:auto;"></td>'+
-        '<td style="min-width:110px;">'+inp('county','text',' list="aiCountyList"')+'</td>'+
-        '<td style="min-width:90px;"><select data-i="'+i+'" data-k="code">'+codes.map(c=>'<option'+(c===r.code?' selected':'')+'>'+c+'</option>').join('')+'</select></td>'+
-        '<td style="min-width:130px;">'+inp('teamA')+'</td>'+
-        '<td style="min-width:130px;">'+inp('teamB')+'</td>'+
-        '<td style="min-width:125px;">'+inp('date','date')+'</td>'+
-        '<td style="min-width:90px;">'+inp('time','time')+'</td>'+
-        '<td style="min-width:110px;">'+inp('venue')+'</td>'+
-        '<td style="min-width:160px;">'+inp('competition')+'</td>'+
-        '<td style="min-width:90px;">'+inp('round')+'</td>'+
+        '<td style="min-width:90px;">'+inp('county','text',' list="aiCountyList"')+'</td>'+
+        '<td style="min-width:80px;"><select data-i="'+i+'" data-k="code">'+codes.map(c=>'<option'+(c===r.code?' selected':'')+'>'+c+'</option>').join('')+'</select></td>'+
+        '<td style="min-width:115px;">'+inp('teamA')+'</td>'+
+        '<td style="min-width:115px;">'+inp('teamB')+'</td>'+
+        '<td style="min-width:122px;">'+inp('date','date')+'</td>'+
+        '<td style="min-width:82px;">'+inp('time','time')+'</td>'+
+        '<td style="min-width:100px;">'+inp('venue')+'</td>'+
+        '<td style="min-width:130px;">'+inp('competition')+'</td>'+
+        '<td style="min-width:70px;">'+inp('round')+'</td>'+
         '<td class="ai-check" id="aiCheck'+i+'"></td></tr>';
     }).join('');
     refreshChecks();
