@@ -6972,7 +6972,7 @@ let currentIsAdmin = false;
       const dayEnd=!list[i+1]||list[i+1].date!==f.date;
       if(dayStart&&i) html+='<tr class="ap-gap"><td colspan="12"></td></tr>';
       html+='<tr class="ap-day-row cr-'+esc(String(f.county||'').toLowerCase().replace(/\s+/g,'-'))+(dayStart?' ap-day-start':'')+(dayEnd?' ap-day-end':'')+'">'+
-        '<td style="white-space:nowrap;">'+esc(f.date)+'</td><td>'+esc(f.day||dayName(f.date))+'</td>'+
+        '<td style="white-space:nowrap;"><button type="button" class="edit-btn ap-edit" data-edit-id="'+esc(f.id)+'" title="Edit fixture" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:0 4px 0 0;opacity:.6;">&#9998;</button>'+esc(f.date)+'</td><td>'+esc(f.day||dayName(f.date))+'</td>'+
         '<td style="white-space:nowrap;">'+esc(f.time||'TBC')+'</td><td>'+esc(f.county)+'</td><td>'+esc(f.code)+'</td>'+
         '<td>'+teamCellHtml(f,'A')+'</td><td>'+teamCellHtml(f,'B')+'</td><td>'+esc(f.venue)+'</td><td>'+esc(f.competition)+'</td><td>'+esc(f.round)+'</td>'+
         '<td class="ap-plain">'+(f.clubberCreated?'<span class="ai-ok" title="In Clubber">&#10003;</span>':missingInfoBadges(f)||'<span style="color:var(--reject);font-weight:700;" title="Not in Clubber yet">&#10007;</span>')+clubberDiffHtml(f)+'</td><td class="ap-plain">'+(f.clubberPick?'&#9733;':'')+'</td></tr>';
@@ -6999,6 +6999,12 @@ let currentIsAdmin = false;
   try{ const v=localStorage.getItem('gaaApprovedSport'); if(['gaa','rugby','both'].includes(v)) els('apSport').value=v; }catch(_){}
   els('apSport').addEventListener('change',()=>{ try{ localStorage.setItem('gaaApprovedSport',els('apSport').value); }catch(_){} els('apCounty').value=''; renderApproved(); });
   ['apSearch','apCounty','apCode','apFrom','apTo'].forEach(id=>els(id).addEventListener(id==='apSearch'?'input':'change',renderApproved));
+  // ✎ opens the same edit form as the All fixtures tab
+  els('apBody').addEventListener('click',e=>{
+    const b=e.target.closest('.ap-edit'); if(!b) return;
+    const rawId=b.dataset.editId;
+    openEditModal(isNaN(rawId)||rawId===''?rawId:Number(rawId));
+  });
   els('apClear').addEventListener('click',()=>{ ['apSearch','apCounty','apCode','apFrom','apTo'].forEach(id=>els(id).value=''); renderApproved(); });
   // Keep the tab up to date whenever the dashboard re-renders (new data, status changes)
   const baseRender=render;
