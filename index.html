@@ -3100,7 +3100,7 @@ document.getElementById('clubberConfirmBody').addEventListener('change', e => {
   applyDialogGrade(+sel.dataset.idx, sel.value);
   // Minor / U20-21: 14.99 anywhere; Munster / Leinster: by grade
   // Camogie stays 14.99 whatever the grade
-  const price = /camogie/i.test((r.payload && r.payload.code) || '') ? 14.99 : underageGradePrice(sel.value) ?? (['Munster', 'Leinster'].includes(r.fixture.county) ? provincialGradePrice(sel.value) : null);
+  const price = /camogie/i.test((r.payload && r.payload.code) || '') || r.fixture.county === 'Higher Education' ? 14.99 : underageGradePrice(sel.value) ?? (['Munster', 'Leinster'].includes(r.fixture.county) ? provincialGradePrice(sel.value) : null);
   const inp = sel.closest('tr').querySelector('.price-edit');
   if (price != null && inp) inp.value = price;
 });
@@ -4920,6 +4920,8 @@ function buildGamePayload(f) {
   if (isSchools && !isRugby) price = 14.99;
   // Camogie: always 14.99, whatever the grade, round or province
   if (isCamogie && !isRugby) price = 14.99;
+  // Third-level (Higher Education): always 14.99, whatever the grade or round
+  if (isHE && !isRugby) price = 14.99;
 
   const county = isRugby ? 'UK'
     : (isProvincial || isPPS || isHE) ? (teamAResult?.county || countyA)
