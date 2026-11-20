@@ -1,0 +1,644 @@
+openapi: 3.0.3
+info:
+  title: Fixtures Dashboard API for Clubber
+  version: 1.0.0
+  description: |
+    Everything the Fixtures Dashboard does, for Clubber to integrate: the
+    fixtures scraped from county / provincial / college / rugby websites plus
+    hand-added ones, their status (Proposed / Approved / Rejected), edits,
+    history, crew, and the ready-to-use Clubber game details for each.
+
+    The API reads and writes the same data as the dashboard, so both can be
+    used side by side. Clubber game details (`clubber.game`) are worked out by
+    the dashboard's own export rules (club IDs, grade, price, UTC time, venue).
+
+    All dates are `YYYY-MM-DD`. Fixture `date` / `time` are Irish local time
+    (Europe/Dublin, 24-hour `HH:MM`); `clubber.game.date` / `time` are UTC,
+    exactly as Clubber's GameDetails import expects. Timestamps are ISO 8601 UTC.
+servers:
+  - url: https://gaa-fixtures-proxy-v2.clodagh-b01.workers.dev/api/v1
+security:
+  - bearerAuth: []
+  - apiKeyHeader: []
+tags:
+  - name: Fixtures
+  - name: Changes
+  - name: History
+  - name: Import
+  - name: Reference
+paths:
+  /health:
+    get:
+      tags: [Reference]
+      summary: Is the API up (no key needed)
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  configured: { type: boolean, description: false until the API key is set on the worker }
+                  time: { type: string, format: date-time }
+  /fixtures:
+    get:
+      tags: [Fixtures]
+      summary: List fixtures in a date range
+      description: |
+        Returns fixtures (all statuses unless filtered) whose `date` is within
+        `from`..`to` inclusive. Defaults: `from` = today (Irish time), `to` =
+        `from` + 30 days. A request can cover at most 366 days. Sorted by date,
+        time, county. Paged with `limit` / `cursor`.
+      parameters:
+        - { $ref: '#/components/parameters/from' }
+        - { $ref: '#/components/parameters/to' }
+        - name: status
+          in: query
+          description: Comma-separated statuses
+          schema: { type: string, example: 'Approved,Proposed' }
+        - name: site
+          in: query
+          description: IE (GAA, Clubber Ireland) or UK (rugby, Clubber UK)
+          schema: { type: string, enum: [IE, UK] }
+        - name: county
+          in: query
+          description: Comma-separated county / grouping values (e.g. Cork, Munster, Higher Education, BUCS)
+          schema: { type: string }
+        - name: code
+          in: query
+          description: Comma-separated codes (Football, Hurling, Camogie, LGFA, ...)
+          schema: { type: string }
+        - name: inClubber
+          in: query
+          description: true = only fixtures already created in Clubber; false = only ones not yet created
+          schema: { type: boolean }
+        - name: q
+          in: query
+          description: Text search over teams, venue, competition, county, round
+          schema: { type: string }
+        - name: changedSince
+          in: query
+          description: Only fixtures whose content changed after this timestamp
+          schema: { type: string, format: date-time }
+        - { $ref: '#/components/parameters/limit' }
+        - { $ref: '#/components/parameters/cursor' }
+      responses:
+        '200':
+          description: A page of fixtures
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  from: { type: string, format: date }
+                  to: { type: string, format: date }
+                  total: { type: integer, description: Matching fixtures across all pages }
+                  nextCursor: { type: string, nullable: true }
+                  fixtures:
+                    type: array
+                    items: { $ref: '#/components/schemas/Fixture' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorised' }
+    post:
+      tags: [Fixtures]
+      summary: Add a fixture (like "Add fixture" on the dashboard)
+      description: Creates a hand-added fixture, status Proposed unless `status` is given. 409 if the same fixture (county, teams, competition, date) already exists.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NewFixture' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  fixture: { $ref: '#/components/schemas/Fixture' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorised' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /fixtures/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/id' }
+    get:
+      tags: [Fixtures]
+      summary: One fixture
+      responses:
+        '200':
+          description: The fixture
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  fixture: { $ref: '#/components/schemas/Fixture' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Fixtures]
+      summary: Approve / reject / edit / set Clubber or crew details
+      description: |
+        Send only the fields to change. Everything is saved exactly as the
+        dashboard saves the same action, and recorded in the fixture's history
+        under `user` ("Name (Clubber)").
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FixturePatch' }
+      responses:
+        '200':
+          description: Updated fixture
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  changed: { type: array, items: { type: string }, description: Fields that actually changed }
+                  fixture: { $ref: '#/components/schemas/Fixture' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Fixtures]
+      summary: Remove a Rejected fixture (the dashboard's "Remove")
+      description: Only Rejected fixtures can be removed (409 otherwise). Hand-added fixtures are deleted; scraped ones are marked Removed and stop appearing.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user: { type: string }
+      responses:
+        '200':
+          description: Removed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  id: { type: string }
+                  removed: { type: boolean }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /fixtures/batch:
+    post:
+      tags: [Fixtures]
+      summary: Update many fixtures at once (e.g. approve a selection)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [updates]
+              properties:
+                user: { type: string, description: Name of the person making the change }
+                updates:
+                  type: array
+                  maxItems: 500
+                  items:
+                    allOf:
+                      - type: object
+                        required: [id]
+                        properties:
+                          id: { type: string }
+                      - { $ref: '#/components/schemas/FixturePatch' }
+            example:
+              user: Aoife
+              updates:
+                - { id: 'f_Q29ya3x...', status: Approved }
+                - { id: 'm_mabc123', status: Rejected }
+      responses:
+        '200':
+          description: Results in the same order
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: string }
+                        changed: { type: array, items: { type: string } }
+                        fixture: { $ref: '#/components/schemas/Fixture' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /fixtures/{id}/history:
+    parameters:
+      - { $ref: '#/components/parameters/id' }
+    get:
+      tags: [History]
+      summary: A fixture's history, oldest first
+      responses:
+        '200':
+          description: History
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  id: { type: string }
+                  history:
+                    type: array
+                    items: { $ref: '#/components/schemas/HistoryEntry' }
+  /history:
+    get:
+      tags: [History]
+      summary: All status changes and edits made in a date range
+      description: '`from` / `to` are the days the changes were made (Irish time). Keeps the latest 500 status changes and 2000 edits.'
+      parameters:
+        - { $ref: '#/components/parameters/from' }
+        - { $ref: '#/components/parameters/to' }
+        - name: type
+          in: query
+          schema: { type: string, enum: [status, edit] }
+        - { $ref: '#/components/parameters/limit' }
+        - { $ref: '#/components/parameters/cursor' }
+      responses:
+        '200':
+          description: History, oldest first
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  from: { type: string, format: date }
+                  to: { type: string, format: date }
+                  total: { type: integer }
+                  nextCursor: { type: string, nullable: true }
+                  history:
+                    type: array
+                    items: { $ref: '#/components/schemas/HistoryEntry' }
+  /changes:
+    get:
+      tags: [Changes]
+      summary: Fixtures that changed since a time (for polling)
+      description: |
+        Anything about a fixture counts: source website updates (date, time,
+        venue...), status, edits, Clubber details, crew - and fixtures added
+        or removed. Poll with `since` = the previous response's `asOf`.
+        If `complete` is false, `since` is before change tracking started:
+        do a full `GET /fixtures` load instead.
+      parameters:
+        - name: since
+          in: query
+          required: true
+          schema: { type: string, format: date-time }
+        - name: from
+          in: query
+          description: Optional - only fixtures dated on/after this day
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          description: Optional - only fixtures dated on/before this day
+          schema: { type: string, format: date }
+        - { $ref: '#/components/parameters/limit' }
+        - { $ref: '#/components/parameters/cursor' }
+      responses:
+        '200':
+          description: Changes, oldest first
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  since: { type: string, format: date-time }
+                  asOf: { type: string, format: date-time, description: Use as the next `since` }
+                  trackingSince: { type: string, format: date-time }
+                  complete: { type: boolean }
+                  total: { type: integer }
+                  nextCursor: { type: string, nullable: true }
+                  changes:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: string }
+                        change: { type: string, enum: [changed, removed] }
+                        at: { type: string, format: date-time }
+                        fixture:
+                          allOf: [{ $ref: '#/components/schemas/Fixture' }]
+                          nullable: true
+                          description: Current fixture (null when removed)
+  /import:
+    post:
+      tags: [Import]
+      summary: Read fixtures from screenshots, PDFs or text (Claude)
+      description: |
+        Same as the dashboard's "Add from screenshot": returns the fixtures it
+        found, each with up to 3 existing fixtures it may match (same teams,
+        within 6 weeks). Nothing is saved - create with POST /fixtures or
+        update a match with PATCH /fixtures/{id}. Can take up to a minute.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                files:
+                  type: array
+                  maxItems: 10
+                  items:
+                    type: object
+                    required: [mediaType, data]
+                    properties:
+                      name: { type: string }
+                      mediaType: { type: string, enum: [image/png, image/jpeg, image/gif, image/webp, application/pdf] }
+                      data: { type: string, description: Base64 file content }
+                texts:
+                  type: array
+                  maxItems: 10
+                  items:
+                    type: object
+                    properties:
+                      name: { type: string }
+                      text: { type: string }
+                note: { type: string, description: 'Hints for the reader, e.g. "These are Cork camogie games"' }
+      responses:
+        '200':
+          description: Fixtures found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  fixtures:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        county: { type: string }
+                        competition: { type: string }
+                        code: { type: string }
+                        round: { type: string }
+                        teamA: { type: string }
+                        teamB: { type: string }
+                        date: { type: string }
+                        time: { type: string }
+                        venue: { type: string }
+                        matches:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id: { type: string }
+                              status: { type: string }
+                              date: { type: string }
+                              time: { type: string, nullable: true }
+                              teamA: { type: string }
+                              teamB: { type: string }
+                              competition: { type: string }
+        '502': { $ref: '#/components/responses/BadRequest' }
+  /reference:
+    get:
+      tags: [Reference]
+      summary: Statuses, grades, counties, codes and editable fields
+      responses:
+        '200':
+          description: Reference lists
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, description: 'Authorization: Bearer <API key>' }
+    apiKeyHeader: { type: apiKey, in: header, name: X-API-Key }
+  parameters:
+    id:
+      name: id
+      in: path
+      required: true
+      description: Fixture id from a list response (f_... scraped, m_... hand-added). Opaque - don't build it yourself.
+      schema: { type: string }
+    from:
+      name: from
+      in: query
+      description: First day (YYYY-MM-DD, inclusive). Default today, Irish time.
+      schema: { type: string, format: date }
+    to:
+      name: to
+      in: query
+      description: Last day (YYYY-MM-DD, inclusive). Default from + 30 days. At most 366 days after from.
+      schema: { type: string, format: date }
+    limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 2000, default: 500 }
+    cursor:
+      name: cursor
+      in: query
+      description: nextCursor from the previous page
+      schema: { type: string }
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unauthorised:
+      description: Missing or wrong API key
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: No such fixture
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Conflict:
+      description: Not allowed in the fixture's current state, or already exists
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+  schemas:
+    Error:
+      type: object
+      properties:
+        ok: { type: boolean, example: false }
+        error:
+          type: object
+          properties:
+            code: { type: string, example: invalid_range }
+            message: { type: string }
+            details: { type: object }
+    Fixture:
+      type: object
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [scraped, manual], description: scraped = from a source website; manual = added by hand / screenshot / API }
+        status: { type: string, enum: [Proposed, Approved, Rejected] }
+        sport: { type: string, enum: [GAA, Rugby] }
+        site: { type: string, enum: [IE, UK], description: Which Clubber site it belongs on }
+        county: { type: string, description: 'County, or a grouping: Munster, Leinster, Munster PPS, Leinster PPS, Higher Education, BUCS, ACE, Champ' }
+        competition: { type: string }
+        code: { type: string }
+        round: { type: string }
+        teamA: { type: string, description: Home team as the source names it }
+        teamB: { type: string }
+        teamACounty: { type: string, description: Team's own county when it differs from county (provincial games) }
+        teamBCounty: { type: string }
+        date: { type: string, description: 'YYYY-MM-DD, Irish time' }
+        day: { type: string, example: Saturday }
+        time: { type: string, nullable: true, description: 'HH:MM Irish time; null = no time yet' }
+        timeText: { type: string, example: '7:30 PM', description: As the dashboard shows it }
+        venue: { type: string }
+        sourceUrl: { type: string, description: Source website when it isn't the county board's }
+        edited: { type: array, items: { type: string }, description: Fields changed on the dashboard / API (they no longer follow the source website) }
+        missing:
+          type: object
+          properties:
+            date: { type: boolean }
+            time: { type: boolean }
+            teams: { type: boolean, description: Teams not decided yet (e.g. "Winner SF1") }
+        clubber:
+          type: object
+          properties:
+            created: { type: boolean, description: Marked as created in Clubber }
+            gameId: { type: string, nullable: true }
+            pick: { type: boolean, description: Clubber Pick (trending) }
+            hero: { type: boolean }
+            ready: { type: boolean, description: true when errors is empty - game can be created }
+            errors: { type: array, items: { type: string }, description: Must be fixed before creating the game }
+            warnings: { type: array, items: { type: string }, description: 'Worth checking (e.g. club auto-matched, venue left out)' }
+            game: { $ref: '#/components/schemas/GameDetails' }
+            live:
+              type: object
+              nullable: true
+              description: The game as Clubber currently has it (when gameId is in Clubber's upcoming feed)
+              properties:
+                date: { type: string }
+                time: { type: string, nullable: true }
+                site: { type: string }
+                grade: { type: string }
+                price: { type: number, nullable: true }
+            differences:
+              type: array
+              description: Where Clubber's game differs from the fixture (date / time, Irish time)
+              items:
+                type: object
+                properties:
+                  field: { type: string, enum: [date, time] }
+                  clubber: { type: string, nullable: true }
+                  dashboard: { type: string, nullable: true }
+        crew:
+          type: object
+          properties:
+            socials: { type: string, nullable: true }
+            socialsEmail: { type: string, nullable: true }
+            support2: { type: string, nullable: true }
+            support2Email: { type: string, nullable: true }
+            videographer: { type: string, nullable: true }
+            videographerEmail: { type: string, nullable: true }
+            replay: { type: string, nullable: true }
+            cameras: { nullable: true }
+            unit: { type: string, nullable: true }
+            unitSystem: { type: string, nullable: true }
+        updatedAt: { type: string, format: date-time, nullable: true, description: When anything about the fixture last changed }
+    GameDetails:
+      type: object
+      description: The game exactly as the dashboard's Clubber export would create it (UTC date / time)
+      properties:
+        gameScope: { type: string, enum: [Club, School, University] }
+        date: { type: string, description: 'YYYY-MM-DD UTC' }
+        time: { type: string, description: 'HH:MM UTC; 00:01 = no time yet' }
+        county: { type: string }
+        club: { type: string }
+        clubId: { type: string }
+        code: { type: string }
+        sportType: { type: string, description: Rugby only }
+        grade: { type: string }
+        championsType: { type: string }
+        season: { type: string }
+        round: { type: string }
+        title: { type: string }
+        venue: { type: string, description: Only when it exactly matches a Clubber venue }
+        competitorClubName: { type: string }
+        competitorClubId: { type: string }
+        competitorClubCounty: { type: string }
+        price: { type: number }
+        hideFromFan: { type: boolean }
+        sendToSpectatr: { type: boolean }
+        sendToMagnifi: { type: boolean }
+        trendingUpcoming: { type: boolean }
+        heroSection: { type: boolean }
+    NewFixture:
+      type: object
+      required: [county, teamA, teamB, date]
+      properties:
+        user: { type: string, description: Name of the person adding it }
+        county: { type: string }
+        teamA: { type: string }
+        teamB: { type: string }
+        teamACounty: { type: string }
+        teamBCounty: { type: string }
+        date: { type: string, format: date }
+        time: { type: string, example: '19:30', description: Irish time; omit if unknown }
+        venue: { type: string }
+        competition: { type: string }
+        round: { type: string }
+        code: { type: string, description: Worked out from the competition if omitted }
+        status: { type: string, enum: [Proposed, Approved, Rejected] }
+    FixturePatch:
+      type: object
+      properties:
+        user: { type: string, description: 'Name of the person making the change - history shows "Name (Clubber)"' }
+        status: { type: string, enum: [Proposed, Approved, Rejected] }
+        date: { type: string, format: date }
+        time: { type: string, nullable: true, example: '19:30', description: Irish time; null = no time }
+        venue: { type: string }
+        round: { type: string }
+        competition: { type: string }
+        code: { type: string }
+        county: { type: string }
+        teamA: { type: string }
+        teamB: { type: string }
+        teamACounty: { type: string }
+        teamBCounty: { type: string }
+        clubberGameId: { type: string, nullable: true, description: Clubber game UUID once created }
+        clubberCreated: { type: boolean }
+        clubberPick: { type: boolean }
+        hero: { type: boolean }
+        socials: { type: string, nullable: true }
+        socialsEmail: { type: string, nullable: true }
+        support2: { type: string, nullable: true }
+        support2Email: { type: string, nullable: true }
+        videographer: { type: string, nullable: true }
+        videographerEmail: { type: string, nullable: true }
+        replay: { type: string, nullable: true }
+        cameras: { nullable: true }
+        unit: { type: string, nullable: true }
+        unitSystem: { type: string, nullable: true }
+    HistoryEntry:
+      type: object
+      properties:
+        type: { type: string, enum: [status, edit, clubber, pick] }
+        at: { type: string, format: date-time }
+        user: { type: string }
+        device: { type: string }
+        note: { type: string }
+        key: { type: string }
+        changes:
+          type: array
+          items:
+            type: object
+            properties:
+              field: { type: string }
+              from: { type: string, nullable: true }
+              to: { type: string, nullable: true }

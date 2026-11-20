@@ -1,0 +1,301 @@
+<title>Fixtures API for Clubber</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap">
+<style>
+/* Layout: a single reading column with a sticky contents rail on wide screens; code in its own scroll boxes */
+:root {
+  --bg: #f6f7f4; --panel: #ffffff; --fg: #18211c; --muted: #5b675f; --line: #dfe4dd;
+  --accent: #1f7a4d; --accent-soft: #e3f1e8; --code-bg: #eef1ec; --warn: #9a5b00; --warn-soft: #fbf0dc;
+  --get: #1f6fb2; --post: #1f7a4d; --patch: #8a5a00; --del: #b03a2e;
+  --display: 'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;
+  --body: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111613; --panel: #171e1a; --fg: #e4ebe6; --muted: #98a59d; --line: #2a342e;
+  --accent: #5cc690; --accent-soft: #1c3227; --code-bg: #1c2420; --warn: #e3ad55; --warn-soft: #33281a;
+  --get: #6fb3ec; --post: #5cc690; --patch: #e3ad55; --del: #ec7f73; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #111613; --panel: #171e1a; --fg: #e4ebe6; --muted: #98a59d; --line: #2a342e;
+  --accent: #5cc690; --accent-soft: #1c3227; --code-bg: #1c2420; --warn: #e3ad55; --warn-soft: #33281a;
+  --get: #6fb3ec; --post: #5cc690; --patch: #e3ad55; --del: #ec7f73; color-scheme: dark }
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--fg); font: 15px/1.6 var(--body); margin: 0 }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 40px 80px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 48px }
+nav { position: sticky; top: calc(24px + env(safe-area-inset-top, 0px)); align-self: start; font-size: 13px }
+nav p { margin: 0 0 8px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-size: 11px; font-weight: 600 }
+nav a { display: block; color: var(--muted); text-decoration: none; padding: 3px 0 3px 10px; border-left: 2px solid var(--line) }
+nav a:hover, nav a:focus-visible { color: var(--fg); border-left-color: var(--accent); outline: none }
+main { min-width: 0; max-width: 760px }
+h1 { font: 700 clamp(30px, 5vw, 42px)/1.1 var(--display); margin: 0 0 12px; text-wrap: balance; letter-spacing: -.01em }
+h2 { font: 600 24px/1.25 var(--display); margin: 56px 0 12px; text-wrap: balance; scroll-margin-top: 24px }
+h3 { font: 600 16px/1.4 var(--body); margin: 28px 0 8px }
+p, li { max-width: 68ch }
+.lede { font-size: 17px; color: var(--muted); margin: 0 0 24px }
+a { color: var(--accent) }
+code { font: 13px/1.5 var(--mono); background: var(--code-bg); padding: 1px 5px; border-radius: 4px }
+pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; overflow-x: auto; margin: 10px 0 18px }
+pre code { background: none; padding: 0; font-size: 12.5px; white-space: pre }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 24px 0 }
+.fact { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px }
+.fact b { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; margin-bottom: 4px }
+.fact span { font: 13px/1.45 var(--mono); word-break: break-all }
+.note { background: var(--accent-soft); border-radius: 8px; padding: 12px 16px; margin: 16px 0 }
+.note.warn { background: var(--warn-soft) }
+.note p { margin: 0 }
+.ep { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 12px; margin: 30px 0 6px; padding-top: 18px; border-top: 1px solid var(--line) }
+.ep code { font-size: 14px; background: none; padding: 0; font-weight: 500 }
+.m { font: 600 11px/1 var(--mono); letter-spacing: .06em; padding: 4px 7px; border-radius: 4px; border: 1px solid currentColor }
+.m.get { color: var(--get) } .m.post { color: var(--post) } .m.patch { color: var(--patch) } .m.del { color: var(--del) }
+.tbl { overflow-x: auto; margin: 10px 0 18px }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 520px }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top }
+th { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600 }
+td:first-child { font-family: var(--mono); font-size: 12.5px; white-space: nowrap }
+ol.steps { padding-left: 20px } ol.steps li { margin: 6px 0 }
+footer { margin-top: 64px; color: var(--muted); font-size: 13px }
+@media (max-width: 860px) { .wrap { grid-template-columns: minmax(0, 1fr); gap: 0 } nav { display: none } }
+</style>
+
+<div class="wrap">
+<nav aria-label="Contents">
+  <p>Contents</p>
+  <a href="#start">Getting started</a>
+  <a href="#model">The fixture</a>
+  <a href="#list">List fixtures</a>
+  <a href="#one">One fixture</a>
+  <a href="#change">Approve & edit</a>
+  <a href="#batch">Many at once</a>
+  <a href="#add">Add a fixture</a>
+  <a href="#remove">Remove</a>
+  <a href="#clubber">Creating the game</a>
+  <a href="#changes">Keeping in sync</a>
+  <a href="#webhook">Webhook</a>
+  <a href="#history">History</a>
+  <a href="#import">Read a screenshot</a>
+  <a href="#errors">Errors & limits</a>
+</nav>
+<main>
+<h1>Fixtures API for Clubber</h1>
+<p class="lede">The Fixtures Dashboard as an API: every fixture it collects from county, provincial, college and rugby websites, its status, edits, crew and history, plus the Clubber game ready to create. It reads and writes the same data as the dashboard, so both can be used during the switch-over.</p>
+
+<div class="facts">
+  <div class="fact"><b>Base URL</b><span>https://gaa-fixtures-proxy-v2.clodagh-b01.workers.dev/api/v1</span></div>
+  <div class="fact"><b>Auth</b><span>Authorization: Bearer &lt;key&gt;</span></div>
+  <div class="fact"><b>Format</b><span>JSON, UTF-8</span></div>
+  <div class="fact"><b>Spec</b><span>docs/clubber-api.openapi.yaml</span></div>
+</div>
+
+<h2 id="start">Getting started</h2>
+<ol class="steps">
+  <li>Get the API key from Clodagh. Send it on every request as <code>Authorization: Bearer &lt;key&gt;</code> (or <code>X-API-Key: &lt;key&gt;</code>). Keep it server-side: it can approve and edit fixtures.</li>
+  <li>Check the API is up: <code>GET /health</code> needs no key and returns <code>configured: true</code> once the key is set.</li>
+  <li>Load the fixtures for a date range with <code>GET /fixtures</code>, then poll <code>GET /changes</code> to stay up to date.</li>
+</ol>
+<pre><code>curl -H "Authorization: Bearer $FIXTURES_API_KEY" \
+  "https://gaa-fixtures-proxy-v2.clodagh-b01.workers.dev/api/v1/fixtures?from=2026-11-20&amp;to=2026-12-20&amp;status=Approved&amp;site=IE"</code></pre>
+<p>Send the name of the person using Clubber with every change, as <code>"user": "Aoife"</code> in the body or an <code>X-User-Name</code> header. The dashboard's history then shows <b>Aoife (Clubber)</b>. Without a name it shows <b>Clubber</b>.</p>
+
+<h3>Dates and times</h3>
+<ul>
+  <li>All dates are <code>YYYY-MM-DD</code>. Fixture <code>date</code> and <code>time</code> are <b>Irish local time</b> (24-hour <code>HH:MM</code>); <code>time</code> is <code>null</code> when there's no throw-in time yet.</li>
+  <li>The Clubber game in <code>clubber.game</code> uses <b>UTC</b>, exactly as Clubber's GameDetails import expects. <code>00:01</code> there means no time yet.</li>
+  <li>Timestamps (<code>updatedAt</code>, history <code>at</code>) are ISO 8601 UTC.</li>
+</ul>
+
+<h2 id="model">The fixture</h2>
+<p>Every endpoint returns fixtures in this shape. <code>id</code> is opaque and stable: <code>f_…</code> for fixtures from a source website, <code>m_…</code> for ones added by hand, from a screenshot or through the API. Store it; don't build it yourself.</p>
+<pre><code>{
+  "id": "f_Q29ya3xKdW5pb3IgQSBIQ3xEb25vdWdobW9yZXxLaWxsZWFnaHwyMDI2LTExLTI4",
+  "kind": "scraped",                 // or "manual"
+  "status": "Approved",              // Proposed | Approved | Rejected
+  "sport": "GAA", "site": "IE",      // site: IE = Clubber Ireland, UK = Clubber UK (rugby)
+  "county": "Cork", "competition": "Junior A HC", "code": "Hurling", "round": "Final",
+  "teamA": "Donoughmore", "teamB": "Killeagh", "teamACounty": "", "teamBCounty": "",
+  "date": "2026-11-28", "day": "Saturday", "time": "19:30", "timeText": "7:30 PM",
+  "venue": "Super Valu Pairc Ui Chaoimh",
+  "sourceUrl": "",
+  "edited": [],                      // fields changed on the dashboard / API
+  "missing": { "date": false, "time": false, "teams": false },
+  "clubber": {
+    "created": true, "gameId": "db6b4817-a763-4189-946e-d6741dda46e9",
+    "pick": false, "hero": false,
+    "ready": true,                   // no errors: the game can be created
+    "errors": [],
+    "warnings": ["\"Donoughmore\" auto-matched to \"Donoughmore\" — verify this is correct"],
+    "game": {                        // GameDetails, UTC
+      "gameScope": "Club", "date": "2026-11-28", "time": "19:30", "county": "Cork",
+      "club": "Donoughmore", "clubId": "bef4a651-dd14-4924-8735-df36c2b6a03b",
+      "code": "Hurling", "grade": "Junior 2", "championsType": "Cork", "season": "Season 26",
+      "round": "final", "title": "", "venue": "Páirc Uí Chaoimh",
+      "competitorClubName": "Killeagh", "competitorClubId": "00ca3b0c-e8f5-4001-909f-d6591ac262a1",
+      "competitorClubCounty": "Cork", "price": 19.99,
+      "hideFromFan": false, "sendToSpectatr": true, "sendToMagnifi": false
+    },
+    "live": { "date": "2026-11-28", "time": "19:30", "site": "IE", "grade": "Junior 2", "price": 14.99 },
+    "differences": []                // date / time where Clubber's game differs
+  },
+  "crew": { "socials": null, "socialsEmail": null, "support2": null, "support2Email": null,
+            "videographer": null, "videographerEmail": null, "replay": null,
+            "cameras": null, "unit": null, "unitSystem": null },
+  "updatedAt": "2026-11-20T15:20:06.366Z"
+}</code></pre>
+<div class="tbl"><table>
+<thead><tr><th>Field</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>county</td><td>A county, or a grouping: <code>Munster</code>, <code>Leinster</code>, <code>Munster PPS</code>, <code>Leinster PPS</code> (schools), <code>Higher Education</code>, <code>BUCS</code>, <code>ACE</code>, <code>Champ</code>.</td></tr>
+<tr><td>teamA / teamB</td><td>Names as the source website writes them. The Clubber club names and IDs are in <code>clubber.game</code>.</td></tr>
+<tr><td>edited</td><td>Fields someone changed on the dashboard or through the API. These keep the edited value even when the source website changes.</td></tr>
+<tr><td>missing.teams</td><td>The teams aren't decided yet ("Winner SF1"). The game can't be created until they are.</td></tr>
+<tr><td>clubber.ready</td><td><code>true</code> when <code>errors</code> is empty. Errors must be fixed first (unknown club, team not confirmed, no grade). Warnings are worth a look (club auto-matched, venue not found in Clubber so left out).</td></tr>
+<tr><td>clubber.game</td><td>The game exactly as the dashboard's Clubber export would create it: club IDs, grade, championship type, round, price, UTC date and time, and a venue only when it exactly matches a Clubber venue.</td></tr>
+<tr><td>clubber.live</td><td>The game as Clubber has it now, when <code>gameId</code> is in Clubber's upcoming-games feed. <code>differences</code> lists date or time mismatches.</td></tr>
+<tr><td>updatedAt</td><td>When anything about the fixture last changed.</td></tr>
+</tbody></table></div>
+
+<h2 id="list">List fixtures</h2>
+<div class="ep"><span class="m get">GET</span><code>/fixtures</code></div>
+<p>Fixtures dated from <code>from</code> to <code>to</code>, both inclusive. If you leave them out, you get today to 30 days ahead (Irish time). One request can cover at most 366 days. Results are sorted by date, time and county, 500 per page by default.</p>
+<div class="tbl"><table>
+<thead><tr><th>Parameter</th><th>Example</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>from, to</td><td>2026-11-20</td><td>Date range of the fixtures (inclusive)</td></tr>
+<tr><td>status</td><td>Approved,Proposed</td><td>One or more statuses. Default: all three</td></tr>
+<tr><td>site</td><td>IE</td><td>IE (GAA) or UK (rugby)</td></tr>
+<tr><td>county</td><td>Cork,Munster</td><td>One or more county / grouping values</td></tr>
+<tr><td>code</td><td>Hurling</td><td>One or more codes</td></tr>
+<tr><td>inClubber</td><td>false</td><td>Only fixtures already created in Clubber (true) or not yet (false)</td></tr>
+<tr><td>q</td><td>Killeagh</td><td>Text search in teams, venue, competition, county, round</td></tr>
+<tr><td>changedSince</td><td>2026-11-20T09:00:00Z</td><td>Only fixtures changed after this time</td></tr>
+<tr><td>limit, cursor</td><td>200</td><td>Page size (1–2000) and the <code>nextCursor</code> from the previous page</td></tr>
+</tbody></table></div>
+<pre><code>GET /fixtures?from=2026-11-21&amp;to=2026-11-23&amp;status=Approved&amp;inClubber=false
+
+{ "ok": true, "from": "2026-11-21", "to": "2026-11-23", "total": 14,
+  "nextCursor": null, "fixtures": [ { …fixture… }, … ] }</code></pre>
+
+<h2 id="one">One fixture</h2>
+<div class="ep"><span class="m get">GET</span><code>/fixtures/{id}</code></div>
+<p>Returns <code>{ "ok": true, "fixture": { … } }</code>, or 404 if the fixture has gone (removed, or no longer on the source website).</p>
+
+<h2 id="change">Approve, reject and edit</h2>
+<div class="ep"><span class="m patch">PATCH</span><code>/fixtures/{id}</code></div>
+<p>Send only what changes. Each change is saved exactly as the dashboard saves it and shows in the fixture's history.</p>
+<div class="tbl"><table>
+<thead><tr><th>Field</th><th>Values</th></tr></thead>
+<tbody>
+<tr><td>status</td><td><code>Proposed</code>, <code>Approved</code> or <code>Rejected</code></td></tr>
+<tr><td>date, time</td><td><code>2026-11-28</code>, <code>19:30</code> (Irish time; <code>null</code> = no time)</td></tr>
+<tr><td>venue, round, competition, code</td><td>Text</td></tr>
+<tr><td>county, teamA, teamB, teamACounty, teamBCounty</td><td>Text (teams and county can't be empty)</td></tr>
+<tr><td>clubberGameId, clubberCreated</td><td>The Clubber game ID once created; <code>true</code> marks it as in Clubber</td></tr>
+<tr><td>clubberPick, hero</td><td><code>true</code> / <code>false</code></td></tr>
+<tr><td>socials, support2, videographer (+ …Email), replay, cameras, unit, unitSystem</td><td>Crew assignments</td></tr>
+</tbody></table></div>
+<pre><code>PATCH /fixtures/f_Q29ya3x…
+{ "user": "Aoife", "status": "Approved" }
+
+PATCH /fixtures/f_Q29ya3x…
+{ "user": "Aoife", "time": "20:15", "venue": "Páirc Uí Rinn" }
+
+→ { "ok": true, "changed": ["time", "venue"], "fixture": { … } }</code></pre>
+<p>After an edit, <code>clubber.game</code> is worked out again, so a new time is converted to UTC and a new venue matched against Clubber's venues.</p>
+<div class="note"><p>Edits stick. Once a field is edited it keeps your value, even if the source website changes it later. If the source changes the date, teams or competition, the fixture can come back as a new <code>id</code> with status Proposed; the old one disappears from the list and shows as <code>removed</code> in <a href="#changes">changes</a>.</p></div>
+
+<h2 id="batch">Many at once</h2>
+<div class="ep"><span class="m post">POST</span><code>/fixtures/batch</code></div>
+<p>Up to 500 updates in one request, for example approving a selection. Every update takes the same fields as PATCH. If any id is unknown or any field is invalid, nothing is saved.</p>
+<pre><code>{ "user": "Aoife",
+  "updates": [ { "id": "f_Q29ya3x…", "status": "Approved" },
+               { "id": "m_mabc123",  "status": "Rejected" } ] }
+
+→ { "ok": true, "results": [ { "id": "f_…", "changed": ["status"], "fixture": { … } }, … ] }</code></pre>
+
+<h2 id="add">Add a fixture</h2>
+<div class="ep"><span class="m post">POST</span><code>/fixtures</code></div>
+<p>Adds a fixture by hand, as the dashboard's <b>Add fixture</b> does. It starts as Proposed unless you send <code>status</code>. <code>county</code>, <code>teamA</code>, <code>teamB</code> and <code>date</code> are required, and <code>code</code> is worked out from the competition when you leave it out. The same fixture twice (same county, teams, competition and date) returns 409 with the existing id.</p>
+<pre><code>{ "user": "Aoife", "county": "Cork", "teamA": "Sarsfields", "teamB": "Midleton",
+  "date": "2026-12-06", "time": "14:00", "competition": "Premier Senior HC",
+  "round": "Final", "venue": "Páirc Uí Chaoimh", "status": "Approved" }
+
+→ 201 { "ok": true, "fixture": { "id": "m_mmwp4lvu1vhs3", "kind": "manual", … } }</code></pre>
+
+<h2 id="remove">Remove</h2>
+<div class="ep"><span class="m del">DELETE</span><code>/fixtures/{id}</code></div>
+<p>The dashboard's <b>Remove</b>. It only works on Rejected fixtures; reject the fixture first, or you get 409. Fixtures added by hand are deleted. Scraped fixtures are marked Removed and won't come back from the source website.</p>
+
+<h2 id="clubber">Creating the game in Clubber</h2>
+<ol class="steps">
+  <li>List the Approved fixtures that aren't in Clubber yet: <code>GET /fixtures?status=Approved&amp;inClubber=false</code>.</li>
+  <li>For each one where <code>clubber.ready</code> is true, create the game from <code>clubber.game</code>. Show <code>clubber.warnings</code> to the person approving.</li>
+  <li>Record the new game: <code>PATCH /fixtures/{id}</code> with <code>{ "clubberGameId": "…", "clubberCreated": true }</code>. The dashboard then shows it as In Clubber, and <code>clubber.live</code> / <code>differences</code> start tracking it.</li>
+  <li>When a fixture already in Clubber changes (see <a href="#changes">Keeping in sync</a>), compare <code>clubber.game</code> with your game and update it. <code>clubber.differences</code> flags date and time mismatches.</li>
+</ol>
+<div class="note warn"><p>Fixtures with errors (club not found, team not confirmed, no grade) need fixing first, usually by mapping the club on the dashboard. Show the errors to the person approving rather than creating a partial game.</p></div>
+
+<h2 id="changes">Keeping in sync</h2>
+<div class="ep"><span class="m get">GET</span><code>/changes?since=…</code></div>
+<p>Every fixture whose content changed after <code>since</code>, oldest first. Anything counts: a source website changing the date, time or venue; a status change or edit made on the dashboard or through the API; a Clubber or crew change; a new fixture; or one that's gone. Add <code>from</code> / <code>to</code> to limit it to fixtures dated in a range.</p>
+<pre><code>GET /changes?since=2026-11-20T15:00:00Z
+
+{ "ok": true, "since": "2026-11-20T15:00:00.000Z", "asOf": "2026-11-20T16:00:02.114Z",
+  "trackingSince": "2026-11-20T15:20:06.366Z", "complete": true, "total": 2,
+  "changes": [
+    { "id": "f_…", "change": "changed", "at": "2026-11-20T15:48:10.002Z", "fixture": { … } },
+    { "id": "f_…", "change": "removed", "at": "2026-11-20T15:48:10.002Z", "fixture": null } ] }</code></pre>
+<ol class="steps">
+  <li>Do a full load with <code>GET /fixtures</code> and keep the time you made it.</li>
+  <li>Every few minutes, call <code>GET /changes?since=</code> with the previous response's <code>asOf</code>.</li>
+  <li>Upsert each <code>changed</code> fixture and drop each <code>removed</code> one.</li>
+  <li>If <code>complete</code> is false, your <code>since</code> is from before change tracking started, so do a full load again.</li>
+</ol>
+<p>Source websites are checked hourly, so polling every 5–15 minutes is plenty.</p>
+
+<h2 id="webhook">Webhook (optional)</h2>
+<p>If Clubber gives us a URL, the dashboard will POST to it once an hour whenever something has changed. The post lists only ids; fetch the details with <code>GET /fixtures/{id}</code> or <code>/changes</code>.</p>
+<pre><code>POST https://your-clubber-endpoint
+X-Fixtures-Signature: sha256=&lt;hex HMAC-SHA256 of the raw body, keyed with the shared secret&gt;
+
+{ "event": "fixtures.changed", "since": "…", "asOf": "…", "count": 2, "truncated": false,
+  "changes": [ { "id": "f_…", "change": "changed", "at": "…" },
+               { "id": "f_…", "change": "removed", "at": "…" } ] }</code></pre>
+<p>Reply with any 2xx status. If the post fails, the same changes are sent again the next hour. Verify the signature by computing the HMAC of the raw body yourself and comparing it with the header.</p>
+
+<h2 id="history">History</h2>
+<div class="ep"><span class="m get">GET</span><code>/fixtures/{id}/history</code></div>
+<div class="ep"><span class="m get">GET</span><code>/history?from=…&amp;to=…</code></div>
+<p>Status changes, edits, In Clubber and Clubber Pick changes, oldest first, with who made them and on what device. For <code>/history</code>, <code>from</code> / <code>to</code> are the days the changes were made (Irish time); add <code>type=status</code> or <code>type=edit</code> to narrow it. The shared store keeps the latest 500 status changes and 2,000 edits.</p>
+<pre><code>{ "type": "status", "at": "2026-11-19T21:46:16.887Z", "user": "James", "device": "Windows",
+  "changes": [ { "field": "Status", "from": "Proposed", "to": "Approved" } ], "note": "" }</code></pre>
+
+<h2 id="import">Read fixtures from a screenshot</h2>
+<div class="ep"><span class="m post">POST</span><code>/import</code></div>
+<p>The dashboard's <b>Add from screenshot</b>. Send up to 10 images or PDFs (base64) and/or pasted text. Claude reads the fixtures, and each comes back with up to 3 existing fixtures it may match (same teams, within six weeks). Nothing is saved: add new ones with <code>POST /fixtures</code>, or update a match with <code>PATCH</code>. It can take up to a minute.</p>
+<pre><code>{ "files": [ { "name": "cork.png", "mediaType": "image/png", "data": "iVBORw0KGgo…" } ],
+  "texts": [ { "name": "email", "text": "Sat 28 Nov, Donoughmore v Killeagh, 7.30pm, PUC" } ],
+  "note": "Cork hurling" }</code></pre>
+
+<h2 id="errors">Errors and limits</h2>
+<p>Errors return a 4xx or 5xx status with a code you can act on:</p>
+<pre><code>{ "ok": false, "error": { "code": "range_too_long", "message": "A request can cover at most 366 days" } }</code></pre>
+<div class="tbl"><table>
+<thead><tr><th>Status</th><th>When</th></tr></thead>
+<tbody>
+<tr><td>400</td><td>Bad parameter or field: <code>invalid_range</code>, <code>range_too_long</code>, <code>invalid_status</code>, <code>invalid_time</code>, <code>unknown_fields</code>…</td></tr>
+<tr><td>401</td><td>Missing or wrong API key</td></tr>
+<tr><td>404</td><td>No such fixture (or endpoint)</td></tr>
+<tr><td>409</td><td>Not allowed now: removing a fixture that isn't Rejected, or adding one that already exists</td></tr>
+<tr><td>502</td><td>Reading a screenshot failed</td></tr>
+<tr><td>503</td><td>The API key hasn't been set up on the server yet</td></tr>
+</tbody></table></div>
+<ul>
+  <li>Date range: up to 366 days per request. Page size: up to 2,000. Batch: up to 500 updates.</li>
+  <li>Writes go to the same store as the dashboard, last write wins. Avoid two people changing the same fixture at the same moment.</li>
+  <li>The Clubber fields come from the dashboard's own export rules, so the API and the dashboard always agree on club IDs, grade, price and time.</li>
+</ul>
+
+<footer>Fixtures Dashboard · API version 1 · OpenAPI spec: <code>docs/clubber-api.openapi.yaml</code> in the dashboard repository</footer>
+</main>
+</div>

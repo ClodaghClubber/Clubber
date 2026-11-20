@@ -6,6 +6,7 @@
 // fixtures dashboard.
 
 import Anthropic from '@anthropic-ai/sdk';
+import { handleClubberApi, isClubberApiRequest, runClubberApiCron } from './clubber-api.js';
 
 const UA = 'Mozilla/5.0 (compatible; FixturesDashboardBot/1.0)';
 
@@ -4092,6 +4093,16 @@ async function runClubberUpdateAlert(kv, env) {
   await kv.put(CLUBBER_UPDATE_ALERT_KEY, JSON.stringify(next));
 }
 
+// What the Clubber API (clubber-api.js) uses from this file
+function clubberApiDeps() {
+  return {
+    getAllCachedFixtures, deduplicateFixtures, fixtureKey, getStatusMap, getOverridesMap, getManualFixtures,
+    getStatusHistory, getClubberGames, clubberToDublin, extractFixturesWithClaude,
+    STATUS_KV_KEY, STATUS_HISTORY_KV_KEY, STATUS_HISTORY_MAX, OVERRIDES_KV_KEY, MANUAL_KV_KEY,
+    EDIT_HISTORY_KV_KEY, EDIT_HISTORY_MAX, TEAM_MAPPINGS_EXTRA_KEY, VENUE_MAPPINGS_KEY,
+  };
+}
+
 // ── Duplicate games in Clubber ──
 // Same site, same two clubs (either way round), same code, same grade, same
 // day (Irish time). Time, venue and round are ignored.
@@ -4203,6 +4214,8 @@ export default {
         catch (e) { console.error('Cron: Clubber update alert failed', e); }
         try { await runClubberDuplicateAlert(kv, env); }
         catch (e) { console.error('Cron: Clubber duplicate alert failed', e); }
+        try { await runClubberApiCron(env, clubberApiDeps()); }
+        catch (e) { console.error('Cron: Clubber API change tracking failed', e); }
       }
     } catch (e) {
       console.error(`Cron ${cron} failed:`, e);
@@ -4210,6 +4223,9 @@ export default {
   },
 
   async fetch(request, env, ctx) {
+    // Clubber API (/api/v1/...) - separate, key-protected; see clubber-api.js
+    if (isClubberApiRequest(new URL(request.url))) return handleClubberApi(request, env, ctx, clubberApiDeps());
+
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: CORS_HEADERS });
     }

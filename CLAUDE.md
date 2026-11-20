@@ -54,6 +54,12 @@ A GAA fixtures dashboard hosted on GitHub Pages, backed by a Cloudflare Worker a
 - `statusHistory` KV key — stores status changes and Clubber Pick toggles with timestamp, user, device
 - Pick toggles stored as `{status: 'Pick: Yes'/'Pick: No', ...}` entries in statusHistory
 
+## Clubber API (worker/clubber-api.js)
+- Key-protected REST API at `/api/v1/...` on the worker, for Clubber to integrate the dashboard. Guide: `docs/clubber-api-guide.html`; spec: `docs/clubber-api.openapi.yaml`.
+- Secrets: `CLUBBER_API_KEY` (required; API returns 503 until set), optional `CLUBBER_WEBHOOK_URL` + `CLUBBER_WEBHOOK_SECRET` (hourly change webhook, cron at :48). Set with `wrangler secret put` only.
+- Reads/writes the same KV data and formats as the dashboard (statuses, overrides, manualFixtures, statusHistory, editHistory). Change tracking lives in KV `apiFixtureVersions`.
+- **`worker/clubber-rules.js` is generated from index.html** (buildGamePayload and everything it uses). After changing any Clubber export rule in index.html (pricing, grade, club/venue matching, championsType...), run `node tools/build-clubber-rules.mjs`, commit, and deploy the worker. `--check` reports if it's stale.
+
 ## Known gotchas
 - **render() runs during page load, before the rest of the script has run.** With cached fixtures in localStorage, the first render() happens before later `let`/`const` declarations (e.g. `sportsCountiesIndex`, `ALL_GAA_COUNTIES`, `userBtnLabel`) are initialised. Anything render() calls must not read those, or must guard the read with try/catch. A throw there stops the rest of the script, and sign-in breaks with "Cannot access 'userBtnLabel' before initialization". Test changes to render() with cached data: load the page once, then reload.
 - **Nested backticks in template literals** will cause a silent syntax error that breaks the entire app — use string concatenation (`'...' + var + '...'`) inside `tr.innerHTML` template literals
