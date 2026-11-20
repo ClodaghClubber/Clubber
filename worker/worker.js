@@ -4090,6 +4090,93 @@ async function runClubberUpdateAlert(kv, env) {
   await kv.put(CLUBBER_UPDATE_ALERT_KEY, JSON.stringify(next));
 }
 
+// ── Duplicate games in Clubber ──
+// Same site, same two clubs (either way round), same code, same grade, same
+// day (Irish time). Time, venue and round are ignored.
+const CLUBBER_DUPLICATE_ALERT_KEY = 'clubberDuplicateAlerts';
+
+async function findClubberDuplicates(kv) {
+  const feed = JSON.parse(await getClubberGames(kv));
+  if (!feed.ok) return { ok: false, duplicates: [] };
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Dublin' });
+  const norm = s => String(s || '').trim().toLowerCase();
+  const groups = new Map();
+  for (const g of feed.games || []) {
+    const a = g.clubId || norm(g.club), b = g.competitorClubId || norm(g.competitorClubName);
+    if (!a || !b) continue;
+    const { date, time } = clubberToDublin(g.date, g.time);
+    if (!date || date < today) continue;
+    const key = [g.site, [a, b].sort().join('+'), norm(g.code || g.sportType), norm(g.grade), date].join('|');
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push({ ...g, localDate: date, localTime: time });
+  }
+  const duplicates = [];
+  for (const [key, games] of groups) {
+    if (games.length < 2) continue;
+    games.sort((x, y) => (x.localTime || '').localeCompare(y.localTime || ''));
+    const g = games[0];
+    duplicates.push({ key, site: g.site, teamA: g.club, teamB: g.competitorClubName, code: g.code, grade: g.grade,
+      date: g.localDate, games: games.map(x => ({ id: x.id, time: x.localTime, round: x.round, championsType: x.championsType, price: x.price })) });
+  }
+  duplicates.sort((x, y) => x.date.localeCompare(y.date));
+  return { ok: true, duplicates };
+}
+
+async function sendClubberDuplicateCard(webhookUrl, duplicates, site) {
+  if (!webhookUrl || !duplicates.length) return;
+  const rows = duplicates.map(d =>
+    `### ${d.teamA} v ${d.teamB}\n${[d.code, d.grade, clubberDateLabel(d.date)].filter(Boolean).join(' · ')} — ${d.games.length} games in Clubber\n\n` +
+    d.games.map(x => `- ${clubberTimeLabel(x.time)}${x.round ? ' · ' + x.round : ''}${x.championsType ? ' · ' + x.championsType : ''} · ID ${x.id}`).join('\n')
+  ).join('\n\n---\n\n');
+  const n = duplicates.length;
+  await fetch(webhookUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      type: 'message',
+      attachments: [{
+        contentType: 'application/vnd.microsoft.card.adaptive',
+        content: {
+          $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
+          type: 'AdaptiveCard',
+          version: '1.4',
+          body: [
+            { type: 'TextBlock', text: `⚠️ ${site}: ${n} possible duplicate${n > 1 ? 's' : ''} in Clubber`, weight: 'Bolder', size: 'Medium' },
+            { type: 'TextBlock', text: rows, wrap: true },
+            { type: 'TextBlock', text: 'Same clubs, code, grade and day. Delete the extra game in Clubber if it is a duplicate.', wrap: true, isSubtle: true },
+          ],
+        },
+      }],
+    }),
+  });
+}
+
+// IE site games go to TEAMS_WEBHOOK_URL (Fixture Changes IE), UK site games to
+// TEAMS_WEBHOOK_URL_UK (Fixture Changes UK). Each duplicate posts once, and again
+// only if its set of games changes.
+async function runClubberDuplicateAlert(kv, env) {
+  const { ok, duplicates } = await findClubberDuplicates(kv);
+  if (!ok) return;
+  const raw = await kv.get(CLUBBER_DUPLICATE_ALERT_KEY);
+  let sent = {};
+  try { sent = raw ? JSON.parse(raw) : {}; } catch { sent = {}; }
+  const sig = d => d.games.map(x => x.id).sort().join(',');
+  const fresh = duplicates.filter(d => sent[d.key] !== sig(d));
+  const next = Object.fromEntries(duplicates.map(d => [d.key, sig(d)]));
+  for (const [site, url] of [['IE', env.TEAMS_WEBHOOK_URL], ['UK', env.TEAMS_WEBHOOK_URL_UK]]) {
+    const list = fresh.filter(d => (d.site === 'UK' ? 'UK' : 'IE') === site);
+    if (!list.length) continue;
+    try {
+      if (!url) throw new Error(`no webhook for ${site}`);
+      await sendClubberDuplicateCard(url, list, site);
+    } catch (e) {
+      console.error(`Cron: Clubber duplicate alert failed (${site})`, e);
+      for (const d of list) delete next[d.key];
+    }
+  }
+  await kv.put(CLUBBER_DUPLICATE_ALERT_KEY, JSON.stringify(next));
+}
+
 export default {
   // Cron handler: staggered across 5 time slots, each scraping a county group.
   // Group E (minute 48) also runs the Teams alert check.
@@ -4112,6 +4199,8 @@ export default {
         await runTeamsAlert(kv, env);
         try { await runClubberUpdateAlert(kv, env); }
         catch (e) { console.error('Cron: Clubber update alert failed', e); }
+        try { await runClubberDuplicateAlert(kv, env); }
+        catch (e) { console.error('Cron: Clubber duplicate alert failed', e); }
       }
     } catch (e) {
       console.error(`Cron ${cron} failed:`, e);
@@ -4390,6 +4479,10 @@ export default {
     // What the Clubber update alert would post right now (nothing is sent)
     if (url.searchParams.get('action') === 'clubberUpdates' && kv) {
       return new Response(JSON.stringify(await findClubberUpdates(kv)), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...CORS_HEADERS } });
+    }
+    // What the Clubber duplicate alert would post right now (nothing is sent)
+    if (url.searchParams.get('action') === 'clubberDuplicates' && kv) {
+      return new Response(JSON.stringify(await findClubberDuplicates(kv)), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...CORS_HEADERS } });
     }
 
     // GET reads exclusively from the 5 group KV keys written by the cron scrapers.
