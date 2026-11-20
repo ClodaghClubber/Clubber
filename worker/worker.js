@@ -2015,7 +2015,9 @@ function isTopUnderage(heading, opts = {}) {
   if (lowerGrade.test(comp.replace(/\b(fod|ko|fc|hc)\b/g, ''))) return false;
   if (/premier\s*(2|ii|two|3|iii)\b/.test(all)) return false;
   // Divisions: keep Division 1 (or "1 and 2"), never 2+ or ranges like "1-5"
-  if (/\bdiv(?:ision)?\.?\s*(?:[2-9]|1\s?-\s?\d)/.test(all)) return false;
+  // (opts.allDivisionsAges: every division for those ages - Laois U20)
+  const allDivisions = (opts.allDivisionsAges || []).includes(underageAge(s));
+  if (!allDivisions && /\bdiv(?:ision)?\.?\s*(?:[2-9]|1\s?-\s?\d)/.test(all)) return false;
   if (opts.premierTop && /\bdiv/.test(all) && !/premier/.test(all)) return false;
   return true;
 }
@@ -2060,7 +2062,7 @@ function underageCompAndRound(heading, sport, noGroup) {
 // ClubAndCounty sites: one grade-level feed per county / code / grade
 const UNDERAGE_CAC_SOURCES = [
   { county: 'Kilkenny',  domain: 'kilkennygaa.ie',            grades: ['minor', 'u21', 'juvenile'], allowB: true }, // minor football is filed under juvenile
-  { county: 'Laois',     domain: 'laoisgaa.ie',               grades: ['juvenile'] },                 // U17 (minor) + U20
+  { county: 'Laois',     domain: 'laoisgaa.ie',               grades: ['juvenile'], allDivisionsAges: ['U20/21'] }, // U17 (minor) + U20 (U20: every division)
   { county: 'Wexford',   domain: 'wexford.clubandcounty.com', grades: ['minor', 'u21'], premierTop: true },
   { county: 'Monaghan',  domain: 'www.monaghangaa.ie',        grades: ['minor'] },
   { county: 'Meath',     domain: 'meath.gaa.ie',              grades: ['minor', 'u21'] },
@@ -2086,6 +2088,9 @@ async function fetchCacUnderage(src, sport, grade, debug) {
       const { _rawComp, ...f } = r;
       const cr = underageCompAndRound(_rawComp, sport);
       if (UNDERAGE_SIDE_ROUND.test(cr.round)) continue;
+      // Every-division ages: name the division ("... Division 2", not "Group 2")
+      const dv = (src.allDivisionsAges || []).includes(underageAge(_rawComp)) && _rawComp.match(/\bDivision\s+(\w+)/i);
+      if (dv) cr.competition = cr.competition.replace(new RegExp(` Group ${dv[1]}$`), '') + ` Division ${dv[1]}`;
       // Offaly: "St Rynagh's (Football)" - the club's football side
       const team = t => (t || '').replace(/\s*\((?:football|hurling)\)$/i, '');
       out.push({ ...f, teamA: team(f.teamA), teamB: team(f.teamB), competition: cr.competition, round: cr.round, sport: sport === 'hurling' ? 'Hurling' : 'Football' });
