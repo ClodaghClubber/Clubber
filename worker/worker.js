@@ -1782,10 +1782,16 @@ async function fetchLeinsterCamogieFixtures(reg) {
 
 // ---- Munster Camogie (munstercamogie.ie, ClubAndCounty) ----
 // Adult provincial and inter-county camogie only: the grade feeds for
-// province/senior and inter_county senior + intermediate. Club-level grades
-// on this site are individual counties' championships (Cork, Clare...), and
-// minor/U16/féile/schools are underage, so neither is read here.
-const MUNSTER_CAMOGIE_FEEDS = [['province', 'senior'], ['inter_county', 'senior'], ['inter_county', 'intermediate']];
+// province/senior and inter_county senior + intermediate, plus the adult club
+// feeds. The club feeds also carry individual counties' championships (Cork,
+// Clare...), which the county scrapers cover, so from those only the
+// provincial and All-Ireland club championships are kept ("AIB Munster
+// Intermediate Club Championship", "AIB Senior Club Championship"...).
+// Minor/U16/féile/schools are underage and not read.
+const MUNSTER_CAMOGIE_FEEDS = [['province', 'senior'], ['inter_county', 'senior'], ['inter_county', 'intermediate'],
+  ['club', 'senior'], ['club', 'intermediate'], ['club', 'junior']];
+const MUNSTER_CAMOGIE_CLUB_COMP = /^(?:AIB\s+|Munster\s+|All[- ]Ireland\s+)/i;
+const MUNSTER_CAMOGIE_COUNTY_COMP = /\b(?:Clare|Cork|Kerry|Limerick|Tipperary|Waterford)\b/i;
 async function fetchMunsterCamogieFixtures(debug) {
   const out = [];
   await Promise.all(MUNSTER_CAMOGIE_FEEDS.map(async ([level, grade]) => {
@@ -1802,7 +1808,9 @@ async function fetchMunsterCamogieFixtures(debug) {
         // "Munster Senior Championship - Cup Division 1 - Preliminary Round"
         const parts = decodeEntities(_rawComp || '').replace(/\s+/g, ' ').trim().split(/\s+[-–]\s+/);
         const round = parts.length > 1 ? parts.pop() : '';
-        const comp = parts.join(' - ').replace(/^20\d\d\s+/, '').replace(/^Munster\s+/i, '');
+        const rawComp = parts.join(' - ').replace(/^20\d\d\s+/, '');
+        if (level === 'club' && (!MUNSTER_CAMOGIE_CLUB_COMP.test(rawComp) || MUNSTER_CAMOGIE_COUNTY_COMP.test(rawComp))) continue;
+        const comp = rawComp.replace(/^AIB\s+/i, '').replace(/^Munster\s+/i, '');
         out.push({ ...f, competition: `Munster Camogie ${comp}`, round, sport: 'Camogie',
           sourceUrl: 'https://munstercamogie.ie/fixtures-results/' });
       }
