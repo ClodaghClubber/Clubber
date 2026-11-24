@@ -4137,7 +4137,7 @@ async function findClubberDuplicates(kv) {
     games.sort((x, y) => (x.localTime || '').localeCompare(y.localTime || ''));
     const g = games[0];
     duplicates.push({ key, site: g.site, teamA: g.club, teamB: g.competitorClubName, code: g.code, grade: g.grade,
-      date: g.localDate, games: games.map(x => ({ id: x.id, time: x.localTime, round: x.round, championsType: x.championsType, price: x.price })) });
+      date: g.localDate, games: games.map(x => ({ id: x.id, teamA: x.club, teamB: x.competitorClubName, time: x.localTime, round: x.round, championsType: x.championsType, price: x.price })) });
   }
   duplicates.sort((x, y) => x.date.localeCompare(y.date));
   return { ok: true, duplicates };
@@ -4146,8 +4146,8 @@ async function findClubberDuplicates(kv) {
 async function sendClubberDuplicateCard(webhookUrl, duplicates, site) {
   if (!webhookUrl || !duplicates.length) return;
   const rows = duplicates.map(d =>
-    `### ${d.teamA} v ${d.teamB}\n${[d.code, d.grade, clubberDateLabel(d.date)].filter(Boolean).join(' · ')} — ${d.games.length} games in Clubber\n\n` +
-    d.games.map(x => `- ${clubberTimeLabel(x.time)}${x.round ? ' · ' + x.round : ''}${x.championsType ? ' · ' + x.championsType : ''} · ID ${x.id}`).join('\n')
+    `**${d.teamA} v ${d.teamB}**\n\n${[d.code, d.grade, clubberDateLabel(d.date)].filter(Boolean).join(' · ')} — ${d.games.length} games in Clubber\n\n` +
+    d.games.map(x => `- ${clubberTimeLabel(x.time)} · ${x.teamA || '?'} v ${x.teamB || '?'}${x.round ? ' · ' + x.round : ''}${x.championsType ? ' · ' + x.championsType : ''}`).join('\n')
   ).join('\n\n---\n\n');
   const n = duplicates.length;
   await fetch(webhookUrl, {
