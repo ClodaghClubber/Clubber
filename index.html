@@ -1150,7 +1150,10 @@
       <div id="lkCheck" class="ai-check" style="margin-top:8px;"></div>
     </div>
     <div id="lkStatus" style="font-size:13px;margin-top:10px;min-height:18px;"></div>
-    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px;">
+    <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:8px;">
+      <label id="lkApproveWrap" style="display:none;margin-right:auto;font-size:13px;cursor:pointer;" title="Add the fixture as Approved instead of Proposed">
+        <input type="checkbox" id="lkApprove" style="width:auto;vertical-align:middle;"> Mark as Approved
+      </label>
       <button type="button" id="lkBackBtn" class="btn-remove" style="display:none;">&larr; Change link</button>
       <button type="button" id="lkReadBtn" class="btn-modal-add">Read page</button>
       <button type="button" id="lkAddBtn" class="btn-modal-add" style="display:none;" disabled>Add &amp; follow</button>
@@ -6922,11 +6925,13 @@ async function handleLogout() {
     document.getElementById('lkReadBtn').style.display=n===1?'':'none';
     document.getElementById('lkBackBtn').style.display=n===2?'':'none';
     document.getElementById('lkAddBtn').style.display=n===2?'':'none';
+    document.getElementById('lkApproveWrap').style.display=n===2?'':'none';
   }
   function openModal(){
     if(!authToken){ alert('Please log in first - adding a fixture from a link needs a logged-in user.'); return; }
     page=null; pick=-1; row=null;
     document.getElementById('lkUrl').value=''; document.getElementById('lkNote').value='';
+    document.getElementById('lkApprove').checked=false;
     showStep(1); setStatus(''); modal.classList.add('open');
     setTimeout(()=>document.getElementById('lkUrl').focus(),0);
   }
@@ -7021,13 +7026,14 @@ async function handleLogout() {
     const fixture={county:normaliseCounty(row.county.trim()), code:row.code||deriveCode(row.competition||'',null)||'',
       teamA:row.teamA.trim(), teamB:row.teamB.trim(), date:row.date, time:row.time||'', venue:row.venue.trim(),
       competition:row.competition.trim(), round:row.round.trim()};
+    const approve=document.getElementById('lkApprove').checked;
     setStatus('Adding...');
     try{
-      const res=await authFetch(WORKER_URL,{method:'POST',body:JSON.stringify({action:'addLinkedFixture',url:page.url,pageHash:page.pageHash,pageTeams:{teamA:r.teamA,teamB:r.teamB},fixture})});
+      const res=await authFetch(WORKER_URL,{method:'POST',body:JSON.stringify({action:'addLinkedFixture',url:page.url,pageHash:page.pageHash,pageTeams:{teamA:r.teamA,teamB:r.teamB},fixture,approve})});
       const json=await res.json().catch(()=>({ok:false,error:'Unexpected response ('+res.status+')'}));
       if(!json.ok) throw new Error(json.error||('Request failed ('+res.status+')'));
       closeModal();
-      showConflictToast('✓ Added '+fixture.teamA+' v '+fixture.teamB+' - following the link for changes','#16a34a');
+      showConflictToast('✓ Added '+fixture.teamA+' v '+fixture.teamB+(json.approved?' (Approved)':'')+' - following the link for changes','#16a34a');
       loadFixtures(true);
     }catch(err){ setStatus('Could not add it: '+esc(err.message),'ai-err'); btn.disabled=false; }
   }

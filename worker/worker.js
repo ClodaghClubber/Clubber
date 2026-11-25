@@ -4027,7 +4027,16 @@ async function handleLinkAction(body, kv, env) {
     if (list.some(x => fixtureKey(linkedToFixture(x)) === key)) return jsonResp({ ok: false, error: 'That fixture has already been added from a link' }, 409);
     list.push(l);
     await kv.put(LINKED_KV_KEY, JSON.stringify(list));
-    return jsonResp({ ok: true, link: l, fixture: linkedToFixture(l) });
+    // "Mark as Approved" in the dialog: saved like the dashboard's Approve button
+    if (body.approve) {
+      const [statusMap, history] = await Promise.all([getStatusMap(kv), getStatusHistory(kv)]);
+      history.push({ key, status: 'Approved', previousStatus: statusMap[key] || 'Proposed', timestamp: new Date().toISOString(),
+        user: String(body.user || '').slice(0, 60), device: body.device || 'Unknown' });
+      statusMap[key] = 'Approved';
+      if (history.length > STATUS_HISTORY_MAX) history.splice(0, history.length - STATUS_HISTORY_MAX);
+      await Promise.all([kv.put(STATUS_KV_KEY, JSON.stringify(statusMap)), kv.put(STATUS_HISTORY_KV_KEY, JSON.stringify(history))]);
+    }
+    return jsonResp({ ok: true, link: l, fixture: linkedToFixture(l), approved: !!body.approve });
   }
   if (body.action === 'setLinkActive') {
     const list = await getLinkedFixtures(kv);
@@ -4596,6 +4605,7 @@ export default {
         // Fixtures added from a link (read the page, add one fixture, stop/resume checks)
         if (['readLink', 'addLinkedFixture', 'setLinkActive'].includes(body.action)) {
           try {
+            body.device = parseDevice(request.headers.get('User-Agent') || '');
             return await handleLinkAction(body, kv, env);
           } catch (err) {
             if (err instanceof Anthropic.RateLimitError) return jsonResp({ ok: false, error: 'Claude is busy - try again in a minute' }, 429);
