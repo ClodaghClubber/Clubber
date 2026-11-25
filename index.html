@@ -197,6 +197,26 @@
   .ai-check{font-size:11px;line-height:1.35;min-width:220px;}
   #aiTable td.ai-check{white-space:normal;} /* beats the main table's td:nth-child(11) nowrap */
   .ai-check select{width:auto;max-width:100%;}
+  /* ---- Add from link (followed fixtures) ---- */
+  #linkImportBtn{background:none;border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:6px 12px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;font-weight:600;}
+  #linkImportBtn:hover{background:rgba(90,79,207,.08);}
+  #linkModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;align-items:flex-start;justify-content:center;padding-top:30px;}
+  #linkModal.open{display:flex;}
+  #linkModal .modal-box{width:min(820px,96vw);max-height:calc(100vh - 50px);display:flex;flex-direction:column;}
+  #linkModal input,#linkModal select{width:100%;box-sizing:border-box;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:7px 9px;font-family:inherit;font-size:13px;}
+  #linkModal label.lk-lbl{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:10px 0 3px;}
+  #lkList{overflow:auto;max-height:200px;border:1px solid var(--border);border-radius:8px;}
+  #lkList label{display:flex;gap:8px;align-items:flex-start;padding:7px 10px;border-bottom:1px solid var(--border);font-size:13px;cursor:pointer;}
+  #lkList label:last-child{border-bottom:none;}
+  #lkList label.on{background:rgba(90,79,207,.08);}
+  #lkList input{width:auto;margin-top:3px;}
+  #lkForm{display:grid;grid-template-columns:repeat(3,1fr);gap:0 10px;}
+  #lkForm .wide{grid-column:span 3;}
+  #lkForm input.ai-missing{border-color:#dc2626;}
+  @media (max-width:600px){ #lkForm{grid-template-columns:1fr;} #lkForm .wide{grid-column:auto;} }
+  .badge-link{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:#0e7490;color:#fff;padding:1px 5px;border-radius:8px;margin-left:5px;vertical-align:middle;white-space:nowrap;cursor:pointer;border:1px solid #0e7490;}
+  .badge-link.err{background:#b45309;border-color:#b45309;}
+  .badge-link.off{background:transparent;color:var(--muted);border:1px dashed var(--muted);}
   .inline-approve{visibility:hidden;margin-left:4px;padding:0 6px;border:1px solid #16a34a;border-radius:10px;background:none;color:#16a34a;font-size:11px;font-weight:700;line-height:16px;cursor:pointer;vertical-align:middle;}
   tr:hover .inline-approve{visibility:visible;}
   .inline-approve:hover{background:#16a34a;color:#fff;}
@@ -618,6 +638,12 @@
         <rect x="1" y="2.5" width="12" height="9" rx="1.5"/><circle cx="5" cy="6" r="1.2"/><path d="M13 9.5l-3.5-3-5 4.5"/>
       </svg>
       Add from screenshot
+    </button>
+    <button id="linkImportBtn" title="Add a fixture from a link - the page is checked every hour and the fixture kept up to date">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 8a2.5 2.5 0 0 0 3.5 0l2-2a2.5 2.5 0 0 0-3.5-3.5l-.8.8"/><path d="M8 6a2.5 2.5 0 0 0-3.5 0l-2 2A2.5 2.5 0 0 0 6 11.5l.8-.8"/>
+      </svg>
+      Add from link
     </button>
     <button id="csvImportBtn" title="Import fixtures from spreadsheet CSV">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -1102,6 +1128,36 @@
   </div>
 </div>
 
+<div id="linkModal">
+  <div class="modal-box">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+      <h2 style="margin:0;">Add a fixture from a link</h2>
+      <button type="button" id="lkCloseBtn" style="background:none;border:none;cursor:pointer;font-size:20px;line-height:1;color:var(--muted);padding:4px 6px;" aria-label="Close">&times;</button>
+    </div>
+    <div style="font-size:13px;color:var(--muted);">The page is checked every hour until the game is played, and the fixture's date, time and venue are kept up to date. Only the fixture you pick is added - nothing else on the page.</div>
+    <div id="lkStep1">
+      <label class="lk-lbl" for="lkUrl">Link to the page showing the fixture</label>
+      <input id="lkUrl" type="url" placeholder="https://..." autocomplete="off">
+      <label class="lk-lbl" for="lkNote">Anything Claude should know? (optional)</label>
+      <input id="lkNote" placeholder="e.g. the Oran v Templeglantine game">
+    </div>
+    <div id="lkStep2" style="display:none;flex:1;min-height:0;flex-direction:column;overflow:auto;">
+      <div id="lkQuestions" class="ai-warn" style="display:none;font-size:12px;margin-top:8px;"></div>
+      <label class="lk-lbl">Pick the fixture to follow</label>
+      <div id="lkList"></div>
+      <div id="lkForm"></div>
+      <datalist id="lkCountyList"></datalist>
+      <div id="lkCheck" class="ai-check" style="margin-top:8px;"></div>
+    </div>
+    <div id="lkStatus" style="font-size:13px;margin-top:10px;min-height:18px;"></div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px;">
+      <button type="button" id="lkBackBtn" class="btn-remove" style="display:none;">&larr; Change link</button>
+      <button type="button" id="lkReadBtn" class="btn-modal-add">Read page</button>
+      <button type="button" id="lkAddBtn" class="btn-modal-add" style="display:none;" disabled>Add &amp; follow</button>
+    </div>
+  </div>
+</div>
+
 <!-- Change password (signed-in users) -->
 <div id="changePwModal" class="um-modal">
   <div class="modal-box" style="width:400px;">
@@ -1367,6 +1423,19 @@ function checkUnitConflict(fId,sys,unit,date,time){
   if(!unit||!sys||!time||time===''||time.toLowerCase()==='tbc') return null;
   return fixtures.find(f=>f.id!==fId&&f.unitSystem===sys&&f.unit===unit&&f.date===date&&f.time===time&&f.time.toLowerCase()!=='tbc')||null;
 }
+// LINK badge on a fixture added from a link: the worker checks the page every
+// hour. Click it to stop / resume the checks (handler in the "Add from link" script).
+function linkBadgeHtml(f){
+  const e=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  let when='';
+  try{ if(f.linkCheckedAt) when=new Date(f.linkCheckedAt).toLocaleString('en-IE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); }catch(_){}
+  const cls=!f.linkActive?' off':f.linkError?' err':'';
+  const tip=(f.linkActive?'Followed from ':'No longer checked - from ')+f.sourceUrl
+    +(when?'\nLast checked '+when:'')+(f.linkError?'\nProblem: '+f.linkError:'')
+    +'\nClick to '+(f.linkActive?'stop':'resume')+' checking';
+  return '<span class="badge-link'+cls+'" data-link-id="'+e(f.linkId)+'" data-link-active="'+(f.linkActive?1:0)+'" title="'+e(tip)+'">LINK</span>';
+}
+
 function showConflictToast(msg,color){
   const t=document.getElementById('unitConflictToast');
   if(!t) return;
@@ -2691,7 +2760,7 @@ function render(){
       <td style="white-space:nowrap;">${f.county}</td>
       <td>${f.code||''}</td>
       <td>${teamCellHtml(f,'A')}</td>
-      <td>${teamCellHtml(f,'B')}${f.manual?(f.source==='csv'?'<span class="badge-import" title="Imported from spreadsheet CSV">IMPORT</span>':f.source==='claude'?'<span class="badge-claude" style="margin-left:5px;" title="Created via Claude">CLAUDE</span>':'<span class="badge-manual" style="margin-left:5px;">MAN</span>'):''}${dhIds.has(f.id)?'<span class="badge-dh" style="margin-left:5px;" title="Double header — multiple fixtures at this venue on this day">DH</span>':''}</td>
+      <td>${teamCellHtml(f,'B')}${f.manual?(f.source==='csv'?'<span class="badge-import" title="Imported from spreadsheet CSV">IMPORT</span>':f.source==='claude'?'<span class="badge-claude" style="margin-left:5px;" title="Created via Claude">CLAUDE</span>':'<span class="badge-manual" style="margin-left:5px;">MAN</span>'):''}${f.linkId?linkBadgeHtml(f):''}${dhIds.has(f.id)?'<span class="badge-dh" style="margin-left:5px;" title="Double header — multiple fixtures at this venue on this day">DH</span>':''}</td>
       <td>${f.date}</td>
       <td>${f.day}</td>
       <td>${f.time}</td>
@@ -3796,7 +3865,7 @@ async function loadFixtures(isRefresh){
     }
     retryPendingOverrides();
     if(authToken) flushSharedEdits();
-    const incoming=(json.fixtures||[]).map(f=>({...mk(f.county,f.teamA,f.teamB,f.date,f.time,f.venue,f.competition,f.round), code:f.code||deriveCode(f.competition,f.sport), status:f.status||'Proposed', ...(f.clubberCreated!==undefined?{clubberCreated:f.clubberCreated}:{}), ...(f.clubberGameId?{clubberGameId:f.clubberGameId}:{}), ...(f.teamACounty?{teamACounty:f.teamACounty}:{}), ...(f.teamBCounty?{teamBCounty:f.teamBCounty}:{}), ...(f.teamACountySource?{teamACountySource:f.teamACountySource}:{}), ...(f.teamBCountySource?{teamBCountySource:f.teamBCountySource}:{}), ...(f.sourceUrl?{sourceUrl:f.sourceUrl}:{}), ...(f.statusKey?{statusKey:f.statusKey}:{})}));
+    const incoming=(json.fixtures||[]).map(f=>({...mk(f.county,f.teamA,f.teamB,f.date,f.time,f.venue,f.competition,f.round), code:f.code||deriveCode(f.competition,f.sport), status:f.status||'Proposed', ...(f.clubberCreated!==undefined?{clubberCreated:f.clubberCreated}:{}), ...(f.clubberGameId?{clubberGameId:f.clubberGameId}:{}), ...(f.teamACounty?{teamACounty:f.teamACounty}:{}), ...(f.teamBCounty?{teamBCounty:f.teamBCounty}:{}), ...(f.teamACountySource?{teamACountySource:f.teamACountySource}:{}), ...(f.teamBCountySource?{teamBCountySource:f.teamBCountySource}:{}), ...(f.sourceUrl?{sourceUrl:f.sourceUrl}:{}), ...(f.statusKey?{statusKey:f.statusKey}:{}), ...(f.linkId?{linkId:f.linkId,linkActive:f.linkActive!==false,linkCheckedAt:f.linkCheckedAt||'',linkError:f.linkError||''}:{})}));
     mergeFixtures(incoming);
     detectChanges(takeSnapshot());
     updateClearChangesBtn();
@@ -6829,6 +6898,166 @@ async function handleLogout() {
   document.getElementById('aiReadBtn').addEventListener('click',readFixtures);
   document.getElementById('aiBackBtn').addEventListener('click',()=>{ showStep(1); setStatus(''); });
   document.getElementById('aiAddBtn').addEventListener('click',addFixtures);
+})();
+
+// ===== Add from link =====
+// The worker reads the page (Claude), the user picks ONE fixture and checks
+// its details, and the worker then follows that page hourly for that fixture
+// only. The fixture comes back in the normal feed (like a scraped one), with
+// a LINK badge.
+(function(){
+  const modal=document.getElementById('linkModal');
+  const statusEl=document.getElementById('lkStatus');
+  const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  const setStatus=(msg,cls)=>{ statusEl.className=cls||''; statusEl.innerHTML=msg||''; };
+  let page=null;   // {url, pageHash, fixtures, existing}
+  let pick=-1, row=null;
+  const FIELDS=[['county','County','text',' list="lkCountyList"'],['code','Code','select'],['round','Round'],
+    ['teamA','Team A'],['teamB','Team B'],['date','Date','date'],['time','Time','time'],['venue','Venue','text',' class="wide"'],['competition','Competition','text',' class="wide"']];
+  const CODES=['','Football','Hurling','Camogie','LGFA','Rugby'];
+
+  function showStep(n){
+    document.getElementById('lkStep1').style.display=n===1?'':'none';
+    document.getElementById('lkStep2').style.display=n===2?'flex':'none';
+    document.getElementById('lkReadBtn').style.display=n===1?'':'none';
+    document.getElementById('lkBackBtn').style.display=n===2?'':'none';
+    document.getElementById('lkAddBtn').style.display=n===2?'':'none';
+  }
+  function openModal(){
+    if(!authToken){ alert('Please log in first - adding a fixture from a link needs a logged-in user.'); return; }
+    page=null; pick=-1; row=null;
+    document.getElementById('lkUrl').value=''; document.getElementById('lkNote').value='';
+    showStep(1); setStatus(''); modal.classList.add('open');
+    setTimeout(()=>document.getElementById('lkUrl').focus(),0);
+  }
+  function closeModal(){ modal.classList.remove('open'); }
+
+  async function readPage(){
+    const url=document.getElementById('lkUrl').value.trim();
+    if(!/^https?:\/\/\S+$/i.test(url)){ setStatus('Paste the full link, starting with https://','ai-err'); return; }
+    const btn=document.getElementById('lkReadBtn'); btn.disabled=true;
+    setStatus('<span class="spinner active" style="display:inline-block;vertical-align:middle;margin-right:6px;"></span>Reading the page with Claude - this can take up to a minute...');
+    try{
+      const knownCounties=[...new Set(fixtures.map(f=>f.county).filter(Boolean))].sort();
+      const res=await authFetch(WORKER_URL,{method:'POST',body:JSON.stringify({action:'readLink',url,note:document.getElementById('lkNote').value.trim(),knownCounties})});
+      const json=await res.json().catch(()=>({ok:false,error:'Unexpected response ('+res.status+')'}));
+      if(!json.ok) throw new Error(json.error||('Request failed ('+res.status+')'));
+      if(!(json.fixtures||[]).length){ setStatus('Claude didn\'t find a fixture on that page. If the page only shows its fixtures after it loads in a browser, it can\'t be followed - use "Add from screenshot" instead.','ai-warn'); return; }
+      page=json; pick=json.fixtures.length===1?0:-1; row=null;
+      renderList(); setStatus(''); showStep(2);
+    }catch(err){ setStatus('Could not read that page: '+esc(err.message),'ai-err'); }
+    finally{ btn.disabled=false; }
+  }
+
+  function renderList(){
+    const q=document.getElementById('lkQuestions');
+    q.style.display=(page.questions||[]).length?'':'none';
+    q.innerHTML=(page.questions||[]).map(esc).join('<br>');
+    document.getElementById('lkCountyList').innerHTML=[...new Set(fixtures.map(f=>f.county).filter(Boolean))].sort().map(c=>'<option value="'+esc(c)+'">').join('');
+    const followed=r=>(page.existing||[]).some(x=>normClubName(x.teamA)===normClubName(r.teamA)&&normClubName(x.teamB)===normClubName(r.teamB));
+    document.getElementById('lkList').innerHTML=page.fixtures.map((r,i)=>
+      '<label class="'+(i===pick?'on':'')+'"><input type="radio" name="lkPick" value="'+i+'"'+(i===pick?' checked':'')+'>'
+      +'<span><strong>'+esc(r.teamA)+' v '+esc(r.teamB)+'</strong> &middot; '+esc(r.date||'no date')+(r.time?' '+esc(r.time):'')
+      +(r.venue?' &middot; '+esc(r.venue):'')+'<br><span style="color:var(--muted);font-size:12px;">'+esc([r.competition,r.round].filter(Boolean).join(' - '))+'</span>'
+      +(followed(r)?' <span class="ai-warn" style="font-size:12px;">(already followed from this link)</span>':'')+'</span></label>').join('');
+    renderForm();
+  }
+  function renderForm(){
+    const form=document.getElementById('lkForm');
+    if(pick<0){ form.innerHTML=''; document.getElementById('lkCheck').innerHTML=''; refresh(); return; }
+    const r=page.fixtures[pick];
+    if(!row||row._i!==pick){
+      row={_i:pick, county:normaliseCounty(r.county||''), code:r.code||deriveCode(r.competition||'',null)||'',
+        teamA:r.teamA||'', teamB:r.teamB||'', date:r.date||'', time:r.time||'', venue:r.venue||'', competition:r.competition||'', round:r.round||''};
+    }
+    form.innerHTML=FIELDS.map(([k,label,type,extra])=>{
+      const wide=extra&&extra.includes('wide');
+      const ctl=type==='select'
+        ?'<select data-k="'+k+'">'+CODES.map(c=>'<option'+(c===row[k]?' selected':'')+'>'+c+'</option>').join('')+'</select>'
+        :'<input data-k="'+k+'" type="'+(type||'text')+'" value="'+esc(row[k])+'"'+(extra&&!wide?extra:'')+'>';
+      return '<div'+(wide?' class="wide"':'')+'><label class="lk-lbl">'+label+'</label>'+ctl+'</div>';
+    }).join('');
+    refresh();
+  }
+  function refresh(){
+    const btn=document.getElementById('lkAddBtn');
+    const check=document.getElementById('lkCheck');
+    if(pick<0||!row){ btn.disabled=true; check.innerHTML='<span class="ai-warn">Pick the fixture you want to follow.</span>'; return; }
+    const need=['county','teamA','teamB','date','competition'].filter(k=>!String(row[k]||'').trim());
+    document.querySelectorAll('#lkForm [data-k]').forEach(el=>el.classList.toggle('ai-missing',need.includes(el.getAttribute('data-k'))));
+    const notes=[];
+    if(need.length) notes.push('<span class="ai-err">Needs '+need.map(k=>FIELDS.find(x=>x[0]===k)[1].toLowerCase()).join(', ')+'</span>');
+    else {
+      // Already on the dashboard? (same teams either way round, within a week)
+      const a=normClubName(row.teamA), b=normClubName(row.teamB);
+      const same=fixtures.find(f=>f.status!=='Removed'&&f.date&&Math.abs((new Date(f.date)-new Date(row.date))/864e5)<=7
+        &&((normClubName(f.teamA)===a&&normClubName(f.teamB)===b)||(normClubName(f.teamA)===b&&normClubName(f.teamB)===a)));
+      if(same) notes.push('<span class="ai-warn">Already on the dashboard: '+esc(same.teamA)+' v '+esc(same.teamB)+', '+esc(same.date)+' ('+esc(same.county)+', '+esc(same.status||'Proposed')+'). Adding it from the link too would list it twice.</span>');
+      try{
+        const g={...row, county:normaliseCounty(row.county), time:row.time?to12h(row.time):'', code:row.code||deriveCode(row.competition||'',null)};
+        const p=buildGamePayload(g);
+        notes.push(!p.errors.length?'<span class="ai-ok">&#10003; Ready to export: '+esc(p.payload.club)+' v '+esc(p.payload.competitorClubName)+'</span>'
+          :'<span class="ai-warn">Can be added, but not exported yet: '+p.errors.map(esc).join('; ')+'</span>');
+      }catch(_){}
+    }
+    check.innerHTML=notes.join('<br>');
+    btn.disabled=!!need.length;
+  }
+  document.getElementById('lkList').addEventListener('change',e=>{
+    if(e.target.name!=='lkPick') return;
+    pick=+e.target.value;
+    document.querySelectorAll('#lkList label').forEach((l,i)=>l.classList.toggle('on',i===pick));
+    renderForm();
+  });
+  document.getElementById('lkForm').addEventListener('input',e=>{
+    const k=e.target.getAttribute('data-k'); if(!k||!row) return;
+    row[k]=e.target.value; refresh();
+  });
+
+  async function addLinked(){
+    if(!row||pick<0) return;
+    const btn=document.getElementById('lkAddBtn'); btn.disabled=true;
+    const r=page.fixtures[pick];
+    const fixture={county:normaliseCounty(row.county.trim()), code:row.code||deriveCode(row.competition||'',null)||'',
+      teamA:row.teamA.trim(), teamB:row.teamB.trim(), date:row.date, time:row.time||'', venue:row.venue.trim(),
+      competition:row.competition.trim(), round:row.round.trim()};
+    setStatus('Adding...');
+    try{
+      const res=await authFetch(WORKER_URL,{method:'POST',body:JSON.stringify({action:'addLinkedFixture',url:page.url,pageHash:page.pageHash,pageTeams:{teamA:r.teamA,teamB:r.teamB},fixture})});
+      const json=await res.json().catch(()=>({ok:false,error:'Unexpected response ('+res.status+')'}));
+      if(!json.ok) throw new Error(json.error||('Request failed ('+res.status+')'));
+      closeModal();
+      showConflictToast('✓ Added '+fixture.teamA+' v '+fixture.teamB+' - following the link for changes','#16a34a');
+      loadFixtures(true);
+    }catch(err){ setStatus('Could not add it: '+esc(err.message),'ai-err'); btn.disabled=false; }
+  }
+
+  // LINK badge: stop / resume the hourly checks
+  document.addEventListener('click',async e=>{
+    const b=e.target.closest&&e.target.closest('.badge-link'); if(!b) return;
+    e.stopPropagation(); e.preventDefault();
+    if(!authToken){ alert('Please log in first.'); return; }
+    const active=b.getAttribute('data-link-active')==='1';
+    if(!confirm(active?'Stop checking this link for changes? The fixture stays on the dashboard as it is now.':'Start checking this link for changes again?')) return;
+    try{
+      const res=await authFetch(WORKER_URL,{method:'POST',body:JSON.stringify({action:'setLinkActive',id:b.getAttribute('data-link-id'),active:!active})});
+      const json=await res.json().catch(()=>({ok:false}));
+      if(!json.ok) throw new Error(json.error||'Request failed');
+      fixtures.filter(f=>f.linkId===json.link.id).forEach(f=>{ f.linkActive=json.link.active; });
+      render();
+      showConflictToast(json.link.active?'✓ Checking the link again':'✓ Stopped checking the link','#16a34a');
+    }catch(err){ alert('Could not change it: '+err.message); }
+  },true);
+
+  document.getElementById('linkImportBtn').addEventListener('click',openModal);
+  document.getElementById('lkCloseBtn').addEventListener('click',closeModal);
+  document.getElementById('lkReadBtn').addEventListener('click',readPage);
+  document.getElementById('lkUrl').addEventListener('keydown',e=>{ if(e.key==='Enter') readPage(); });
+  document.getElementById('lkBackBtn').addEventListener('click',()=>{ showStep(1); setStatus(''); });
+  document.getElementById('lkAddBtn').addEventListener('click',addLinked);
+  let downOnBackdrop=false;
+  modal.addEventListener('mousedown',e=>{ downOnBackdrop=e.target===modal; });
+  modal.addEventListener('click',e=>{ if(e.target===modal&&downOnBackdrop) closeModal(); downOnBackdrop=false; });
 })();
 </script>
 <script>

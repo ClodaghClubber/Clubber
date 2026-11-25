@@ -18,6 +18,7 @@ A GAA fixtures dashboard hosted on GitHub Pages, backed by a Cloudflare Worker a
   - `cache_A` through `cache_E` — fixture data by county group
   - `statusHistory` — per-fixture status change history + Clubber Pick audit log
   - `fixtureOverrides` — field-level overrides synced from the dashboard
+  - `linkedFixtures` — fixtures added with "Add from link": one fixture per link, served in the feed like a scraped fixture (`linkId`, LINK badge); the :24 cron re-reads each page hourly (Claude only when the page text changed) and updates that fixture's date/time/venue, moving its keys on a date change. Checks stop after the game; dropped 14 days later
 - **Worker secrets:** `ANTHROPIC_API_KEY` — used by the `extractFixtures` action ("Add from screenshot" in the dashboard: Claude Opus 5.5 reads screenshots/PDFs/spreadsheets/text into fixtures, which the user reviews before they're added as Proposed manual fixtures). The worker now has a `package.json` (`@anthropic-ai/sdk`); run `npm install` in `worker/` before `wrangler deploy`.
 
 ## Security constraint

@@ -3681,7 +3681,8 @@ async function getAllCachedFixtures(kv) {
     readGroupCache(kv, CACHE_E_KEY),
     readGroupCache(kv, CACHE_F_KEY),
   ]);
-  return [...a, ...b, ...c, ...d, ...e, ...f];
+  const linked = await getLinkedFixtures(kv).catch(() => []);
+  return [...a, ...b, ...c, ...d, ...e, ...f, ...linked.map(linkedToFixture)];
 }
 
 // Group A: Cork + Waterford
@@ -3824,6 +3825,220 @@ async function scrapeGroupE(kv) {
       && [regNorm(x.teamA), regNorm(x.teamB)].sort().join('|') === [regNorm(f.teamA), regNorm(f.teamB)].sort().join('|'))),
   ];
   await writeGroupCache(kv, CACHE_E_KEY, fixtures);
+}
+
+// ---- Fixtures added from a link ----
+// A user pastes the link to a page showing one fixture we don't scrape. The
+// page is read once with Claude, the user picks / checks the fixture, and it
+// joins the feed like a scraped fixture (same keys, status, edits, Teams
+// alerts, Clubber export). Every hour (:24) the same page is read again and
+// only that fixture's date, time and venue are updated - other fixtures on
+// the page are never added. Claude is only asked again when the page text
+// has changed. Checking stops once the game's date has passed; the fixture
+// leaves the feed LINKED_KEEP_DAYS later.
+const LINKED_KV_KEY = 'linkedFixtures';
+const LINKED_MAX = 300;
+const LINKED_KEEP_DAYS = 14;
+const LINKED_CLAUDE_PER_RUN = 15;
+
+async function getLinkedFixtures(kv) {
+  if (!kv) return [];
+  const raw = await kv.get(LINKED_KV_KEY);
+  if (!raw) return [];
+  try { const p = JSON.parse(raw); return Array.isArray(p) ? p : []; } catch { return []; }
+}
+
+const isoToLong = d => { const [y, m, day] = d.split('-'); return `${+day} ${NUM_TO_MONTH[+m]} ${y}`; };
+
+function linkedToFixture(l) {
+  const f = l.fixture;
+  return {
+    county: f.county, teamA: f.teamA, teamB: f.teamB, date: isoToLong(f.date), time: f.time || 'TBC',
+    venue: f.venue || '', competition: f.competition, round: f.round || '',
+    ...(f.code ? { code: f.code, sport: f.code } : {}),
+    sourceUrl: l.url, linkId: l.id, linkActive: l.active !== false,
+    linkCheckedAt: l.checkedAt || '', ...(l.lastError ? { linkError: l.lastError } : {}),
+  };
+}
+
+// Only public web pages: no local / private addresses
+function checkLinkUrl(raw) {
+  let u;
+  try { u = new URL(String(raw || '').trim()); } catch { throw new Error('That is not a valid link'); }
+  if (!/^https?:$/.test(u.protocol)) throw new Error('The link must start with http:// or https://');
+  const h = u.hostname.toLowerCase();
+  if (h === 'localhost' || h.endsWith('.local') || h.endsWith('.internal') || /^[\d.]+$/.test(h) || h.includes(':')) {
+    throw new Error('That link is not a public web page');
+  }
+  return u.toString();
+}
+
+// Visible text of a page, plus any JSON data blocks (some sites build their
+// fixture lists from those)
+function pageTextFromHtml(html) {
+  const data = [...html.matchAll(/<script[^>]*type=["']application\/(?:ld\+)?json["'][^>]*>([\s\S]*?)<\/script>/gi)]
+    .map(m => m[1].trim()).filter(Boolean).join('\n').slice(0, 60000);
+  const title = (html.match(/<title[^>]*>([\s\S]*?)<\/title>/i) || [])[1] || '';
+  let t = html.replace(/<(script|style|noscript|svg|head|template)\b[\s\S]*?<\/\1>/gi, ' ')
+    .replace(/<br\s*\/?>|<\/(?:p|div|li|tr|h\d|section|article|table|ul|ol)>/gi, '\n')
+    .replace(/<\/t[dh]>/gi, ' | ')
+    .replace(/<[^>]+>/g, ' ');
+  t = decodeEntities(t).replace(/[ \t ]+/g, ' ').replace(/ *\n[\s|]*/g, '\n').trim();
+  return { title: decodeEntities(title).replace(/\s+/g, ' ').trim(), text: (t + (data ? '\n--- Data on the page ---\n' + data : '')).slice(0, 150000) };
+}
+
+async function sha256Hex(data) {
+  const buf = typeof data === 'string' ? new TextEncoder().encode(data) : data;
+  return bytesToHex(new Uint8Array(await crypto.subtle.digest('SHA-256', buf)));
+}
+
+// Fetches the page: {kind:'text', text, title} or {kind:'pdf', data(base64)}, plus a hash
+async function fetchLinkPage(url) {
+  const res = await fetch(url, {
+    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36', Accept: 'text/html,application/xhtml+xml,application/pdf;q=0.9,*/*;q=0.8' },
+    redirect: 'follow', signal: AbortSignal.timeout(20000),
+  });
+  if (!res.ok) throw new Error(`The page returned an error (${res.status})`);
+  const type = (res.headers.get('content-type') || '').toLowerCase();
+  if (type.includes('application/pdf')) {
+    const buf = await res.arrayBuffer();
+    if (buf.byteLength > 15 * 1024 * 1024) throw new Error('That PDF is too big to read');
+    const bytes = new Uint8Array(buf);
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    return { kind: 'pdf', data: btoa(bin), title: '', hash: await sha256Hex(buf) };
+  }
+  if (!/text\/html|application\/xhtml|text\/plain|^$/.test(type)) throw new Error('That link is not a web page or PDF');
+  const html = await res.text();
+  const { title, text } = pageTextFromHtml(html);
+  if (text.length < 40) throw new Error('No text could be read from that page');
+  // Fingerprint without leftover character codes and spacing: some sites
+  // scramble their contact email differently on every load
+  const stable = text
+    .replace(/&\s*#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16) || 32))
+    .replace(/&\s*#(\d+);/g, (_, d) => String.fromCodePoint(+d || 32))
+    .replace(/&\s*[a-z]+;/gi, '').replace(/\s+/g, '');
+  return { kind: 'text', text, title, hash: await sha256Hex(stable) };
+}
+
+async function extractFromLinkPage(env, url, page, note, knownCounties) {
+  const body = { note, knownCounties };
+  if (page.kind === 'pdf') body.files = [{ mediaType: 'application/pdf', data: page.data }];
+  else body.texts = [{ name: `Web page ${url}${page.title ? ' - ' + page.title : ''}`, text: page.text }];
+  return extractFixturesWithClaude(env, body);
+}
+
+const linkTeamsMatch = (r, a, b) => {
+  const x = regNorm(r.teamA), y = regNorm(r.teamB);
+  return (x === a && y === b) || (x === b && y === a);
+};
+
+// The hourly check (cron :24)
+async function runLinkedFixturesCheck(kv, env) {
+  const list = await getLinkedFixtures(kv);
+  if (!list.length) return;
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Dublin' });
+  const keepFrom = new Date(Date.now() - LINKED_KEEP_DAYS * 864e5).toISOString().slice(0, 10);
+  const kept = list.filter(l => l.fixture.date >= keepFrom);
+  const due = kept.filter(l => l.active !== false && l.fixture.date >= today);
+  const moves = [];
+  let claudeCalls = 0, changed = kept.length !== list.length;
+  for (const l of due) {
+    const now = new Date().toISOString();
+    try {
+      const page = await fetchLinkPage(l.url);
+      l.checkedAt = now;
+      if (l.fetchError) { delete l.fetchError; delete l.lastError; }
+      if (page.hash === l.pageHash) continue;   // page unchanged
+      if (!env.ANTHROPIC_API_KEY || claudeCalls >= LINKED_CLAUDE_PER_RUN) continue;   // next hour
+      claudeCalls++;
+      const f = l.fixture;
+      const note = `This page is being followed for ONE fixture: ${l.pageTeams.teamA} v ${l.pageTeams.teamB}` +
+        ` (${f.competition}), last seen on ${f.date}${f.time ? ' at ' + f.time : ''}. Include that fixture if the page still lists it,` +
+        ' even if its date, time or venue has changed or it now has a result.';
+      const out = await extractFromLinkPage(env, l.url, page, note, []);
+      const a = regNorm(l.pageTeams.teamA), b = regNorm(l.pageTeams.teamB);
+      const cands = out.fixtures.filter(r => linkTeamsMatch(r, a, b) && /^\d{4}-\d{2}-\d{2}$/.test(r.date || ''));
+      cands.sort((x, y) => Math.abs(new Date(x.date) - new Date(f.date)) - Math.abs(new Date(y.date) - new Date(f.date)));
+      const r = cands[0];
+      l.pageHash = page.hash;
+      changed = true;
+      if (!r) { l.lastError = 'The fixture is no longer on the page'; continue; }
+      delete l.lastError;
+      const upd = {};
+      if (r.date !== f.date) upd.date = r.date;
+      if (r.time && r.time !== f.time) upd.time = r.time;
+      if (r.venue && r.venue.trim() !== (f.venue || '')) upd.venue = r.venue.trim();
+      if (!Object.keys(upd).length) continue;
+      const oldKey = fixtureKey(linkedToFixture(l));
+      l.history = [...(l.history || []), { at: now, changes: Object.entries(upd).map(([k, v]) => ({ field: k, from: f[k] || '', to: v })) }].slice(-50);
+      Object.assign(f, upd);
+      l.changedAt = now;
+      if (upd.date) moves.push([oldKey, fixtureKey(linkedToFixture(l))]);
+    } catch (e) {
+      l.checkedAt = now;
+      l.lastError = String((e && e.message) || e).slice(0, 200);
+      l.fetchError = true;
+      changed = true;
+      console.error('Linked fixture check failed', l.url, l.lastError);
+    }
+  }
+  // Status, dashboard edits and alert snapshot follow a moved game
+  if (moves.length) await moveFixtureKeys(kv, moves).catch(e => console.error('moveFixtureKeys failed:', e));
+  // Save onto a fresh read, so links added or stopped during this run are kept
+  // (checkedAt changes every run, so this always saves when anything was due)
+  if (!changed && !due.length) return;
+  const mine = new Map(kept.map(l => [l.id, l]));
+  const fresh = (await getLinkedFixtures(kv)).filter(x => x.fixture.date >= keepFrom);
+  await kv.put(LINKED_KV_KEY, JSON.stringify(fresh.map(x => mine.has(x.id) ? { ...mine.get(x.id), active: x.active } : x)));
+}
+
+// Signed-in POST actions for links: readLink, addLinkedFixture, setLinkActive
+async function handleLinkAction(body, kv, env) {
+  if (body.action === 'readLink') {
+    if (!env.ANTHROPIC_API_KEY) return jsonResp({ ok: false, error: 'ANTHROPIC_API_KEY is not set on the worker' }, 500);
+    const url = checkLinkUrl(body.url);
+    const page = await fetchLinkPage(url);
+    const note = 'This is a web page with a fixture a staff member wants to follow.' + (body.note ? ' ' + String(body.note).slice(0, 1000) : '');
+    const out = await extractFromLinkPage(env, url, page, note, Array.isArray(body.knownCounties) ? body.knownCounties : []);
+    const existing = (await getLinkedFixtures(kv)).filter(l => l.url === url).map(l => ({ id: l.id, teamA: l.pageTeams.teamA, teamB: l.pageTeams.teamB, active: l.active !== false }));
+    return jsonResp({ ok: true, url, title: page.title || '', pageHash: page.hash, fixtures: out.fixtures, questions: out.questions, existing });
+  }
+  if (body.action === 'addLinkedFixture') {
+    const url = checkLinkUrl(body.url);
+    const s = (v, n = 160) => String(v == null ? '' : v).replace(/\s+/g, ' ').trim().slice(0, n);
+    const fx = body.fixture || {}, pt = body.pageTeams || {};
+    const fixture = {
+      county: s(fx.county, 60), code: s(fx.code, 20), teamA: s(fx.teamA), teamB: s(fx.teamB), date: s(fx.date, 10),
+      time: s(fx.time, 5), venue: s(fx.venue), competition: s(fx.competition), round: s(fx.round, 80),
+    };
+    if (!fixture.county || !fixture.teamA || !fixture.teamB || !fixture.competition) return jsonResp({ ok: false, error: 'County, both teams and the competition are needed' }, 400);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(fixture.date)) return jsonResp({ ok: false, error: 'The fixture needs a date' }, 400);
+    if (fixture.time && !/^\d{2}:\d{2}$/.test(fixture.time)) return jsonResp({ ok: false, error: 'Time must be HH:MM' }, 400);
+    const list = await getLinkedFixtures(kv);
+    if (list.length >= LINKED_MAX) return jsonResp({ ok: false, error: 'Too many linked fixtures' }, 400);
+    const l = {
+      id: 'l' + Date.now().toString(36) + randomHex(3), url, active: true,
+      pageTeams: { teamA: s(pt.teamA) || fixture.teamA, teamB: s(pt.teamB) || fixture.teamB },
+      pageHash: s(body.pageHash, 64), fixture,
+      addedBy: body.user, addedAt: new Date().toISOString(), checkedAt: new Date().toISOString(),
+    };
+    const key = fixtureKey(linkedToFixture(l));
+    if (list.some(x => fixtureKey(linkedToFixture(x)) === key)) return jsonResp({ ok: false, error: 'That fixture has already been added from a link' }, 409);
+    list.push(l);
+    await kv.put(LINKED_KV_KEY, JSON.stringify(list));
+    return jsonResp({ ok: true, link: l, fixture: linkedToFixture(l) });
+  }
+  if (body.action === 'setLinkActive') {
+    const list = await getLinkedFixtures(kv);
+    const l = list.find(x => x.id === body.id);
+    if (!l) return jsonResp({ ok: false, error: 'Link not found' }, 404);
+    l.active = !!body.active;
+    l[l.active ? 'resumedBy' : 'stoppedBy'] = body.user;
+    await kv.put(LINKED_KV_KEY, JSON.stringify(list));
+    return jsonResp({ ok: true, link: l });
+  }
+  return null;
 }
 
 // Hourly check of approved fixtures for date / time / venue changes.
@@ -4213,7 +4428,10 @@ export default {
         if (new Date(event.scheduledTime).getUTCMinutes() >= 50) await scrapeGroupF(kv);
         else await scrapeGroupB(kv);
       }
-      else if (cron === '24 * * * *') await scrapeGroupC(kv);
+      else if (cron === '24 * * * *') {
+        await scrapeGroupC(kv);
+        try { await runLinkedFixturesCheck(kv, env); } catch (e) { console.error('Cron: linked fixtures check failed', e); }
+      }
       else if (cron === '36 * * * *') await scrapeGroupD(kv, env);
       else if (cron === '48 * * * *') {
         await scrapeGroupE(kv);
@@ -4372,6 +4590,18 @@ export default {
             if (err instanceof Anthropic.BadRequestError) return jsonResp({ ok: false, error: 'Claude could not read that file: ' + err.message }, 400);
             if (err instanceof Anthropic.APIError) return jsonResp({ ok: false, error: `Claude API error ${err.status}` }, 502);
             return jsonResp({ ok: false, error: String((err && err.message) || err) }, 500);
+          }
+        }
+
+        // Fixtures added from a link (read the page, add one fixture, stop/resume checks)
+        if (['readLink', 'addLinkedFixture', 'setLinkActive'].includes(body.action)) {
+          try {
+            return await handleLinkAction(body, kv, env);
+          } catch (err) {
+            if (err instanceof Anthropic.RateLimitError) return jsonResp({ ok: false, error: 'Claude is busy - try again in a minute' }, 429);
+            if (err instanceof Anthropic.APIError) return jsonResp({ ok: false, error: `Claude API error ${err.status}` }, 502);
+            const msg = String((err && err.message) || err);
+            return jsonResp({ ok: false, error: /timed? ?out|abort/i.test(msg) ? 'The page took too long to load' : msg }, 400);
           }
         }
 
